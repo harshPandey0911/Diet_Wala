@@ -2758,7 +2758,7 @@ function RestaurantDetailsContent() {
                     </Button>
                   )}
                   <Button
-                    className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-1.5 shadow-[0_4px_12px_rgba(255,102,0,0.4)] border border-white/20 rounded-full font-bold transform transition-all duration-300 active:scale-95 group ml-1"
+                    className="bg-[#DD4AA0] hover:bg-[#c43b8b] text-white flex items-center gap-1.5 shadow-[0_4px_12px_rgba(221,74,160,0.4)] border border-white/20 rounded-full font-bold transform transition-all duration-300 active:scale-95 group ml-1"
                     size="sm"
                     onClick={() => setShowMenuSheet(true)}
                   >

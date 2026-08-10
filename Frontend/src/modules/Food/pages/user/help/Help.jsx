@@ -409,7 +409,7 @@ export default function Help() {
                       href="mailto:support@tuggo.com"
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      support@tuggo.com
+                      support@fudron.com
                     </a>
                   </div>
                 </div>

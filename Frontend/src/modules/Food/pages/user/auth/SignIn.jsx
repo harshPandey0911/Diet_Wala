@@ -154,7 +154,7 @@ export default function SignIn() {
           className="w-32 h-32 rounded-full bg-white dark:bg-[#1a1a1a] flex flex-col items-center justify-center shadow-[0_15px_35px_rgba(229,57,53,0.2)] border-4 border-white dark:border-gray-800 mb-8 overflow-hidden p-2"
         >
           {dynamicLogo ? (
-            <img src={dynamicLogo} alt={companyName} className="w-full h-full object-contain" />
+            <img src={dynamicLogo} alt={companyName} className="w-full h-full object-contain p-4" />
           ) : (
             <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-[#E53935] to-[#D32F2F] rounded-full p-2">
               <ChefHat className="w-10 h-10 text-white mb-1" />

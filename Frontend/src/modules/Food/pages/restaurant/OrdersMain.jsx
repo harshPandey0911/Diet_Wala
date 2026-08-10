@@ -2494,7 +2494,7 @@ export default function OrdersMain() {
   };
 
   return (
-    <div className="restaurant-page min-h-full bg-gray-100">
+    <div className="restaurant-theme restaurant-page min-h-full bg-gray-100">
       {/* Profile Update Pending Banner */}
       <AnimatePresence>
         {!restaurantStatus.isLoading &&

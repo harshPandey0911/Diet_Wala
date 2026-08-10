@@ -20,12 +20,12 @@ export const loadRazorpayScript = (retries = 3) => {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
-      
+
       script.onload = () => {
         razorpayLoaded = true;
         resolve();
       };
-      
+
       script.onerror = () => {
         document.body.removeChild(script);
         if (attemptsLeft > 1) {
@@ -35,7 +35,7 @@ export const loadRazorpayScript = (retries = 3) => {
           reject(new Error('Failed to load Razorpay payment gateway. Please check your internet connection or turn off any ad-blockers.'));
         }
       };
-      
+
       document.body.appendChild(script);
     };
 
@@ -74,7 +74,7 @@ export const initRazorpayPayment = async (options) => {
       amount: options.amount,
       currency: options.currency || 'INR',
       order_id: options.order_id,
-      name: options.name || 'Tuggo Food',
+      name: options.name || 'fudron Food',
       description: options.description || 'Order Payment',
       image: options.image || 'https://www.tuggo.in/logo.png',
       prefill: {
@@ -86,13 +86,13 @@ export const initRazorpayPayment = async (options) => {
       theme: {
         color: '#E23744'
       },
-      handler: function(response) {
+      handler: function (response) {
         if (options.handler) {
           options.handler(response);
         }
       },
       modal: {
-        ondismiss: function() {
+        ondismiss: function () {
           if (options.onClose) {
             options.onClose();
           }
@@ -109,9 +109,9 @@ export const initRazorpayPayment = async (options) => {
     };
 
     const razorpay = new window.Razorpay(razorpayOptions);
-    
+
     // Handle payment failures
-    razorpay.on('payment.failed', function(response) {
+    razorpay.on('payment.failed', function (response) {
       console.error('Razorpay payment failed:', response);
       if (options.onError) {
         options.onError(response.error || { description: 'Payment failed. Please try again.' });
@@ -119,7 +119,7 @@ export const initRazorpayPayment = async (options) => {
     });
 
     // Handle payment method selection failures
-    razorpay.on('payment.method_selection_failed', function(response) {
+    razorpay.on('payment.method_selection_failed', function (response) {
       console.error('Razorpay payment method selection failed:', response);
       if (options.onError) {
         options.onError(response.error || { description: 'Please select another payment method.' });
@@ -128,7 +128,7 @@ export const initRazorpayPayment = async (options) => {
 
     // Open Razorpay modal
     razorpay.open();
-    
+
     console.log('✅ Razorpay checkout opened successfully');
     console.log('Razorpay options:', {
       key: razorpayOptions.key ? 'Present' : 'Missing',

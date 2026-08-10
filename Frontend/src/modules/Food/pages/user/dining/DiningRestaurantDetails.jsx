@@ -221,7 +221,7 @@ export default function DiningRestaurantDetails() {
   const handleShare = async () => {
     const shareData = {
       title: restaurantName,
-      text: `Check out ${restaurantName} on Tuggo Food Delivery!`,
+      text: `Check out ${restaurantName} on fudron Food Delivery!`,
       url: window.location.href,
     }
 
@@ -350,8 +350,8 @@ export default function DiningRestaurantDetails() {
               onClick={() => isDiningEnabled && setIsBookingSheetOpen(true)}
               disabled={!isDiningEnabled}
               className={`flex h-[52px] w-full items-center justify-center gap-2 rounded-full border px-3 text-[15px] font-medium shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all ${isDiningEnabled
-                  ? "border-[#f1ebee] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2b2118] dark:text-slate-100"
-                  : "cursor-not-allowed border-[#f2d7da] dark:border-red-900/30 bg-[#fff5f6] dark:bg-red-950/20 text-[#c06a79] opacity-80"
+                ? "border-[#f1ebee] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2b2118] dark:text-slate-100"
+                : "cursor-not-allowed border-[#f2d7da] dark:border-red-900/30 bg-[#fff5f6] dark:bg-red-950/20 text-[#c06a79] opacity-80"
                 }`}
             >
               <Ticket className="h-[15px] w-[15px] text-primary" />
@@ -379,8 +379,8 @@ export default function DiningRestaurantDetails() {
                   scrollToSection(tab.target)
                 }}
                 className={`shrink-0 rounded-full border px-4 py-2 text-sm transition-colors ${activeTab === tab.id
-                    ? "border-primary bg-white dark:bg-slate-900 text-[#2a2018] dark:text-slate-100"
-                    : "border-[#ece9e1] dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900 text-[#8b8881] dark:text-slate-400"
+                  ? "border-primary bg-white dark:bg-slate-900 text-[#2a2018] dark:text-slate-100"
+                  : "border-[#ece9e1] dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900 text-[#8b8881] dark:text-slate-400"
                   }`}
               >
                 {tab.label}
@@ -526,8 +526,8 @@ export default function DiningRestaurantDetails() {
             onClick={() => isDiningEnabled && setIsBookingSheetOpen(true)}
             disabled={!isDiningEnabled}
             className={`h-12 w-full rounded-2xl border text-[17px] font-medium transition-all ${isDiningEnabled
-                ? "border-[#b18da5] bg-white dark:bg-slate-900 text-primary dark:text-purple-400 hover:bg-[#fdfafc] dark:hover:bg-slate-800"
-                : "cursor-not-allowed border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-400 dark:text-slate-600 opacity-80"
+              ? "border-[#b18da5] bg-white dark:bg-slate-900 text-primary dark:text-purple-400 hover:bg-[#fdfafc] dark:hover:bg-slate-800"
+              : "cursor-not-allowed border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-400 dark:text-slate-600 opacity-80"
               }`}
           >
             {isDiningEnabled ? "Book a table" : "Dining paused"}
@@ -575,12 +575,12 @@ export default function DiningRestaurantDetails() {
                     disabled={isBooked || isTooLarge}
                     onClick={() => setSelectedGuests(count)}
                     className={`relative rounded-2xl border px-3 py-4 text-sm font-bold transition-all ${selectedGuests === count
-                        ? "border-primary bg-[#fdfafc] dark:bg-purple-950/30 text-primary scale-[1.02] shadow-sm"
-                        : isBooked
-                          ? "border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-400 cursor-not-allowed opacity-70"
-                          : isTooLarge
-                            ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-gray-300 dark:text-slate-600 cursor-not-allowed"
-                            : "border-[#ece7de] dark:border-slate-800 bg-white dark:bg-slate-800 text-[#23180f] dark:text-slate-100 hover:border-primary/30"
+                      ? "border-primary bg-[#fdfafc] dark:bg-purple-950/30 text-primary scale-[1.02] shadow-sm"
+                      : isBooked
+                        ? "border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-400 cursor-not-allowed opacity-70"
+                        : isTooLarge
+                          ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-gray-300 dark:text-slate-600 cursor-not-allowed"
+                          : "border-[#ece7de] dark:border-slate-800 bg-white dark:bg-slate-800 text-[#23180f] dark:text-slate-100 hover:border-primary/30"
                       }`}
                   >
                     {isBooked ? (

@@ -129,7 +129,7 @@ export default function RestaurantLogin() {
               <img
                 src={logoToDisplay}
                 alt="Restaurant Partner Logo"
-                className="w-full h-full object-contain p-2"
+                className="w-full h-full object-contain p-5"
                 style={{ borderRadius: '50%' }}
                 onError={(e) => {
                   e.currentTarget.src = logoNew

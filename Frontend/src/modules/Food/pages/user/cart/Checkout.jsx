@@ -146,8 +146,8 @@ export default function Checkout() {
                           <div
                             key={addressId || `${address.label}-${address.street}-${address.city}`}
                             className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${isSelected
-                                ? "border-primary bg-orange-50"
-                                : "border-gray-200 hover:border-orange-300"
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-200 hover:border-primary/50"
                               }`}
                             onClick={() => {
                               setSelectedAddressId(addressId)
@@ -205,8 +205,8 @@ export default function Checkout() {
                           <div
                             key={payment.id}
                             className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${isSelected
-                                ? "border-primary bg-orange-50"
-                                : "border-gray-200 hover:border-orange-300"
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-200 hover:border-primary/50"
                               }`}
                             onClick={() => setSelectedPayment(payment.id)}
                           >

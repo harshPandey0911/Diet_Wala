@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { adminAPI } from "@food/api";
 import { setCachedSettings, updateFavicon, updateTitle, normalizeSettingsUrls } from "@food/utils/businessSettings";
 import { EMAIL_REGEX } from "@/shared/utils/emailValidation";
-const debugLog = (...args) => {}
-const debugWarn = (...args) => {}
-const debugError = (...args) => {}
+const debugLog = (...args) => { }
+const debugWarn = (...args) => { }
+const debugError = (...args) => { }
 
 
 export default function BusinessSetup() {
@@ -109,13 +109,13 @@ export default function BusinessSetup() {
         toast.error("Email is required");
         return;
       }
-      
+
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(formData.email.trim())) {
         toast.error("Please enter a valid email address");
         return;
       }
-      
+
       const emailDomain = formData.email.trim().split('@')[1]?.toLowerCase();
       const invalidDomains = ['gnali.com', 'gmai.com', 'gamil.com', 'gmail.con', 'gmail.comm', 'yahoo.comm', 'yahoo.con', 'hotmal.com', 'hotmail.con'];
       if (invalidDomains.includes(emailDomain) || emailDomain?.endsWith('.comm')) {
@@ -145,7 +145,7 @@ export default function BusinessSetup() {
         toast.error("Please enter a valid pincode (4-10 digits)");
         return;
       }
-      
+
       if (formData.supportEmail?.trim()) {
         const sEmail = formData.supportEmail.trim();
         if (!emailRegex.test(sEmail)) {
@@ -158,7 +158,7 @@ export default function BusinessSetup() {
           return;
         }
       }
-      
+
       if (formData.supportPhone?.trim()) {
         const sPhone = formData.supportPhone.trim().replace(/\D/g, "");
         if (!/^\d{10}$/.test(sPhone)) {
@@ -166,7 +166,7 @@ export default function BusinessSetup() {
           return;
         }
       }
-      
+
       if (!logoPreview && !logoFile) {
         toast.error("Company logo picture is required. Please upload a logo.");
         return;
@@ -446,13 +446,13 @@ export default function BusinessSetup() {
               <div className="md:col-span-2 border-t pt-4 mt-2">
                 <h4 className="text-sm font-bold text-slate-800 mb-3">Support Information (Dynamic Support Page)</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div>
+                  <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Support Email
                     </label>
                     <input
                       type="email"
-                      placeholder="support@tuggo.com"
+                      placeholder="support@fudron.com"
                       value={formData.supportEmail || ""}
                       onChange={(e) => handleInputChange("supportEmail", e.target.value)}
                       className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -664,17 +664,17 @@ export default function BusinessSetup() {
                         {termsPdfFile ? termsPdfFile.name : "Current T&C Document"}
                       </p>
                       {termsPdfUrl && !termsPdfFile && (
-                         <a 
-                           href={termsPdfUrl} 
-                           target="_blank" 
-                           rel="noreferrer" 
-                           onClick={(e) => e.stopPropagation()}
-                           className="text-[10px] text-blue-600 hover:underline mt-1 relative z-10"
-                         >
-                           View Document
-                         </a>
+                        <a
+                          href={termsPdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] text-blue-600 hover:underline mt-1 relative z-10"
+                        >
+                          View Document
+                        </a>
                       )}
-                      
+
                       <button
                         type="button"
                         onClick={(e) => {

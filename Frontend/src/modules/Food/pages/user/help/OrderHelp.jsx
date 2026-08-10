@@ -437,7 +437,7 @@ export default function OrderHelp() {
                       href={`mailto:support@tuggo.com?subject=Help with Order ${order.id}`}
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      support@tuggo.com
+                      support@fudron.com
                     </a>
                   </div>
                 </div>

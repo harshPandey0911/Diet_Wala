@@ -1,9 +1,9 @@
 :root {
-  --rt-primary: #B80B3D;
-  --rt-primary-strong: #66001D;
-  --rt-primary-soft: #fdf2f5;
+  --rt-primary: #DD4AA0;
+  --rt-primary-strong: #d99ec0;
+  --rt-primary-soft: #fcf4f9;
   --rt-surface: #ffffff;
-  --rt-border: #f0ccd5;
+  --rt-border: #f4d4e7;
   --rt-text: #1f1f24;
   --rt-muted: #6d6470;
   --rt-modal-z: 200;
@@ -12,33 +12,45 @@
   --rt-bottom-nav-z: 60;
 }
 
-.restaurant-theme {
+.restaurant-theme,
+.restaurant-page {
   color: var(--rt-text);
 }
 
 .restaurant-theme [class~="text-primary"],
-.restaurant-theme [class~="text-[#EB590E]"] {
+.restaurant-page [class~="text-primary"],
+.restaurant-theme [class~="text-[#EB590E]"],
+.restaurant-page [class~="text-[#EB590E]"] {
   color: var(--rt-primary) !important;
 }
 
 .restaurant-theme [class~="bg-primary"],
-.restaurant-theme [class~="bg-[#EB590E]"] {
+.restaurant-page [class~="bg-primary"],
+.restaurant-theme [class~="bg-[#EB590E]"],
+.restaurant-page [class~="bg-[#EB590E]"] {
   background-color: var(--rt-primary) !important;
 }
 
 .restaurant-theme [class~="hover:bg-secondary"]:hover,
+.restaurant-page [class~="hover:bg-secondary"]:hover,
 .restaurant-theme [class~="hover:bg-[#d84f0a]"]:hover,
-.restaurant-theme [class~="hover:bg-[#00A055]"]:hover {
+.restaurant-page [class~="hover:bg-[#d84f0a]"]:hover,
+.restaurant-theme [class~="hover:bg-[#00A055]"]:hover,
+.restaurant-page [class~="hover:bg-[#00A055]"]:hover {
   background-color: var(--rt-primary-strong) !important;
 }
 
 .restaurant-theme [class~="border-primary"],
-.restaurant-theme [class~="border-[#EB590E]"] {
+.restaurant-page [class~="border-primary"],
+.restaurant-theme [class~="border-[#EB590E]"],
+.restaurant-page [class~="border-[#EB590E]"] {
   border-color: color-mix(in srgb, var(--rt-primary) 30%, #ffffff) !important;
 }
 
 .restaurant-theme [class~="bg-primary/5"],
-.restaurant-theme [class~="bg-primary/10"] {
+.restaurant-page [class~="bg-primary/5"],
+.restaurant-theme [class~="bg-primary/10"],
+.restaurant-page [class~="bg-primary/10"] {
   background-color: var(--rt-primary-soft) !important;
 }
 

@@ -51,7 +51,7 @@ function formatCurrency(value) {
 
 function KpiCard({ title, value, subtitle, icon: Icon, trend, accent = "primary" }) {
   const accentClasses = {
-    primary: "from-[#B80B3D]/10 to-[#66001D]/5 text-[#B80B3D]",
+    primary: "from-[#DD4AA0]/10 to-[#d99ec0]/5 text-[#DD4AA0]",
     green: "from-emerald-50 to-emerald-100/50 text-emerald-700",
     amber: "from-amber-50 to-amber-100/50 text-amber-700",
     blue: "from-blue-50 to-blue-100/50 text-blue-700",
@@ -152,7 +152,7 @@ export default function RestaurantDashboard() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#B80B3D] border-t-transparent" />
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#DD4AA0] border-t-transparent" />
           <p className="mt-4 text-sm font-medium text-gray-500">Loading dashboard...</p>
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function RestaurantDashboard() {
     <RestaurantPageShell className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#B80B3D]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#DD4AA0]">
             Restaurant overview
           </p>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 mt-1">

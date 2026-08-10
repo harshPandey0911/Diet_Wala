@@ -459,9 +459,9 @@ export default function AddToCartAnimation({
               }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              animate={{ boxShadow: ["0px 4px 15px rgba(255,102,0,0.3)", "0px 4px 25px rgba(255,102,0,0.6)", "0px 4px 15px rgba(255,102,0,0.3)"] }}
+              animate={{ boxShadow: ["0px 4px 15px rgba(221,74,160,0.3)", "0px 4px 25px rgba(221,74,160,0.6)", "0px 4px 15px rgba(221,74,160,0.3)"] }}
               transition={{ boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" } }}
-              className="pointer-events-auto bg-orange-500 hover:bg-orange-600 border border-white/20 text-white rounded-full flex items-center justify-between pl-2 pr-3 py-1.5 min-w-[130px] mx-auto"
+              className="pointer-events-auto bg-[#DD4AA0] hover:bg-[#c43b8b] border border-white/20 text-white rounded-full flex items-center justify-between pl-2 pr-3 py-1.5 min-w-[130px] mx-auto shadow-lg"
             >
               <div className="flex items-center justify-center bg-white/20 p-1.5 rounded-full mr-2.5">
                 <ShoppingCart className="h-3.5 w-3.5 text-white" />

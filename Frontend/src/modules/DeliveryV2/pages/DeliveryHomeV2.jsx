@@ -44,6 +44,7 @@ import { shouldSendLocationUpdate } from "@delivery/utils/trackingInterval";
 import { getHaversineDistance, calculateETA, calculateHeading } from '@/modules/DeliveryV2/utils/geo';
 import { parseLatLng } from '@/modules/DeliveryV2/hooks/proximity.utils';
 import { useCompanyName } from "@food/hooks/useCompanyName";
+import { useAppLogo } from "@food/hooks/useAppLogo";
 import { useNavigate } from 'react-router-dom';
 import useNotificationInbox from "@food/hooks/useNotificationInbox";
 import { writeDeliveryLocation } from "@food/realtimeTracking";
@@ -105,6 +106,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const { acceptOrder, reachPickup, pickUpOrder, reachDrop, completeDelivery, resetTrip } = useOrderManager();
   const { newOrder, clearNewOrder, orderStatusUpdate, clearOrderStatusUpdate, claimedOrderId, clearClaimedOrderId, autoKilledOrder, clearAutoKilledOrder, adminNotification, clearAdminNotification, isConnected: isSocketConnected, emitLocation, playNotificationSound } = useDeliveryNotificationContext();
   const companyName = useCompanyName();
+  const dynamicLogo = useAppLogo('delivery_app');
   const { items: broadcastItems, unreadCount: notificationUnreadCount, markAsRead: markBroadcastAsRead, dismissAll: dismissAllBroadcast } = useNotificationInbox("delivery", { limit: 20 });
 
   const [incomingOrders, setIncomingOrders] = useState([]);
@@ -1207,9 +1209,17 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
           <div className="flex items-center gap-4">
              <div 
                 onClick={() => navigate('/food/delivery/profile')}
-                className="w-10 h-10 rounded-full border border-white/20 p-0.5 shadow-xl overflow-hidden bg-white/5 cursor-pointer active:scale-95 transition-all"
+                className="w-10 h-10 rounded-full border border-white/40 shadow-xl overflow-hidden bg-white cursor-pointer active:scale-95 transition-all p-1 flex items-center justify-center shrink-0"
+                title="View Profile"
              >
-                <img src={profileImage || "/delivery_avatar.png"} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                <img 
+                  src={dynamicLogo || "/delivery_avatar.png"} 
+                  alt="App Logo" 
+                  className="w-full h-full object-contain" 
+                  onError={(e) => {
+                    e.currentTarget.src = "/delivery_avatar.png"
+                  }}
+                />
              </div>
               <button 
                 onClick={async () => {
