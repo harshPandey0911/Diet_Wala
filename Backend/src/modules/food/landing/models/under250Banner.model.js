@@ -8,7 +8,8 @@ const foodUnder250BannerSchema = new mongoose.Schema(
         },
         publicId: {
             type: String,
-            required: true
+            required: false,
+            default: null
         },
         title: {
             type: String

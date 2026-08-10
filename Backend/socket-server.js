@@ -39,6 +39,15 @@ const startSocketServer = async () => {
         await initSocket(httpServer);
 
         const port = config.socketPort || 5001;
+        httpServer.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                logger.error(`Port ${port} is already in use. A socket server process is already running.`);
+            } else {
+                logger.error(`Socket Server Error: ${err.message}`);
+            }
+            process.exit(1);
+        });
+
         httpServer.listen(port, config.host || '127.0.0.1', () => {
             logger.info(`Dedicated Socket.IO Server running on ${config.host || '127.0.0.1'}:${port}`);
         });

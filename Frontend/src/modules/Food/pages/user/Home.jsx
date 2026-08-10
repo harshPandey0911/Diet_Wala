@@ -484,11 +484,11 @@ export default function Home() {
             ? apiItem.link
             : `/${apiItem.link}`
           : item.href;
+        const rawApiImg = String(apiItem.imageUrl || apiItem.image || "").trim();
+        const resolvedApiImg = rawApiImg ? normalizeImageUrl(rawApiImg) : "";
         return {
           ...item,
-          image:
-            normalizeImageUrl(apiItem.imageUrl || apiItem.image || "") ||
-            item.image,
+          image: resolvedApiImg || item.image,
           href,
         };
       }

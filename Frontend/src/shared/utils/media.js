@@ -66,6 +66,16 @@ const toUploadsPath = (rawPath) => {
     return `${uploadPath}${query ? `?${query}` : ''}`;
   }
 
+  // If path starts with slash or asset path (frontend static asset), do NOT convert to backend /uploads/
+  if (
+    normalizedPath.startsWith('/') ||
+    normalizedPath.startsWith('assets/') ||
+    normalizedPath.startsWith('src/') ||
+    normalizedPath.includes('@food/')
+  ) {
+    return '';
+  }
+
   const fileName = normalizedPath.split('/').filter(Boolean).pop();
   if (!fileName || !FILE_LIKE_REGEX.test(fileName)) {
     return '';

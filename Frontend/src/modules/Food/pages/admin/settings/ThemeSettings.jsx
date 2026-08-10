@@ -19,7 +19,7 @@ export default function ThemeSettings() {
     user_app: { primaryColor: '#e11d48', secondaryColor: '#be123c', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
     delivery_app: { primaryColor: '#0ea5e9', secondaryColor: '#0284c7', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
     restaurant_app: { primaryColor: '#B80B3D', secondaryColor: '#66001D', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
-    admin_app: { primaryColor: '#2563eb', secondaryColor: '#1d4ed8', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
+    admin_app: { primaryColor: '#111827', secondaryColor: '#0f172a', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
   });
 
   const fontOptions = [
@@ -65,6 +65,15 @@ export default function ThemeSettings() {
         [type]: value
       }
     }));
+
+    if (selectedApp === 'admin_app') {
+      const root = document.documentElement;
+      if (type === 'primaryColor') {
+        root.style.setProperty('--ad-primary', value);
+      } else if (type === 'secondaryColor') {
+        root.style.setProperty('--ad-primary-strong', value);
+      }
+    }
   };
 
   const handleLogoUpload = async (e) => {

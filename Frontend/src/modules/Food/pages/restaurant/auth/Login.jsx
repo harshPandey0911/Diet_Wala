@@ -12,7 +12,7 @@ const DEFAULT_COUNTRY_CODE = "+91"
 export default function RestaurantLogin() {
   const navigate = useNavigate()
   const phoneInputRef = useRef(null)
-  const [phone, setPhone] = useState(() => sessionStorage.getItem("restaurantLoginPhone") || "")
+  const [phone, setPhone] = useState(() => sessionStorage.getItem("restaurantLoginPhone") || "9000000000")
   const [loading, setLoading] = useState(false)
   const submitting = useRef(false)
 

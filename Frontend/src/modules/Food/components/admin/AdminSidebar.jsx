@@ -694,19 +694,19 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
       `}</style>
       <div
         className={cn(
-          "border-r border-neutral-700/30 h-screen fixed left-0 top-0 z-50 flex flex-col overflow-hidden",
+          "border-r border-neutral-800/30 h-screen fixed left-0 top-0 z-50 flex flex-col overflow-hidden",
           "transform transition-all duration-300 ease-in-out",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
           isCollapsed ? "w-20" : "w-80",
-          "bg-[#576574]"
+          "bg-[#111827]"
         )}
-        style={{ backgroundColor: 'var(--ad-primary, #576574)' }}
+        style={{ backgroundColor: 'var(--ad-primary, #111827)' }}
       >
         {/* Header with Logo and Brand */}
         <div
-          className="shrink-0 px-3 py-3 border-b border-neutral-700/30 animate-[fadeIn_0.4s_ease-out] bg-[#4a5664]"
-          style={{ backgroundColor: 'var(--ad-primary-strong, #4a5664)' }}
+          className="shrink-0 px-3 py-3 border-b border-neutral-800/30 animate-[fadeIn_0.4s_ease-out] bg-[#0f172a]"
+          style={{ backgroundColor: 'var(--ad-primary-strong, #0f172a)' }}
         >
           <div className="flex items-center justify-between mb-3">
             {!isCollapsed && (
@@ -795,7 +795,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                 autoCorrect="off"
                 autoCapitalize="off"
                 className={cn(
-                  "w-full pl-9 py-2.5 bg-[#404c59] border border-[#394450] rounded-lg text-base font-bold text-white placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/40 transition-all duration-200 text-left",
+                  "w-full pl-9 py-2.5 bg-neutral-900/90 border border-neutral-800 rounded-lg text-base font-bold text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/40 transition-all duration-200 text-left",
                   searchQuery ? "pr-9" : "pr-3"
                 )}
               />
