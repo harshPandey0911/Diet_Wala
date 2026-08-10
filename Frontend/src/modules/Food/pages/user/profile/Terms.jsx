@@ -107,5 +107,6 @@ export default function Terms() {
       </div>
     </AnimatedPage>
   )
+}
 
 
