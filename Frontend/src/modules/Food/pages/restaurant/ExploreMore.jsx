@@ -1468,18 +1468,18 @@ export default function ExploreMore() {
                     setProfileOpen(false)
                     setDeleteAccountConfirmOpen(true)
                   }}
-                  className="w-full flex items-center justify-between gap-3 rounded-2xl border border-red-600/20 bg-red-600/5 px-4 py-4 text-left hover:bg-red-600/10 transition-all active:scale-[0.99]"
+                  className="w-full flex items-center justify-between gap-3 rounded-2xl border border-red-500/20 bg-red-50/70 p-3.5 sm:p-4 text-left hover:bg-red-100/60 transition-all active:scale-[0.99]"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600/10">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 shrink-0">
                       <X className="w-5 h-5 text-red-600" />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-base font-semibold text-red-600">Delete Restaurant</p>
-                      <p className="text-sm text-red-600/60 font-medium">Permanently delete your account</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-red-600 leading-tight">Delete Restaurant</p>
+                      <p className="text-[11px] text-red-500/80 font-medium mt-0.5 leading-snug">Permanently delete your account</p>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-red-600/40 shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-red-400 shrink-0" />
                 </button>
               </div>
 

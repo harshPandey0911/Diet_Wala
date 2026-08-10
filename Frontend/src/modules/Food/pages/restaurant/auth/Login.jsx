@@ -5,16 +5,21 @@ import { ShieldCheck, Utensils, Star, Heart, ArrowRight, Loader2, Store, ShieldQ
 import { Button } from "@food/components/ui/button"
 import { toast } from "sonner"
 import { restaurantAPI } from "@food/api"
+import { useAppLogo } from "@food/hooks/useAppLogo"
+import { useCompanyName } from "@food/hooks/useCompanyName"
 import logoNew from "@/assets/logo.png"
 
 const DEFAULT_COUNTRY_CODE = "+91"
 
 export default function RestaurantLogin() {
   const navigate = useNavigate()
+  const companyName = useCompanyName()
   const phoneInputRef = useRef(null)
   const [phone, setPhone] = useState(() => sessionStorage.getItem("restaurantLoginPhone") || "9000000000")
   const [loading, setLoading] = useState(false)
   const submitting = useRef(false)
+  const dynamicLogo = useAppLogo("restaurant_app")
+  const logoToDisplay = dynamicLogo || logoNew
 
   // iOS Safari keyboard float fix
   useEffect(() => {
@@ -122,10 +127,13 @@ export default function RestaurantLogin() {
               style={{ borderRadius: '50%', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
             >
               <img
-                src={logoNew}
-                alt="Tuggo Food Delivery Logo"
-                className="w-full h-full object-cover scale-[1.15]"
+                src={logoToDisplay}
+                alt="Restaurant Partner Logo"
+                className="w-full h-full object-contain p-2"
                 style={{ borderRadius: '50%' }}
+                onError={(e) => {
+                  e.currentTarget.src = logoNew
+                }}
               />
             </motion.div>
 
@@ -198,7 +206,7 @@ export default function RestaurantLogin() {
 
           <div className="mt-8 text-center">
             <p className="text-[11px] text-gray-400 font-medium leading-relaxed max-w-[320px] mx-auto">
-              By continuing, you agree to Tuggo Food Delivery's <br />
+              By continuing, you agree to {companyName}'s <br />
               <Link to="/food/restaurant/profile/terms" className="text-gray-900 dark:text-white font-bold hover:text-primary transition-colors">Terms of Service</Link> & <Link to="/food/restaurant/profile/privacy" className="text-gray-900 dark:text-white font-bold hover:text-primary transition-colors">Privacy Policy</Link>
             </p>
           </div>
