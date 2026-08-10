@@ -248,7 +248,7 @@ const BANNERS_DATA = [
 
 async function run() {
     try {
-        const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/Tuggo';
+        const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/Fudron';
         await mongoose.connect(MONGODB_URI);
         console.log('Connected to DB successfully!');
 
@@ -257,11 +257,11 @@ async function run() {
         console.log('Cleared old placeholder restaurants.');
 
         // Also delete any existing test data to prevent duplicates on multiple runs
-        await Restaurant.deleteMany({ ownerName: 'Tuggo Demo' });
-        await DeliveryPartner.deleteMany({ name: { $regex: 'Tuggo Rider' } });
+        await Restaurant.deleteMany({ ownerName: { $in: ['Tuggo Demo', 'Fudron Demo'] } });
+        await DeliveryPartner.deleteMany({ name: { $regex: '(Tuggo|Fudron) Rider' } });
         await HeroBanner.deleteMany({ publicId: { $regex: 'demo_banner_' } });
 
-        await FoodItem.deleteMany({ name: { $regex: 'Tuggo' } }); // Clear previous demo items if any
+        await FoodItem.deleteMany({ name: { $regex: '(Tuggo|Fudron)' } }); // Clear previous demo items if any
 
         // Clear and seed categories
         await FoodCategory.deleteMany({});
@@ -303,7 +303,7 @@ async function run() {
 
             const restaurant = await Restaurant.create({
                 restaurantName: restData.name,
-                ownerName: 'Tuggo Demo',
+                ownerName: 'Fudron Demo',
                 ownerPhone: String(phoneCounter++),
                 city: restData.city,
                 zoneId: zoneMap[restData.city]._id,
@@ -365,7 +365,7 @@ async function run() {
         let dpCounter = 8000000000;
         for (const z of ZONES_DATA) {
             await DeliveryPartner.create({
-                name: `Tuggo Rider ${z.name}`,
+                name: `Fudron Rider ${z.name}`,
                 phone: String(dpCounter++),
                 city: z.name,
                 vehicleType: 'bike',

@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const businessSettingsSchema = new mongoose.Schema(
     {
-        companyName: { type: String, required: true, default: 'Tuggo' },
-        email: { type: String, required: true, default: 'admin@tuggo.com' },
+        companyName: { type: String, required: true, default: 'Fudron' },
+        email: { type: String, required: true, default: 'admin@fudron.com' },
         phone: {
             countryCode: { type: String, default: '+91' },
             number: { type: String, default: '' }
@@ -22,7 +22,7 @@ const businessSettingsSchema = new mongoose.Schema(
             url: { type: String, default: '' },
             publicId: { type: String, default: '' }
         },
-        supportEmail: { type: String, default: 'support@tuggo.com' },
+        supportEmail: { type: String, default: 'support@fudron.com' },
         supportPhone: { type: String, default: '+91 1234567890' },
         supportHours: { type: String, default: '24/7 Availability' },
         termsAndConditionsPdf: {

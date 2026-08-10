@@ -2198,47 +2198,45 @@ export default function OrderTracking() {
 
       {/* Order Details Dialog */}
       <Dialog open={showOrderDetails} onOpenChange={setShowOrderDetails}>
-        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-md bg-white dark:bg-[#1a1a1a] rounded-2xl p-0 overflow-hidden border-none outline-none">
-          <DialogHeader className="p-6 pb-4 border-b border-gray-100 dark:border-gray-800 pr-12">
+        <DialogContent className="w-[92vw] max-w-md sm:max-w-lg bg-white dark:bg-[#121212] rounded-3xl p-0 overflow-hidden border border-gray-100 dark:border-gray-800 shadow-2xl outline-none">
+          <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-gray-100 dark:border-gray-800 pr-12">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-bold text-gray-900">Order Details</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Order Details</DialogTitle>
             </div>
           </DialogHeader>
 
-          <div className="p-6 pt-4 space-y-6 max-h-[70vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 pt-4 space-y-5 max-h-[75vh] overflow-y-auto">
             {/* Order Meta Info */}
-            <div className="flex flex-col gap-1 b">
-              <div className="flex items-center gap-4 mt-2">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Date & Time</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {order?.createdAt ? new Date(order.createdAt).toLocaleString('en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    }) : 'N/A'}
-                  </p>
-                </div>
-                <div className="h-8 w-px bg-gray-100" />
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Status</p>
-                  <span className="text-sm font-bold text-green-600 uppercase">
-                    {order?.status?.replace('_', ' ')}
-                  </span>
-                </div>
+            <div className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Date & Time</p>
+                <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 mt-0.5">
+                  {order?.createdAt ? new Date(order.createdAt).toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : 'N/A'}
+                </p>
+              </div>
+              <div className="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+              <div className="text-right">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</p>
+                <span className="inline-block px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-xs font-extrabold text-green-600 dark:text-green-400 uppercase tracking-wide mt-0.5">
+                  {order?.status?.replace(/_/g, ' ')}
+                </span>
               </div>
             </div>
 
             {/* Delivery Instructions Section */}
             {order?.note && (
-              <div className="bg-orange-50/50 rounded-xl p-4 border border-orange-100 flex gap-3">
+              <div className="bg-orange-50/60 dark:bg-orange-950/20 rounded-2xl p-4 border border-orange-100 dark:border-orange-900/30 flex gap-3">
                 <MessageSquare className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-#55254b font-bold uppercase tracking-wider mb-1">Delivery Instructions</p>
-                  <p className="text-sm text-gray-800 leading-relaxed font-medium capitalize">
+                  <p className="text-[11px] font-bold text-orange-800 dark:text-orange-300 uppercase tracking-wider mb-1">Delivery Instructions</p>
+                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium capitalize">
                     {order.note}
                   </p>
                 </div>
@@ -2246,93 +2244,97 @@ export default function OrderTracking() {
             )}
 
             {/* Items Section */}
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Order Items</p>
-              <div className="space-y-4">
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Items</p>
+              <div className="space-y-2.5">
                 {order?.items?.map((item, index) => (
-                  <div key={index} className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="w-5 h-5 rounded border border-green-600 flex items-center justify-center mt-0.5 shrink-0">
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-600" />
+                  <div key={index} className="flex items-center justify-between gap-3 p-3 bg-gray-50/70 dark:bg-gray-800/30 rounded-xl">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-4 h-4 rounded border-2 border-green-600 flex items-center justify-center shrink-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-600" />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900 leading-tight">{item.name}</p>
-                        {item.variantName ? (
-                          <p className="text-sm text-gray-500 mt-0.5">{item.variantName}</p>
-                        ) : null}
-                        <p className="text-sm text-gray-500 mt-0.5">Quantity: {item.quantity}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {item.variantName ? (
+                            <span>{item.variantName}</span>
+                          ) : null}
+                          <span>Quantity: {item.quantity}</span>
+                        </div>
                       </div>
                     </div>
-                    <p className="font-semibold text-gray-900">₹{((item?.price || 0) * (item?.quantity || 0)).toFixed(2)}</p>
+                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100 shrink-0">₹{((item?.price || 0) * (item?.quantity || 0)).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Bill Summary */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <p className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-1">Bill Summary</p>
+            <div className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-4 space-y-2.5">
+              <p className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">Bill Summary</p>
               
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Item Total</span>
-                <span className="text-gray-900 font-medium">₹{Number(order?.subtotal || 0).toFixed(2)}</span>
+              <div className="flex justify-between items-center text-xs sm:text-sm">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Item Total</span>
+                <span className="text-gray-900 dark:text-gray-100 font-semibold">₹{Number(order?.subtotal || 0).toFixed(2)}</span>
               </div>
 
               {Number(order?.packagingFee) > 0 && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Packaging Charges</span>
-                  <span className="text-gray-900 font-medium">₹{Number(order.packagingFee).toFixed(2)}</span>
+                <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Packaging Charges</span>
+                  <span className="text-gray-900 dark:text-gray-100 font-semibold">₹{Number(order.packagingFee).toFixed(2)}</span>
                 </div>
               )}
 
               {Number(order?.platformFee) > 0 && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Platform Fee</span>
-                  <span className="text-gray-900 font-medium">₹{Number(order.platformFee).toFixed(2)}</span>
+                <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Platform Fee</span>
+                  <span className="text-gray-900 dark:text-gray-100 font-semibold">₹{Number(order.platformFee).toFixed(2)}</span>
                 </div>
               )}
 
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Delivery Fee</span>
-                <span className="text-gray-900 font-medium">₹{Number(order?.deliveryFee || 0).toFixed(2)}</span>
+              <div className="flex justify-between items-center text-xs sm:text-sm">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">Delivery Fee</span>
+                <span className="text-gray-900 dark:text-gray-100 font-semibold">
+                  {Number(order?.deliveryFee || 0) > 0 ? `₹${Number(order?.deliveryFee).toFixed(2)}` : 'FREE'}
+                </span>
               </div>
 
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">GST</span>
-                <span className="text-gray-900 font-medium">₹{Number(order?.gst || 0).toFixed(2)}</span>
+              <div className="flex justify-between items-center text-xs sm:text-sm">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">GST</span>
+                <span className="text-gray-900 dark:text-gray-100 font-semibold">₹{Number(order?.gst || 0).toFixed(2)}</span>
               </div>
 
               {Number(order?.discount) > 0 && (
-                <div className="flex justify-between items-center text-sm text-green-600 font-medium">
+                <div className="flex justify-between items-center text-xs sm:text-sm text-green-600 font-semibold">
                   <span>Discount Applied</span>
                   <span>-₹{Number(order.discount).toFixed(2)}</span>
                 </div>
               )}
 
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                <span className="text-base font-bold text-gray-900 dark:text-white">Total Amount</span>
-                <span className="text-lg font-bold text-gray-900 dark:text-white">₹{Number(order?.totalAmount || 0).toFixed(2)}</span>
+              <div className="pt-3 mt-1 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <span className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Total Amount</span>
+                <span className="text-base sm:text-lg font-black text-gray-900 dark:text-white">₹{Number(order?.totalAmount || 0).toFixed(2)}</span>
               </div>
             </div>
 
             {/* Payment Method */}
             {order?.paymentMethod && (
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm font-medium">Payment Method</span>
+              <div className="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-2xl">
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <Shield className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs sm:text-sm font-medium">Payment Method</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
                   {order.paymentMethod}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="p-6 border-t border-gray-100">
+          <div className="p-4 sm:p-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
             <Button
               onClick={() => setShowOrderDetails(false)}
-              className="w-full bg-gray-900 text-white font-bold h-12 rounded-xl"
+              className="w-full bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white font-bold h-12 rounded-2xl shadow-md transition-all active:scale-[0.98]"
             >
               Okay
             </Button>

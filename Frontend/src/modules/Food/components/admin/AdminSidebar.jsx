@@ -499,8 +499,8 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
             isInSection ? "text-base font-bold" : "text-base font-bold",
             item.label === "Log out" ? "text-red-500 hover:bg-red-500/10 hover:text-red-400" :
               isActive(item.path)
-                ? "bg-white/10 text-white border border-white/15"
-                : "text-neutral-100 hover:bg-white/5 hover:text-white",
+                ? "bg-white/15 text-white border border-white/20 font-extrabold shadow-sm"
+                : "text-white hover:bg-white/10 hover:text-white font-bold",
             isCollapsed && "justify-center px-2"
           )}
           style={{ animationDelay: `${index * 0.05}s` }}
@@ -509,11 +509,11 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
           <Icon className={cn(
             "shrink-0 transition-all duration-300 text-left",
             isInSection ? "w-4 h-4" : "w-4 h-4",
-            isActive(item.path) ? "text-white scale-110" : "text-neutral-300"
+            isActive(item.path) ? "text-white scale-110" : "text-slate-200"
           )} />
           {!isCollapsed && (
             <div className="flex-1 flex items-center justify-between overflow-hidden">
-              <span className="text-left font-bold">
+              <span className="text-left font-bold text-white">
                 {item.label}
               </span>
               {getBadgeCount(item.label, item.path) > 0 && (
@@ -542,12 +542,12 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
               onClick={() => toggleSection(sectionKey)}
               className={cn(
                 "w-full flex items-center justify-center px-2 py-2 rounded-lg transition-all duration-300 ease-out text-base font-bold",
-                "text-white hover:bg-white/5"
+                "text-white hover:bg-white/10"
               )}
               title={item.label}
             >
               <div className="relative">
-                <Icon className="w-4 h-4 shrink-0 text-neutral-300 transition-transform duration-300" />
+                <Icon className="w-4 h-4 shrink-0 text-slate-200 transition-transform duration-300" />
                 {getBadgeCount(item.label, item.path) > 0 && (
                   <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-neutral-950 animate-pulse" />
                 )}
@@ -563,12 +563,12 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
             onClick={() => toggleSection(sectionKey)}
             className={cn(
               "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-all duration-300 ease-out text-base font-bold text-left",
-              "text-white hover:bg-white/5"
+              "text-white hover:bg-white/10"
             )}
           >
             <div className="flex items-center gap-2.5 text-left flex-1 min-w-0">
-              <Icon className="w-4 h-4 shrink-0 text-neutral-100 transition-transform duration-300" />
-              <span className="font-bold text-left">{item.label}</span>
+              <Icon className="w-4 h-4 shrink-0 text-slate-100 transition-transform duration-300" />
+              <span className="font-bold text-left text-white">{item.label}</span>
               {getBadgeCount(item.label, item.path) > 0 && (
                 <span className="shrink-0 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 min-w-[18px] text-center">
                   {getBadgeCount(item.label, item.path) > 99 ? "99+" : getBadgeCount(item.label, item.path)}
@@ -576,7 +576,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
               )}
             </div>
             <div className="transition-transform duration-300 shrink-0" style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
-              <ChevronDown className="w-4 h-4 shrink-0 text-neutral-300" />
+              <ChevronDown className="w-4 h-4 shrink-0 text-slate-200" />
             </div>
           </button>
           {isExpanded && item.suTuggoms && (
@@ -595,16 +595,16 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                     className={cn(
                       "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-300 ease-out text-base font-bold text-left",
                       isActive(suTuggom.path, allSubPaths)
-                        ? "bg-white/10 text-white"
-                        : "text-neutral-100 hover:bg-white/5 hover:text-white"
+                        ? "bg-white/15 text-white font-extrabold"
+                        : "text-slate-100 hover:bg-white/10 hover:text-white"
                     )}
                     style={{ animationDelay: `${subIndex * 0.03}s` }}
                   >
                     <span className={cn(
                       "w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300",
-                      isActive(suTuggom.path, allSubPaths) ? "bg-white scale-125" : "bg-neutral-400"
+                      isActive(suTuggom.path, allSubPaths) ? "bg-white scale-125" : "bg-slate-300"
                     )}></span>
-                    <span className="text-left flex-1">{suTuggom.label}</span>
+                    <span className="text-left flex-1 text-slate-100 hover:text-white font-semibold">{suTuggom.label}</span>
                     {getBadgeCount(suTuggom.label, suTuggom.path) > 0 && (
                       <span className="shrink-0 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 min-w-[18px] text-center">
                         {getBadgeCount(suTuggom.label, suTuggom.path) > 99 ? "99+" : getBadgeCount(suTuggom.label, suTuggom.path)}
@@ -775,7 +775,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
           {/* Admin Panel Label */}
           {!isCollapsed && (
             <div className="mb-3 animate-[slideIn_0.4s_ease-out_0.1s_both]">
-              <h2 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider text-left">
+              <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider text-left">
                 Admin Panel
               </h2>
             </div>
@@ -836,7 +836,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="px-3 py-2 mb-2 flex items-center justify-between">
-                      <span className="text-neutral-300 font-semibold text-base text-left">
+                      <span className="text-slate-100 font-bold text-sm uppercase tracking-wider text-left">
                         {item.label}
                       </span>
                       {item.items.some(suTuggom => {
