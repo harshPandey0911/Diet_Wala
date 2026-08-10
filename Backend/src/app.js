@@ -25,6 +25,11 @@ app.set('trust proxy', 1);
 // Request ID tracing (before other middlewares so all logs can use it)
 app.use(requestIdMiddleware);
 
+// Root endpoint (no rate limit, minimal JSON, no secrets)
+app.get('/', (_req, res) => {
+    res.status(200).json({ status: 'ok', service: 'Fudron API' });
+});
+
 // Health endpoints (no rate limit, minimal JSON, no secrets)
 app.get('/health', async (_req, res) => {
     try {
