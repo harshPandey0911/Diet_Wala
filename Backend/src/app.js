@@ -29,7 +29,6 @@ app.use(requestIdMiddleware);
 app.get('/', (_req, res) => {
     res.status(200).json({ status: 'ok', service: 'Fudron API' });
 });
-
 // Health endpoints (no rate limit, minimal JSON, no secrets)
 app.get('/health', async (_req, res) => {
     try {
