@@ -9,8 +9,8 @@ let redisClient = null;
  * @returns {import('redis').RedisClientType|null}
  */
 export const createRedisClient = () => {
-    if (!config.redisUrl) {
-        logger.warn('Redis URL not provided, Redis client will not be created.');
+    if (!config.redisUrl || typeof config.redisUrl !== 'string' || !config.redisUrl.trim()) {
+        logger.warn('Redis URL not provided or empty, Redis client will not be created.');
         return null;
     }
 

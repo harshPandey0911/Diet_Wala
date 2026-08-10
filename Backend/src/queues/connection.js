@@ -23,13 +23,13 @@ let connection = null;
  * @returns {IORedis | null}
  */
 export const getBullMQConnection = () => {
-    if (!config.redisEnabled) {
-        logger.warn('BullMQ: Redis is disabled (REDIS_ENABLED is not true), queue connection skipped.');
+    if (!config.redisEnabled || !config.bullmqEnabled) {
+        logger.warn('BullMQ: Redis or BullMQ is disabled, queue connection skipped.');
         return null;
     }
 
-    if (!config.redisUrl) {
-        logger.warn('BullMQ: REDIS_URL not set, queue connection skipped.');
+    if (!config.redisUrl || typeof config.redisUrl !== 'string' || !config.redisUrl.trim()) {
+        logger.warn('BullMQ: REDIS_URL not set or empty, queue connection skipped.');
         return null;
     }
 
