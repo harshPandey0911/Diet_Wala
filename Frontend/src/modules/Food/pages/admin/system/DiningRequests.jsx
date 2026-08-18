@@ -8,6 +8,7 @@ import { toast } from "sonner"
 const debugError = (...args) => {}
 
 export default function DiningRequests() {
+    const [categories, setCategories] = useState([])
     const [requests, setRequests] = useState([])
     const [loading, setLoading] = useState(true)
     const [processingId, setProcessingId] = useState(null)
@@ -20,9 +21,17 @@ export default function DiningRequests() {
     const fetchRequests = async () => {
         try {
             setLoading(true)
-            const response = await adminAPI.getDiningRequests()
-            if (response.data.success) {
-                setRequests(response.data.data || [])
+            setError(null)
+            const [reqRes, catRes] = await Promise.all([
+                adminAPI.getDiningRequests(),
+                adminAPI.getDiningCategories().catch(() => ({ data: { success: true, data: [] } }))
+            ])
+
+            if (reqRes.data.success) {
+                setRequests(reqRes.data.data || [])
+            }
+            if (catRes.data.success) {
+                setCategories(catRes.data.data.categories || catRes.data.data || [])
             }
         } catch (err) {
             debugError("Error fetching dining requests:", err)
@@ -152,9 +161,12 @@ export default function DiningRequests() {
                                                 {(() => {
                                                     const raw = request.requestedSettings?.diningType
                                                     if (!raw) return "Not specified"
-                                                    // Handle array or string by converting to string and splitting everything
-                                                    const allSlugs = String(raw).split(",").map(s => s.trim())
-                                                    return [...new Set(allSlugs)].filter(Boolean).join(", ")
+                                                    const idArray = Array.isArray(raw) ? raw : String(raw).split(",").map(s => s.trim())
+                                                    const names = idArray.map(id => {
+                                                        const cat = categories.find(c => c._id === id || c.id === id)
+                                                        return cat ? cat.name : id
+                                                    })
+                                                    return [...new Set(names)].filter(Boolean).join(", ")
                                                 })()}
                                             </p>
                                         </div>

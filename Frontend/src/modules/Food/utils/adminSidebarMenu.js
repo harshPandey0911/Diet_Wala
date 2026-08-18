@@ -235,15 +235,15 @@ export const adminSidebarMenu = [
       { type: "link", label: "Landing Page Management", path: "/admin/food/hero-banner-management", icon: "Image" },
     ],
   },
-  /* {
+  {
     type: "section",
     label: "DINING MANAGEMENT",
     items: [
-      { type: "link", label: "Dining Banners", path: "/admin/food/dining-management", icon: "UtensilsCrossed" },
+      { type: "link", label: "Dining Management", path: "/admin/food/dining-management", icon: "UtensilsCrossed" },
       { type: "link", label: "Dining List", path: "/admin/food/dining-list", icon: "FileText" },
-      { type: "link", label: "Dining Category Request", path: "/admin/food/dining-requests", icon: "CheckCircle" },
+      { type: "link", label: "Dining Requests", path: "/admin/food/dining-requests", icon: "CheckCircle2" },
     ],
-  }, */
+  },
   {
     type: "section",
     label: "EMPLOYEE MANAGEMENT",

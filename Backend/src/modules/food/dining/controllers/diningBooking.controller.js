@@ -31,6 +31,20 @@ export async function createReview(req, res, next) {
     }
 }
 
+// User cancel their OWN pending booking
+export async function cancelMyBooking(req, res, next) {
+    try {
+        const userId = req.user?.userId;
+        const { bookingId } = req.params;
+
+        const booking = await diningService.cancelUserDiningBooking(userId, bookingId);
+        res.status(200).json({ success: true, message: 'Booking cancelled successfully', data: booking });
+    } catch (error) {
+        next(error);
+    }
+}
+
+
 // Restaurant / Admin endpoints
 export async function getRestaurantBookings(req, res, next) {
     try {

@@ -15,8 +15,11 @@ export default function ExploreMoreSection({
         </h2>
         <div className="h-[1px] bg-gray-100 dark:bg-gray-800 flex-1" />
       </div>
-      <div className="px-4 pb-4 lg:pb-6">
-        <div className="flex overflow-x-auto no-scrollbar gap-10 sm:gap-12 md:gap-16 items-start justify-center py-2">
+      <div className="pb-4 lg:pb-6">
+        <div
+          className="flex overflow-x-auto no-scrollbar gap-10 sm:gap-12 md:gap-16 items-start justify-start md:justify-center px-4 py-2"
+          style={{ justifyContent: "safe center" }}
+        >
           {showSkeleton
             ? Array.from({ length: 6 }).map((_, index) => (
                 <div

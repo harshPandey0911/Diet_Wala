@@ -34,7 +34,7 @@ export default function BottomNavigation() {
   }, [zoneId])
 
   // Check active routes - support both /user/* and /* paths
-  const isDining = pathname === "/food/dining" || pathname.startsWith("/food/user/dining")
+  const isDining = pathname === "/food/dining" || pathname.startsWith("/food/user/dining") || pathname === "/food/user/dining"
   const isUnder250 = pathname === "/food/under-250" || pathname.startsWith("/food/user/under-250")
   const isOrders = pathname === "/food/orders" || pathname.startsWith("/food/user/orders")
   const isProfile = pathname === "/food/profile" || pathname.startsWith("/food/user/profile")
@@ -51,13 +51,16 @@ export default function BottomNavigation() {
         !pathname.includes("/under-250") &&
         !pathname.includes("/profile")))
 
+  // Width: 5 tabs → 19%, 4 tabs → 22%
+  const tabW = showDining ? "w-[19%]" : "w-[22%]"
+
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white dark:bg-[#1a1a1a] z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] border-t border-gray-100 dark:border-gray-800 pb-[max(env(safe-area-inset-bottom,0px),10px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] box-border">
       <div className="flex items-center justify-between px-2 py-1.5 min-h-[64px]">
         {/* Home Tab */}
         <Link
           to="/food/user/"
-          className={`flex flex-col items-center justify-center gap-1 w-[22%] py-2 rounded-[1.5rem] transition-all duration-300 ${isHome
+          className={`flex flex-col items-center justify-center gap-1 ${tabW} py-2 rounded-[1.5rem] transition-all duration-300 ${isHome
               ? "bg-[#ffeef2] dark:bg-primary/20 text-primary"
               : "text-slate-500 dark:text-gray-400"
             }`}
@@ -68,10 +71,26 @@ export default function BottomNavigation() {
           </span>
         </Link>
 
+        {/* Dining Tab — shown only when showDining is true */}
+        {showDining && (
+          <Link
+            to="/food/user/dining"
+            className={`flex flex-col items-center justify-center gap-1 ${tabW} py-2 rounded-[1.5rem] transition-all duration-300 ${isDining
+                ? "bg-[#ffeef2] dark:bg-primary/20 text-primary"
+                : "text-slate-500 dark:text-gray-400"
+              }`}
+          >
+            <UtensilsCrossed className={`h-5 w-5 ${isDining ? "text-primary" : "text-slate-500 dark:text-gray-400"}`} strokeWidth={isDining ? 2.5 : 2} />
+            <span className={`text-[10px] sm:text-xs font-bold ${isDining ? "text-primary" : "text-slate-500 dark:text-gray-400 font-semibold"}`}>
+              Dining
+            </span>
+          </Link>
+        )}
+
         {/* Under 250 Tab */}
         <Link
           to="/food/user/under-250"
-          className={`flex flex-col items-center justify-center gap-1 w-[22%] py-2 rounded-[1.5rem] transition-all duration-300 ${isUnder250
+          className={`flex flex-col items-center justify-center gap-1 ${tabW} py-2 rounded-[1.5rem] transition-all duration-300 ${isUnder250
               ? "bg-[#ffeef2] dark:bg-primary/20 text-primary"
               : "text-slate-500 dark:text-gray-400"
             }`}
@@ -85,7 +104,7 @@ export default function BottomNavigation() {
         {/* Orders Tab */}
         <Link
           to="/food/user/orders"
-          className={`flex flex-col items-center justify-center gap-1 w-[22%] py-2 rounded-[1.5rem] transition-all duration-300 ${isOrders
+          className={`flex flex-col items-center justify-center gap-1 ${tabW} py-2 rounded-[1.5rem] transition-all duration-300 ${isOrders
               ? "bg-[#ffeef2] dark:bg-primary/20 text-primary"
               : "text-slate-500 dark:text-gray-400"
             }`}
@@ -99,7 +118,7 @@ export default function BottomNavigation() {
         {/* Profile Tab */}
         <Link
           to="/food/user/profile"
-          className={`flex flex-col items-center justify-center gap-1 w-[22%] py-2 rounded-[1.5rem] transition-all duration-300 ${isProfile
+          className={`flex flex-col items-center justify-center gap-1 ${tabW} py-2 rounded-[1.5rem] transition-all duration-300 ${isProfile
               ? "bg-[#ffeef2] dark:bg-primary/20 text-primary"
               : "text-slate-500 dark:text-gray-400"
             }`}

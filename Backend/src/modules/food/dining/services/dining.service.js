@@ -447,9 +447,10 @@ export async function createDiningRequest(restaurantId, settings = {}) {
 export async function getPendingDiningRequest(restaurantId) {
     if (!mongoose.Types.ObjectId.isValid(restaurantId)) return null;
     return await FoodDiningRequest.findOne({
-        restaurantId,
-        status: 'pending'
-    }).lean();
+        restaurantId
+    })
+    .sort({ createdAt: -1 })
+    .lean();
 }
 
 export async function listAllPendingDiningRequests() {
@@ -704,6 +705,30 @@ export async function createDiningBookingReview(bookingId, payload = {}) {
     };
 
     await booking.save();
+    return booking.toObject();
+}
+
+export async function cancelUserDiningBooking(userId, bookingId) {
+    const filter = mongoose.Types.ObjectId.isValid(bookingId)
+        ? { _id: bookingId }
+        : { bookingId: bookingId };
+
+    const booking = await FoodDiningBooking.findOne(filter);
+    if (!booking) throw new ValidationError('Booking not found');
+
+    // Ensure this booking belongs to the requesting user
+    if (String(booking.userId) !== String(userId)) {
+        throw new ValidationError('You are not authorized to cancel this booking');
+    }
+
+    // Only allow cancellation of pending bookings
+    if (booking.status !== 'pending') {
+        throw new ValidationError('Only pending bookings can be cancelled. Confirmed bookings cannot be cancelled.');
+    }
+
+    booking.status = 'cancelled';
+    await booking.save();
+
     return booking.toObject();
 }
 

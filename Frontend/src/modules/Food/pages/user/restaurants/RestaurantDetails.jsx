@@ -2494,21 +2494,20 @@ function RestaurantDetailsContent() {
         />
       )}
 
-      {/* Header - Back, Search, Menu (like reference image) */}
       <div className="px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 pt-3 md:pt-4 lg:pt-5 pb-2 md:pb-3 bg-white dark:bg-[#0a0a0a]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
           {/* Back Button */}
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full h-10 w-10 border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-[#1a1a1a]"
+            className="rounded-full h-10 w-10 flex-shrink-0 border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-[#1a1a1a]"
             onClick={goBack}
           >
             <ArrowLeft className="h-5 w-5 text-gray-900 dark:text-white" />
           </Button>
 
           {/* Right side: Search pill + menu */}
-          <div className="flex items-center gap-3">
+          <div className={`flex items-center gap-2 sm:gap-3 ${showSearch ? "flex-1 max-w-md justify-end" : ""}`}>
             {!showSearch ? (
               <Button
                 variant="outline"
@@ -2519,40 +2518,38 @@ function RestaurantDetailsContent() {
                 <span className="text-sm font-medium">Search</span>
               </Button>
             ) : (
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search for dishes..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-9 md:h-10 pl-10 pr-10 rounded-full border border-primary dark:border-primary/80 shadow-sm bg-white dark:bg-[#1a1a1a] text-xs md:text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    autoFocus
-                    onBlur={() => {
-                      if (!searchQuery) {
-                        setShowSearch(false)
-                      }
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search for dishes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-9 md:h-10 pl-10 pr-10 rounded-full border border-primary dark:border-primary/80 shadow-sm bg-white dark:bg-[#1a1a1a] text-xs md:text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  autoFocus
+                  onBlur={() => {
+                    if (!searchQuery) {
+                      setShowSearch(false)
+                    }
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("")
+                      setShowSearch(false)
                     }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery("")
-                        setShowSearch(false)
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             )}
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full h-10 w-10 border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-[#1a1a1a]"
+              className="rounded-full h-10 w-10 flex-shrink-0 border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-[#1a1a1a]"
               onClick={() => setShowMenuOptionsSheet(true)}
             >
               <MoreVertical className="h-5 w-5 text-gray-900 dark:text-white" />
@@ -2569,9 +2566,9 @@ function RestaurantDetailsContent() {
             <div className="relative rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] shadow-[0_16px_40px_rgba(15,23,42,0.08)] p-4 sm:p-5 space-y-4 overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-[#8a4b77] to-[#b36b8f]" />
               <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white break-words">
                       {restaurant?.name || "Unknown Restaurant"}
                     </h1>
                     {isRestaurantOffline && (
@@ -2580,12 +2577,12 @@ function RestaurantDetailsContent() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <Utensils className="h-4 w-4" />
+                  <div className="mt-1 flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                    <Utensils className="h-4 w-4 flex-shrink-0" />
                     <span>{restaurant?.topCategory || restaurant?.cuisine || "Multi-cuisine"}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end flex-shrink-0">
                   <div className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
                     <Star className="h-3 w-3 fill-white" />
                     {ratingLabel}
@@ -2598,15 +2595,15 @@ function RestaurantDetailsContent() {
 
               <div className="flex items-center justify-between gap-3">
                 <div
-                  className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300 min-w-0"
+                  className="flex items-center gap-1 text-xs sm:text-sm text-gray-700 dark:text-gray-300 min-w-0 flex-1"
                 >
-                  <MapPin className="h-4 w-4" />
-                  <span className="truncate">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span className="break-words">
                     {restaurant?.distance || "1.2 km"} | {restaurant?.location || "Location"}
                   </span>
                 </div>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white ${isRestaurantOffline ? "bg-rose-600" : "bg-emerald-600"
+                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white flex-shrink-0 ${isRestaurantOffline ? "bg-rose-600" : "bg-emerald-600"
                     }`}
                 >
                   {isRestaurantOffline ? "Offline" : "Open now"}

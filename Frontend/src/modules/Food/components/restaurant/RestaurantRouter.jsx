@@ -47,6 +47,8 @@ const Promocodes = lazy(() => import("@food/pages/restaurant/Promocodes"))
 const ManageOutlets = lazy(() => import("@food/pages/restaurant/ManageOutlets"))
 const UpdateBankDetails = lazy(() => import("@food/pages/restaurant/UpdateBankDetails"))
 const ZoneSetup = lazy(() => import("@food/pages/restaurant/ZoneSetup"))
+const DiningReservations = lazy(() => import("@food/pages/restaurant/DiningReservations"))
+const DiningSettings = lazy(() => import("@food/pages/restaurant/DiningSettings"))
 const Welcome = lazy(() => import("@food/pages/restaurant/auth/Welcome"))
 const Login = lazy(() => import("@food/pages/restaurant/auth/Login"))
 const OTP = lazy(() => import("@food/pages/restaurant/auth/OTP"))
@@ -115,7 +117,8 @@ export default function RestaurantRouter() {
             <Route path="promocodes" element={<Promocodes />} />
             <Route path="manage-outlets" element={<ManageOutlets />} />
             <Route path="update-bank-details" element={<UpdateBankDetails />} />
-            <Route path="reservations" element={<Navigate to="/food/restaurant/explore" replace />} />
+            <Route path="reservations" element={<DiningReservations />} />
+            <Route path="dining-settings" element={<DiningSettings />} />
             <Route path="zone-setup" element={<ZoneSetup />} />
             </Route>
           </Route>

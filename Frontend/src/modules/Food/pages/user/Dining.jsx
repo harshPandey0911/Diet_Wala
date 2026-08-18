@@ -690,18 +690,14 @@ export default function Dining() {
                   transition={{ duration: 0.4, delay: index * 0.05 }}
                   whileHover={{ y: -2, boxShadow: "0 8px 20px -12px rgba(63, 38, 18, 0.2)" }}
                 >
-                  <div className="h-full flex flex-col p-2.5 sm:p-3.5">
-                    <p className="font-['Poppins',_'Nunito_Sans',sans-serif] text-[12px] sm:text-[14px] md:text-[15px] font-bold leading-tight tracking-tight text-[#2d2722] mb-1">
-                      {category.name}
-                    </p>
-
-                    <div className="flex-1 relative overflow-hidden rounded-xl bg-white/40">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 relative overflow-hidden bg-white/40">
                       {category.imageUrl ? (
                         <OptimizedImage
                           src={category.imageUrl}
                           alt={category.name}
                           className="w-full h-full transition-transform duration-500 group-hover:scale-[1.05]"
-                          objectFit="contain"
+                          objectFit="cover"
                           sizes="(max-width: 640px) 31vw, (max-width: 768px) 180px, 220px"
                           placeholder="blur"
                           priority={index < 6}
@@ -711,6 +707,11 @@ export default function Dining() {
                           <div className="absolute inset-x-0 bottom-0 h-[60%] rounded-t-[50%] bg-white/30" />
                         </div>
                       )}
+                    </div>
+                    <div className="py-2 px-1 text-center bg-white border-t border-[#ece5dc]">
+                      <p className="font-['Poppins',_'Nunito_Sans',sans-serif] text-[11px] sm:text-[13px] md:text-[14px] font-bold leading-tight tracking-tight text-[#2d2722] truncate">
+                        {category.name}
+                      </p>
                     </div>
                   </div>
                 </motion.div>

@@ -2138,6 +2138,9 @@ export const diningAPI = {
   
   createBooking: (payload = {}) => 
     userClient.post("/food/dining/bookings", payload),
+
+  cancelBooking: (bookingId) =>
+    userClient.patch(`/food/dining/bookings/${String(bookingId)}/cancel`),
 };
 export const heroBannerAPI = createStubAPI();
 export const publicAPI = {
