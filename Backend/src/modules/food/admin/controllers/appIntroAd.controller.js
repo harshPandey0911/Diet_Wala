@@ -12,7 +12,7 @@ const normalizeToUploadsPath = (value) => {
         const matchedPath = parsed.pathname.match(/(?:(?:\/var\/www)?\/uploads\/|^\/)([^?#]+)/i);
         if (matchedPath?.[1]) {
             const filename = matchedPath[1].split('/').filter(Boolean).pop();
-            return filename ? `/var/www/uploads/${filename}` : '';
+            return filename ? `/uploads/${filename}` : '';
         }
         return '';
     } catch {
@@ -20,7 +20,7 @@ const normalizeToUploadsPath = (value) => {
         const matchedPath = normalized.match(/(?:^|\/)(?:var\/www\/)?uploads\/([^?#]+)/i);
         if (matchedPath?.[1]) {
             const filename = matchedPath[1].split('/').filter(Boolean).pop();
-            return filename ? `/var/www/uploads/${filename}` : '';
+            return filename ? `/uploads/${filename}` : '';
         }
         return '';
     }

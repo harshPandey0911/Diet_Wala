@@ -61,7 +61,7 @@ const toUploadsPath = (rawPath) => {
 
   if (normalizedPath.includes('var/www/uploads/')) {
     const fileName = normalizedPath.split('var/www/uploads/').pop();
-    return `/var/www/uploads/${fileName}${query ? `?${query}` : ''}`;
+    return `/uploads/${fileName}${query ? `?${query}` : ''}`;
   }
 
   const uploadsMatch = normalizedPath.match(UPLOADS_SEGMENT_REGEX);
@@ -87,7 +87,7 @@ const toUploadsPath = (rawPath) => {
     return '';
   }
 
-  return `/var/www/uploads/${fileName}${query ? `?${query}` : ''}`;
+  return `/uploads/${fileName}${query ? `?${query}` : ''}`;
 };
 
 export const getMediaUrl = (path) => {
