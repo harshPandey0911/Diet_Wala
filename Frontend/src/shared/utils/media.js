@@ -58,6 +58,12 @@ const toUploadsPath = (rawPath) => {
   const [withoutHash] = trimmed.split('#');
   const [pathnamePart, query = ''] = withoutHash.split('?');
   const normalizedPath = pathnamePart.replace(/\\/g, '/');
+
+  if (normalizedPath.includes('var/www/uploads/')) {
+    const fileName = normalizedPath.split('var/www/uploads/').pop();
+    return `/var/www/uploads/${fileName}${query ? `?${query}` : ''}`;
+  }
+
   const uploadsMatch = normalizedPath.match(UPLOADS_SEGMENT_REGEX);
 
   if (uploadsMatch) {
@@ -81,7 +87,7 @@ const toUploadsPath = (rawPath) => {
     return '';
   }
 
-  return `/uploads/${fileName}${query ? `?${query}` : ''}`;
+  return `/var/www/uploads/${fileName}${query ? `?${query}` : ''}`;
 };
 
 export const getMediaUrl = (path) => {
