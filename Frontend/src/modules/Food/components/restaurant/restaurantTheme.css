@@ -7,7 +7,8 @@
   --rt-text: #1f1f24;
   --rt-muted: #6d6470;
   --rt-modal-z: 200;
-  --rt-sidebar-z: 50;
+  --rt-sidebar-z: 120;
+  --rt-sidebar-backdrop-z: 110;
   --rt-header-z: 30;
   --rt-bottom-nav-z: 60;
 }
@@ -357,7 +358,7 @@
 }
 
 .restaurant-sidebar {
-  z-index: var(--rt-sidebar-z);
+  z-index: var(--rt-sidebar-z) !important;
   height: 100vh;
   max-height: 100dvh;
 }

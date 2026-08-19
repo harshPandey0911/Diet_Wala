@@ -86,7 +86,8 @@ function RestaurantLayoutShell({
     <div className="restaurant-layout h-screen overflow-hidden bg-gray-100 flex">
       {sidebarOpen && showSidebar && (
         <div
-          className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+          className="fixed inset-0 bg-gray-900/50 lg:hidden"
+          style={{ zIndex: 'var(--rt-sidebar-backdrop-z, 110)' }}
           onClick={() => setSidebarOpen(false)}
           aria-hidden
         />

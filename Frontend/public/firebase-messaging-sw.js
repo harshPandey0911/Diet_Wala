@@ -4,7 +4,7 @@ importScripts("https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-com
 
 const sanitize = (value) => String(value || "").trim().replace(/^['"]|['"]$/g, "");
 const PUSH_DEBUG_PREFIX = "[push-sw]";
-const pushDebugLog = () => {};
+const pushDebugLog = (...args) => console.log(...args);
 const getNotificationKey = (payload) => {
   const fcmId = payload?.messageId || payload?.data?.messageId || payload?.data?.notificationId;
   if (fcmId) return String(fcmId);

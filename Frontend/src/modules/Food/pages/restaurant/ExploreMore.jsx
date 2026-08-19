@@ -997,7 +997,7 @@ export default function ExploreMore() {
           duration: 0.25,
           ease: [0.25, 0.1, 0.25, 1]
         }}
-        className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50"
+        className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-10"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">

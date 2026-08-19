@@ -71,15 +71,9 @@ export async function calculateOrderPricing(userId, dto) {
     throw new ValidationError("Fee settings are not configured by admin.");
   }
 
-  const packagingFee = feeSettings.packagingFee != null ? Number(feeSettings.packagingFee) : NaN;
-  if (!Number.isFinite(packagingFee)) {
-    throw new ValidationError("Packaging fee is not configured by admin.");
-  }
+  const packagingFee = (feeSettings.packagingFee != null && Number.isFinite(Number(feeSettings.packagingFee))) ? Number(feeSettings.packagingFee) : 0;
 
-  const platformFee = feeSettings.platformFee != null ? Number(feeSettings.platformFee) : NaN;
-  if (!Number.isFinite(platformFee)) {
-    throw new ValidationError("Platform fee is not configured by admin.");
-  }
+  const platformFee = (feeSettings.platformFee != null && Number.isFinite(Number(feeSettings.platformFee))) ? Number(feeSettings.platformFee) : 0;
 
   const freeUpTo = Number(feeSettings.freeDeliveryUpTo || 0);
   let distanceKm = null;

@@ -186,39 +186,39 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-md sm:max-w-lg bg-white rounded-t-3xl sm:rounded-t-[3rem] overflow-hidden shadow-[0_-20px_60px_rgba(0,0,0,0.5)] flex flex-col pt-1 sm:pt-2"
+        className="w-full max-w-md sm:max-w-lg bg-white rounded-t-2xl sm:rounded-t-[3rem] overflow-hidden shadow-[0_-20px_60px_rgba(0,0,0,0.5)] flex flex-col pt-0"
       >
         {/* Handle / Minimize */}
-        <div className="w-full flex justify-center pb-1.5 pt-1 bg-white relative z-10 rounded-t-3xl sm:rounded-t-[3rem] -mb-1">
-          <button onClick={onMinimize} className="p-1 hover:bg-gray-100 active:scale-95 transition-all rounded-full flex flex-col items-center">
-             <ChevronDown className="w-6 h-6 text-gray-400 stroke-3" />
+        <div className="w-full flex justify-center pb-0.5 pt-1 bg-white relative z-10 rounded-t-2xl sm:rounded-t-[3rem] -mb-1">
+          <button onClick={onMinimize} className="p-0.5 hover:bg-gray-100 active:scale-95 transition-all rounded-full flex flex-col items-center">
+             <ChevronDown className="w-5 h-5 text-gray-400 stroke-3" />
           </button>
         </div>
 
         {/* Header Ribbon (Old Green Style) */}
         <div 
-          className="p-4 sm:p-8 flex justify-between items-center text-white border-b border-white/10"
+          className="p-3 sm:p-6 flex justify-between items-center text-white border-b border-white/10"
           style={{ background: 'linear-gradient(33deg, #15498b 0%, #000000 100%)' }}
         >
           <div>
-            <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Incoming Request</p>
-            <div className="flex items-end gap-2">
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tighter">₹{Number(earnings || 0).toFixed(2)}</h2>
+            <p className="text-white/80 text-[9px] font-bold uppercase tracking-widest mb-0.5">Incoming Request</p>
+            <div className="flex items-end gap-1.5">
+              <h2 className="text-xl sm:text-3xl font-bold tracking-tighter">₹{Number(earnings || 0).toFixed(2)}</h2>
               {bonus > 0 && (
-                <p className="text-white/70 text-xs font-semibold mb-1">
+                <p className="text-white/70 text-[10px] sm:text-xs font-semibold mb-0.5">
                   (₹{Number(baseEarnings).toFixed(0)} + ₹{Number(bonus).toFixed(0)} Bonus)
                 </p>
               )}
             </div>
           </div>
-          <div className="bg-white/20 border border-white/30 rounded-2xl sm:rounded-3xl px-3 sm:px-6 py-2 sm:py-3 text-white font-bold text-lg sm:text-2xl shadow-inner tabular-nums">
+          <div className="bg-white/20 border border-white/30 rounded-xl sm:rounded-3xl px-2.5 sm:px-5 py-1.5 sm:py-2.5 text-white font-bold text-base sm:text-xl shadow-inner tabular-nums">
             {timeLeft}s
           </div>
         </div>
 
         {queuedOrders.length > 1 && (
-          <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-100">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+          <div className="px-3 sm:px-6 py-2 bg-gray-50 border-b border-gray-100">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
               {queuedOrders.length} orders available — tap to switch
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -239,16 +239,16 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
                     key={queuedId || `order-${index}`}
                     type="button"
                     onClick={() => onSelectOrder?.(queuedOrder)}
-                    className={`shrink-0 rounded-2xl px-4 py-2.5 border text-left transition-all ${
+                    className={`shrink-0 rounded-xl px-3 py-1.5 border text-left transition-all ${
                       isActive
                         ? 'bg-gray-900 text-white border-gray-900 shadow-lg'
                         : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <span className="block text-[10px] font-bold uppercase tracking-wider opacity-80">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider opacity-80">
                       {label.length > 12 ? `${label.slice(0, 12)}…` : label}
                     </span>
-                    <span className="block text-sm font-bold mt-0.5">
+                    <span className="block text-xs font-bold mt-0.5">
                       ₹{Number(earnings || 0).toFixed(0)}
                     </span>
                   </button>
@@ -259,35 +259,35 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
         )}
 
         {/* Info Body */}
-        <div className="p-4 sm:p-8 pb-6 sm:pb-12 space-y-5 sm:space-y-10 overflow-y-auto max-h-[78vh]">
-          <div className="flex gap-3 sm:gap-6">
-            <div className="flex flex-col items-center gap-1.5 mt-2 py-1">
-              <div className="w-5 h-5 rounded-full bg-green-500 border-4 border-green-50 shadow-lg shadow-green-500/20" />
-              <div className="w-0.5 h-16 bg-dashed border-l-2 border-gray-100" />
-              <div className="w-5 h-5 rounded-full bg-blue-500 border-4 border-blue-50 shadow-lg shadow-blue-500/20" />
+        <div className="p-3 sm:p-6 pb-4 sm:pb-8 space-y-3.5 sm:space-y-6 overflow-y-auto max-h-[75vh]">
+          <div className="flex gap-2.5 sm:gap-5">
+            <div className="flex flex-col items-center gap-1 mt-1.5 py-0.5">
+              <div className="w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-green-50 shadow-lg shadow-green-500/20" />
+              <div className="w-0.5 h-10 sm:h-14 bg-dashed border-l border-gray-200" />
+              <div className="w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-blue-50 shadow-lg shadow-blue-500/20" />
             </div>
-            <div className="flex-1 space-y-5 sm:space-y-10">
+            <div className="flex-1 space-y-3 sm:space-y-6">
               <div>
-                <div className="flex items-center gap-2 mb-2 font-bold text-[10px] uppercase tracking-widest text-green-600">
-                  <ChefHat className="w-4 h-4" />
+                <div className="flex items-center gap-1.5 mb-0.5 font-bold text-[9px] uppercase tracking-widest text-green-600">
+                  <ChefHat className="w-3.5 h-3.5" />
                   <span>Restaurant Pickup</span>
                 </div>
-                <p className="text-gray-950 font-bold text-base sm:text-xl leading-tight">{restaurantName}</p>
-                <p className="text-gray-500 text-sm font-medium leading-relaxed">{restaurantAddress}</p>
+                <p className="text-gray-955 font-bold text-sm sm:text-lg leading-tight">{restaurantName}</p>
+                <p className="text-gray-500 text-xs font-medium leading-relaxed line-clamp-2">{restaurantAddress}</p>
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-2 font-bold text-[10px] uppercase tracking-widest text-blue-600">
-                  <MapPin className="w-4 h-4" />
+                <div className="flex items-center gap-1.5 mb-0.5 font-bold text-[9px] uppercase tracking-widest text-blue-600">
+                  <MapPin className="w-3.5 h-3.5" />
                   <span>Customer Drop</span>
                 </div>
-                <p className="text-gray-950 font-bold text-base sm:text-xl leading-tight">Customer Location</p>
-                <p className="text-gray-500 text-sm font-medium line-clamp-2">{customerAddress}</p>
+                <p className="text-gray-955 font-bold text-sm sm:text-lg leading-tight">Customer Location</p>
+                <p className="text-gray-500 text-xs font-medium line-clamp-2">{customerAddress}</p>
                 {mapsLink && (
                   <a
                     href={mapsLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex mt-2 text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700"
+                    className="inline-flex mt-1 text-[9px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700"
                   >
                     Open in Google Maps
                   </a>
@@ -296,44 +296,44 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
             </div>
           </div>
 
-           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-             <div className="p-3 sm:p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center gap-2.5 sm:gap-3">
-               <MapPin className="w-5 h-5 text-green-600" />
+           <div className="grid grid-cols-2 gap-2 sm:gap-3">
+             <div className="p-2 sm:p-3.5 bg-green-50 rounded-xl border border-green-100 flex items-center gap-2 sm:gap-2.5">
+               <MapPin className="w-4 h-4 text-green-600" />
                <div className="flex flex-col">
-                  <span className="text-[10px] text-green-600/80 font-bold uppercase tracking-widest">To Restaurant</span>
-                  <span className="text-sm font-bold text-gray-900">{pickup.distanceKm} KM</span>
+                  <span className="text-[8px] sm:text-[9px] text-green-600/80 font-bold uppercase tracking-widest">To Restaurant</span>
+                  <span className="text-xs sm:text-sm font-bold text-gray-900">{pickup.distanceKm} KM</span>
                </div>
              </div>
-             <div className="p-3 sm:p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center gap-2.5 sm:gap-3">
-               <Clock className="w-5 h-5 text-green-600" />
+             <div className="p-2 sm:p-3.5 bg-green-50 rounded-xl border border-green-100 flex items-center gap-2 sm:gap-2.5">
+               <Clock className="w-4 h-4 text-green-600" />
                <div className="flex flex-col">
-                  <span className="text-[10px] text-green-600/80 font-bold uppercase tracking-widest">Pickup Time</span>
-                  <span className="text-sm font-bold text-gray-900">{pickup.etaMins} MINS</span>
+                  <span className="text-[8px] sm:text-[9px] text-green-600/80 font-bold uppercase tracking-widest">Pickup Time</span>
+                  <span className="text-xs sm:text-sm font-bold text-gray-900">{pickup.etaMins} MINS</span>
                </div>
              </div>
-             <div className="p-3 sm:p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-2.5 sm:gap-3">
-               <MapPin className="w-5 h-5 text-blue-600" />
+             <div className="p-2 sm:p-3.5 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-2 sm:gap-2.5">
+               <MapPin className="w-4 h-4 text-blue-600" />
                <div className="flex flex-col">
-                  <span className="text-[10px] text-blue-600/80 font-bold uppercase tracking-widest">To Customer</span>
-                  <span className="text-sm font-bold text-gray-900">{drop.distanceKm} KM</span>
+                  <span className="text-[8px] sm:text-[9px] text-blue-600/80 font-bold uppercase tracking-widest">To Customer</span>
+                  <span className="text-xs sm:text-sm font-bold text-gray-900">{drop.distanceKm} KM</span>
                </div>
              </div>
-             <div className="p-3 sm:p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-2.5 sm:gap-3">
-               <Clock className="w-5 h-5 text-blue-600" />
+             <div className="p-2 sm:p-3.5 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-2 sm:gap-2.5">
+               <Clock className="w-4 h-4 text-blue-600" />
                <div className="flex flex-col">
-                  <span className="text-[10px] text-blue-600/80 font-bold uppercase tracking-widest">Drop Time</span>
-                  <span className="text-sm font-bold text-gray-900">{drop.etaMins} MINS</span>
+                  <span className="text-[8px] sm:text-[9px] text-blue-600/80 font-bold uppercase tracking-widest">Drop Time</span>
+                  <span className="text-xs sm:text-sm font-bold text-gray-900">{drop.etaMins} MINS</span>
                </div>
              </div>
           </div>
           {total.distanceKm !== '??' && (
-            <p className="text-center text-[11px] font-semibold text-gray-500">
+            <p className="text-center text-[10px] font-semibold text-gray-500">
               Total trip ~ {total.distanceKm} KM · ~ {total.etaMins} MINS
             </p>
           )}
 
         {/* Action Area */}
-          <div className="space-y-4 sm:space-y-6 pt-1 sm:pt-2">
+          <div className="space-y-2 sm:space-y-4 pt-0">
             <ActionSlider 
               key={orderKey}
               label="Slide to Accept" 
@@ -342,16 +342,16 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
               successLabel="Order Accepted ✓"
             />
 
-            <div className="flex justify-between items-center px-4 pt-2">
+            <div className="flex justify-between items-center px-2 pt-1">
               <button 
                 onClick={onMinimize}
-                className="text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-gray-600 transition-colors active:scale-95"
+                className="text-gray-400 font-bold text-[9px] uppercase tracking-widest hover:text-gray-600 transition-colors active:scale-95"
               >
                 Cancel
               </button>
               <button 
                 onClick={onReject}
-                className="text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-red-500 transition-colors active:scale-95"
+                className="text-gray-400 font-bold text-[9px] uppercase tracking-widest hover:text-red-500 transition-colors active:scale-95"
               >
                 Pass this task
               </button>

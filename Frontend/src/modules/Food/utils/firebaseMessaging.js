@@ -27,13 +27,15 @@ let pushSoundContext = null;
 const PUSH_DEBUG_PREFIX = "[push-debug]";
 const notificationDedupWindowMs = 8000;
 
-const pushDebugLog = (prefix, message, data = {}) => {};
-const pushDebugWarn = (prefix, message, data = {}) => {};
+const pushDebugLog = (prefix, message, data = {}) => console.log(prefix, message, data);
+const pushDebugWarn = (prefix, message, data = {}) => console.warn(prefix, message, data);
 
 function normalizeModuleFromPath(pathname = window.location.pathname) {
-  if (pathname.includes("/restaurant") && !pathname.includes("/restaurants")) return "restaurant";
-  if (pathname.includes("/delivery")) return "delivery";
-  if (pathname.includes("/admin")) return "admin";
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
+  const combined = (pathname + hash).toLowerCase();
+  if (combined.includes("/restaurant") && !combined.includes("/restaurants")) return "restaurant";
+  if (combined.includes("/delivery")) return "delivery";
+  if (combined.includes("/admin")) return "admin";
   return "user";
 }
 

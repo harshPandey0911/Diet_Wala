@@ -5,6 +5,7 @@ import { logger } from '../utils/logger.js';
 import { haversineMeters, shouldBroadcastLocation } from '../utils/geo.js';
 import { verifyAccessToken } from '../core/auth/token.util.js';
 import { getFirebaseDB } from './firebase.js';
+import { FoodDeliveryPartner } from '../modules/food/delivery/models/deliveryPartner.model.js';
 
 let io = null;
 let redisEmitter = null;
@@ -199,12 +200,11 @@ export const initSocket = async (server) => {
         });
 
         // Delivery partner emits live GPS location for an active order.
-        // Broadcasts to the tracking room so users see the bike move in real time.
         const _lastLocationBroadcast = {};
         const _lastPolylineBroadcast = {}; // Separate throttle for heavy polyline data
         socket.on('update-location', async (data) => {
             if (socket.user?.role !== 'DELIVERY_PARTNER') return;
-            if (!data || !data.orderId) return;
+            if (!data) return;
 
             const lat = Number(data.lat);
             const lng = Number(data.lng);
@@ -214,104 +214,118 @@ export const initSocket = async (server) => {
             const heading = Number.isFinite(Number(data.heading)) ? Number(data.heading) : 0;
             const speed = Number.isFinite(Number(data.speed)) ? Number(data.speed) : 0;
             const accuracy = Number.isFinite(Number(data.accuracy)) ? Number(data.accuracy) : null;
-
-            // Throttle: max one broadcast per 5s per orderId
-            // (aligned with frontend 10s emit — reduces server→client events by ~60%)
             const now = Date.now();
-            const lastTS = _lastLocationBroadcast[data.orderId] || 0;
-            if (now - lastTS < 5000) return;
-            _lastLocationBroadcast[data.orderId] = now;
 
-            // ── MINIFIED tracking payload (sent to users watching the map) ──
-            // Only essential fields for 60fps client-side interpolation.
-            // Polyline/ETA are large strings that rarely change — sent on 30s cadence.
-            const trackingPayload = {
-                orderId: String(data.orderId),
-                deliveryPartnerId: String(userId),
-                lat,
-                lng,
-                heading,
-                speed,
-                timestamp: now,
-                status: data.status || 'on_the_way',
-            };
-
-            // Send polyline/eta only every 30 seconds (they're large and change rarely)
-            const lastPolyTS = _lastPolylineBroadcast[data.orderId] || 0;
-            if (now - lastPolyTS >= 30000) {
-                _lastPolylineBroadcast[data.orderId] = now;
-                if (data.polyline) trackingPayload.polyline = data.polyline;
-                if (data.eta != null && data.eta !== '') trackingPayload.eta = data.eta;
-            }
-
-            logDeliverySocket('Location update received', {
-                socketId: socket.id,
-                deliveryPartnerId: String(userId),
-                orderId: String(data.orderId),
-                lat,
-                lng,
-                status: data.status || 'on_the_way',
-            });
-
-            // Broadcast to tracking room (all users watching this order)
-            const trackingRoom = roomNames.tracking(data.orderId);
-            socket.to(trackingRoom).emit('location-update', trackingPayload);
-
-            // Also emit to the specific user room if userId is provided
-            if (data.userId) {
-                socket.to(roomNames.user(data.userId)).emit('location-update', trackingPayload);
-            }
-
-            if (data.restaurantId) {
-                socket.to(roomNames.restaurant(data.restaurantId)).emit('location-update', trackingPayload);
-            }
-
-            // â”€â”€â”€ Scalable Persistence (BullMQ + Redis "Hot" Buffering) â”€â”€â”€
-            try {
-                const { getTrackingQueue } = await import('../queues/index.js');
-                const { getRedisClient } = await import('../config/redis.js');
-                const trackingQueue = getTrackingQueue();
-                const redis = getRedisClient();
-
-                if (trackingQueue && redis) {
-                    const coordString = JSON.stringify({ lat, lng, timestamp: now });
-                    
-                    // 1. Immediately buffer the newest location in high-speed Redis Hash (HOT storage)
-                    await Promise.all([
-                        redis.hSet('rider:locations:hot', String(userId), coordString),
-                        redis.hSet('order:locations:hot', String(data.orderId), coordString)
-                    ]);
-
-                    // 2. Schedule a deferred MongoDB write (COLD storage)
-                    // jobId debulks updates: if a job is already waiting, BullMQ ignores the new add()
-                    // Delay (30s) ensures we don't spam MongoDB while the rider is moving fast
-                    const syncJobId = `sync:loc:${data.orderId}`;
-                    trackingQueue.add('sync-hot-locations', 
-                        { userId, orderId: data.orderId }, 
-                        { jobId: syncJobId, delay: 30000, removeOnComplete: true }
-                    ).catch(e => logger.error(`BullMQ sync schedule failed: ${e.message}`));
+            if (!data.orderId) {
+                // Idle Rider: update MongoDB coordinates directly
+                try {
+                    await FoodDeliveryPartner.findByIdAndUpdate(userId, {
+                        $set: {
+                            lastLat: lat,
+                            lastLng: lng,
+                            lastLocation: {
+                                type: 'Point',
+                                coordinates: [lng, lat]
+                            },
+                            lastLocationAt: new Date()
+                        }
+                    });
+                } catch (e) {
+                    logger.error(`[SocketLocation] Error updating idle rider location in MongoDB: ${e.message}`);
                 }
-            } catch (err) {
-                logger.error(`Real-time persistence layer error: ${err.message}`);
+            } else {
+                // Throttle: max one broadcast per 5s per orderId
+                const lastTS = _lastLocationBroadcast[data.orderId] || 0;
+                if (now - lastTS < 5000) return;
+                _lastLocationBroadcast[data.orderId] = now;
+
+                // ── MINIFIED tracking payload (sent to users watching the map) ──
+                const trackingPayload = {
+                    orderId: String(data.orderId),
+                    deliveryPartnerId: String(userId),
+                    lat,
+                    lng,
+                    heading,
+                    speed,
+                    timestamp: now,
+                    status: data.status || 'on_the_way',
+                };
+
+                // Send polyline/eta only every 30 seconds
+                const lastPolyTS = _lastPolylineBroadcast[data.orderId] || 0;
+                if (now - lastPolyTS >= 30000) {
+                    _lastPolylineBroadcast[data.orderId] = now;
+                    if (data.polyline) trackingPayload.polyline = data.polyline;
+                    if (data.eta != null && data.eta !== '') trackingPayload.eta = data.eta;
+                }
+
+                logDeliverySocket('Location update received', {
+                    socketId: socket.id,
+                    deliveryPartnerId: String(userId),
+                    orderId: String(data.orderId),
+                    lat,
+                    lng,
+                    status: data.status || 'on_the_way',
+                });
+
+                // Broadcast to tracking room (all users watching this order)
+                const trackingRoom = roomNames.tracking(data.orderId);
+                socket.to(trackingRoom).emit('location-update', trackingPayload);
+
+                // Also emit to the specific user room if userId is provided
+                if (data.userId) {
+                    socket.to(roomNames.user(data.userId)).emit('location-update', trackingPayload);
+                }
+
+                if (data.restaurantId) {
+                    socket.to(roomNames.restaurant(data.restaurantId)).emit('location-update', trackingPayload);
+                }
+
+                // ─── Scalable Persistence (BullMQ + Redis "Hot" Buffering) ───
+                try {
+                    const { getTrackingQueue } = await import('../queues/index.js');
+                    const { getRedisClient } = await import('../config/redis.js');
+                    const trackingQueue = getTrackingQueue();
+                    const redis = getRedisClient();
+
+                    if (trackingQueue && redis) {
+                        const coordString = JSON.stringify({ lat, lng, timestamp: now });
+                        
+                        await Promise.all([
+                            redis.hSet('rider:locations:hot', String(userId), coordString),
+                            redis.hSet('order:locations:hot', String(data.orderId), coordString)
+                        ]);
+
+                        const syncJobId = `sync:loc:${data.orderId}`;
+                        trackingQueue.add('sync-hot-locations', 
+                            { userId, orderId: data.orderId }, 
+                            { jobId: syncJobId, delay: 30000, removeOnComplete: true }
+                        ).catch(e => logger.error(`BullMQ sync schedule failed: ${e.message}`));
+                    }
+                } catch (err) {
+                    logger.error(`Real-time persistence layer error: ${err.message}`);
+                }
             }
 
-            // â”€â”€â”€ Firebase Realtime Database Sync (Cost Optimization) â”€â”€â”€
+            // ─── Firebase Realtime Database Sync (Cost Optimization) ───
             try {
                 const db = getFirebaseDB();
                 if (db) {
-                    // 1. Update order-specific tracking node
-                    const orderRef = db.ref(`active_orders/${data.orderId}`);
-                    orderRef.update({
-                        lat,
-                        lng,
-                        heading,
-                        speed,
-                        accuracy,
-                        last_updated: now,
-                        status: data.status || 'on_the_way',
-                        ...(data.polyline ? { polyline: data.polyline } : {}),
-                        ...(data.eta != null && data.eta !== '' ? { eta: data.eta } : {}),
-                    }).catch(e => logger.error(`Firebase orderRef update error: ${e.message}`));
+                    if (data.orderId) {
+                        // 1. Update order-specific tracking node
+                        const orderRef = db.ref(`active_orders/${data.orderId}`);
+                        orderRef.update({
+                            lat,
+                            lng,
+                            heading,
+                            speed,
+                            accuracy,
+                            last_updated: now,
+                            status: data.status || 'on_the_way',
+                            ...(data.polyline ? { polyline: data.polyline } : {}),
+                            ...(data.eta != null && data.eta !== '' ? { eta: data.eta } : {}),
+                        }).catch(e => logger.error(`Firebase orderRef update error: ${e.message}`));
+                    }
 
                     // 2. Update global delivery boy status node
                     const boyRef = db.ref(`delivery_boys/${userId}`);
@@ -451,14 +465,30 @@ export const getIO = () => {
     if (io) return io;
     if (redisEmitter) return redisEmitter;
     
-    logger.warn(
-        `[SocketInit] Socket.IO not initialized (No local Server or Redis Emitter). redisEnabled=${config.redisEnabled} redisUrlPresent=${Boolean(config.redisUrl)} pid=${process.pid}`
-    );
+    // Fallback: If Redis is disabled, we forward calls to the standalone socket server via HTTP loopback
+    const broadcastUrl = `http://127.0.0.1:${config.socketPort || 5001}/internal/broadcast`;
     
-    // Return a mock object to prevent crashes if called when disabled
     return {
-        to: () => ({ emit: () => {} }),
-        emit: () => {}
+        to: (room) => ({
+            emit: (event, data) => {
+                fetch(broadcastUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ room, event, data })
+                }).catch((e) => {
+                    logger.error(`[SocketHTTPFallback] Failed to forward event to socket server: ${e.message}`);
+                });
+            }
+        }),
+        emit: (event, data) => {
+            fetch(broadcastUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event, data })
+            }).catch((e) => {
+                logger.error(`[SocketHTTPFallback] Failed to forward event to socket server: ${e.message}`);
+            });
+        }
     };
 };
 

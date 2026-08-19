@@ -4,17 +4,33 @@ import dns from "node:dns/promises";
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import { config } from './src/config/env.js';
 import { connectRedis, closeRedis } from './src/config/redis.js';
-import { initSocket } from './src/config/socket.js';
+import { initSocket, getIO } from './src/config/socket.js';
 import { logger } from './src/utils/logger.js';
 import { loadEnvFromDb } from './src/config/envLoader.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
 import { initializeFirebaseRealtime } from './src/config/firebase.js';
 
 const app = express();
+app.use(express.json());
 
 // Healthcheck route
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'socket', port: config.socketPort || 5001 });
+});
+
+app.post('/internal/broadcast', (req, res) => {
+    try {
+        const { room, event, data } = req.body;
+        const ioInstance = getIO();
+        if (room) {
+            ioInstance.to(room).emit(event, data);
+        } else {
+            ioInstance.emit(event, data);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 const startSocketServer = async () => {

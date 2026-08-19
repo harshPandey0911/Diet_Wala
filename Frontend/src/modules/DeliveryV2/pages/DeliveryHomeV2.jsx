@@ -661,7 +661,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
           eta,
         };
 
-        if (payload.orderId) emitLocation(payload);
+        emitLocation(payload);
 
         const partnerId = getDeliveryPartnerId();
         if (partnerId) {

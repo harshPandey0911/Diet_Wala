@@ -56,7 +56,7 @@ export default function RestaurantSidebar({
     <>
       <aside
         className={cn(
-          "restaurant-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[var(--rt-border)] bg-white transition-transform duration-300 ease-in-out",
+          "restaurant-sidebar fixed inset-y-0 left-0 z-[110] flex flex-col border-r border-[var(--rt-border)] bg-white transition-transform duration-300 ease-in-out",
           collapsed ? "w-20" : "w-72",
           "max-lg:shadow-2xl",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"

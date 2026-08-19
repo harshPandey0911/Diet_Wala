@@ -146,8 +146,13 @@ export async function writeDeliveryLocation({
   } else {
     payload.status = 'offline';
   }
-  await set(ref(firebaseRealtimeDb, getDeliveryLocationPath(deliveryId)), payload);
-  return true;
+  try {
+    await set(ref(firebaseRealtimeDb, getDeliveryLocationPath(deliveryId)), payload);
+    return true;
+  } catch (error) {
+    console.warn('[FirebaseTracking] Direct client-side location write skipped (handled by socket server):', error.message);
+    return false;
+  }
 }
 
 /**

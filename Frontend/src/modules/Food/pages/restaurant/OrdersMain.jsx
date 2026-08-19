@@ -3668,7 +3668,7 @@ function OrderCard({
           ) : null}
 
           {/* Bottom Actions Row - Clean Grid/Flex */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-50 mt-auto">
+          <div className="flex flex-wrap items-center justify-between gap-y-1.5 gap-x-2 pt-2 border-t border-slate-50 mt-auto">
             {scheduledAt ? (
               <div className="flex flex-col gap-0.5">
                 <span className="text-[8px] font-bold text-green-600 uppercase">Scheduled For</span>

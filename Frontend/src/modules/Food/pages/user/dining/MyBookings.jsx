@@ -176,9 +176,9 @@ export default function MyBookings() {
             <div className="p-4 space-y-4">
                 {bookings.length > 0 ? (
                     bookings.map((booking) => (
-                        <div key={booking._id} className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-gray-800 flex items-start gap-4">
-                            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-gray-800 flex items-center justify-center relative">
-                                <Store className="w-6 h-6 text-slate-400 absolute" />
+                        <div key={booking._id} className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-100 dark:border-gray-800 flex items-start gap-3 sm:gap-4">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-gray-800 flex items-center justify-center relative">
+                                <Store className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 absolute" />
                                 {(booking.restaurant?.image || booking.restaurant?.profileImage) && (
                                     <img
                                         src={booking.restaurant?.image || booking.restaurant?.profileImage}
@@ -192,42 +192,42 @@ export default function MyBookings() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start">
-                                    <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base leading-tight">{booking.restaurant?.name}</h3>
-                                    <Badge className={`${getStatusBadgeClass(booking.status)} dark:opacity-80 flex-shrink-0 ml-2`}>
+                                    <h3 className="font-bold text-gray-900 dark:text-white text-xs sm:text-base leading-tight truncate">{booking.restaurant?.name}</h3>
+                                    <Badge className={`${getStatusBadgeClass(booking.status)} dark:opacity-80 flex-shrink-0 ml-2 text-[9px] sm:text-xs px-2 py-0.5 rounded-full`}>
                                         {getStatusLabel(booking.status)}
                                     </Badge>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
-                                    <MapPin className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">
+                                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1 mt-1 leading-normal">
+                                    <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                    <span className="whitespace-normal break-words">
                                         {typeof booking.restaurant?.location === 'string'
                                             ? booking.restaurant.location
                                             : (booking.restaurant?.location?.formattedAddress || booking.restaurant?.location?.address || `${booking.restaurant?.location?.city || ''}${booking.restaurant?.location?.area ? ', ' + booking.restaurant.location.area : ''}`)}
                                     </span>
                                 </p>
 
-                                <div className="flex items-center gap-3 mt-3 flex-wrap">
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
-                                        <Calendar className="w-3 h-3" />
+                                <div className="flex items-center gap-1.5 sm:gap-2.5 mt-2.5 flex-wrap">
+                                    <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-slate-50 dark:bg-gray-800 px-1.5 sm:px-2 py-0.5 rounded-lg border border-slate-100 dark:border-gray-800">
+                                        <Calendar className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gray-400" />
                                         {new Date(booking.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                                     </div>
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
-                                        <Clock className="w-3 h-3" />
+                                    <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-slate-50 dark:bg-gray-800 px-1.5 sm:px-2 py-0.5 rounded-lg border border-slate-100 dark:border-gray-800">
+                                        <Clock className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gray-400" />
                                         {booking.timeSlot}
                                     </div>
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
-                                        <Users className="w-3 h-3" />
+                                    <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-slate-50 dark:bg-gray-800 px-1.5 sm:px-2 py-0.5 rounded-lg border border-slate-100 dark:border-gray-800">
+                                        <Users className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gray-400" />
                                         {booking.guests} Guests
                                     </div>
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="mt-3 flex gap-2">
+                                <div className="mt-2.5 flex gap-2">
                                     {/* Rate & Review — only for completed bookings */}
                                     {booking.status === 'completed' && (
                                         <button
                                             onClick={() => setSelectedBooking(booking)}
-                                            className="flex-1 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-[11px] font-bold rounded-lg border border-red-100 dark:border-red-900/30 hover:bg-red-100 transition-colors"
+                                            className="flex-1 py-1.5 sm:py-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-[10px] sm:text-[11px] font-bold rounded-lg border border-red-100 dark:border-red-900/30 hover:bg-red-100 transition-colors"
                                         >
                                             RATE & REVIEW
                                         </button>
@@ -238,7 +238,7 @@ export default function MyBookings() {
                                         <button
                                             disabled={cancellingId === booking._id}
                                             onClick={() => handleCancelBooking(booking)}
-                                            className="flex-1 py-2 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[11px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex-1 py-1.5 sm:py-2 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] sm:text-[11px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {cancellingId === booking._id ? "Cancelling..." : "CANCEL BOOKING"}
                                         </button>
