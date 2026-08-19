@@ -119,7 +119,13 @@ app.use('/api', responseTimeLogger);
 app.use('/api', routes);
 
 // Static file serving for uploads
-app.use('/var/www/uploads', express.static(path.resolve(config.uploadPath)));
+app.use(['/var/www/uploads', '/uploads'], express.static(path.resolve(config.uploadPath), {
+    maxAge: '7d',
+    setHeaders: (res) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+}));
 
 // Error Handling
 app.use(errorHandler);
