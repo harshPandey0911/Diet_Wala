@@ -118,7 +118,7 @@ app.use('/api', responseTimeLogger);
 app.use('/api', routes);
 
 // Static file serving for uploads
-app.use('/var/www/uploads', express.static(path.resolve(config.uploadPath)));
+app.use('/uploads', express.static(path.resolve(config.uploadPath)));
 
 // Error Handling
 app.use(errorHandler);
