@@ -109,7 +109,7 @@ const processAndSaveImage = async ({ buffer, prefix, width, height, quality = 80
         .webp({ quality })
         .toFile(filepath);
 
-    return `/uploads/${filename}`;
+    return `/var/www/uploads/${filename}`;
 };
 
 /**
@@ -189,7 +189,7 @@ export const uploadFileBuffer = async (buffer, _folder = 'misc', options = {}) =
     const filepath = path.join(dir, filename);
 
     fs.writeFileSync(filepath, buffer);
-    return `/uploads/${filename}`;
+    return `/var/www/uploads/${filename}`;
 };
 
 export const uploadVideoBuffer = async (buffer, _folder = 'videos', options = {}) => {
@@ -200,7 +200,7 @@ export const uploadVideoBuffer = async (buffer, _folder = 'videos', options = {}
     });
     const filepath = path.join(dir, filename);
     fs.writeFileSync(filepath, buffer);
-    return `/uploads/${filename}`;
+    return `/var/www/uploads/${filename}`;
 };
 
 export const buildRawDownloadUrlFromFileUrl = (fileUrl, options = {}) => {
@@ -237,7 +237,7 @@ export const normalizeStoredUploadPath = (value) => {
     const filename = path.posix.basename(normalized);
     if (!filename || filename === '.' || filename === '/') return '';
 
-    return `/uploads/${filename}`;
+    return `/var/www/uploads/${filename}`;
 };
 
 export const resolveStoredUploadPath = (value) => {
@@ -255,18 +255,18 @@ export const resolveStoredUploadPath = (value) => {
 
     const webpCandidate = uploadFiles.get(`${stem}.webp`);
     if (webpCandidate) {
-        return `/uploads/${webpCandidate}`;
+        return `/var/www/uploads/${webpCandidate}`;
     }
 
     const exact = uploadFiles.get(filename.toLowerCase());
     if (exact) {
-        return `/uploads/${exact}`;
+        return `/var/www/uploads/${exact}`;
     }
 
     for (const ext of supportedUploadExtensions) {
         const candidate = uploadFiles.get(`${stem}${ext}`);
         if (candidate) {
-            return `/uploads/${candidate}`;
+            return `/var/www/uploads/${candidate}`;
         }
     }
 
@@ -286,10 +286,10 @@ export const resolveStoredUploadPath = (value) => {
         });
 
     if (prefixMatches.length > 0) {
-        return `/uploads/${prefixMatches[0]}`;
+        return `/var/www/uploads/${prefixMatches[0]}`;
     }
 
-    return `/uploads/${filename}`;
+    return `/var/www/uploads/${filename}`;
 };
 
 // --- Generic Production-Ready File Upload System ---

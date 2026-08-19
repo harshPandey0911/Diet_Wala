@@ -7,7 +7,7 @@ export const uploadSingle = async (req, res, next) => {
             throw new ValidationError('No file provided or invalid file format.');
         }
 
-        const fileUrl = `/uploads/${req.file.filename}`;
+        const fileUrl = `/var/www/uploads/${req.file.filename}`;
 
         const fileData = {
             filename: req.file.filename,
@@ -34,7 +34,7 @@ export const uploadMultiple = async (req, res, next) => {
         }
 
         const filesData = req.files.map(file => {
-            const fileUrl = `/uploads/${file.filename}`;
+            const fileUrl = `/var/www/uploads/${file.filename}`;
             return {
                 filename: file.filename,
                 originalName: file.originalname,

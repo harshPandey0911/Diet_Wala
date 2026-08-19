@@ -84,7 +84,8 @@ app.use(helmet({
     xssFilter: true,
     noSniff: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false
 }));
 app.use(cors());
 app.use(morgan('dev'));
@@ -118,7 +119,7 @@ app.use('/api', responseTimeLogger);
 app.use('/api', routes);
 
 // Static file serving for uploads
-app.use('/uploads', express.static(path.resolve(config.uploadPath)));
+app.use('/var/www/uploads', express.static(path.resolve(config.uploadPath)));
 
 // Error Handling
 app.use(errorHandler);
