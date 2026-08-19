@@ -260,10 +260,10 @@ export default function TableBookingConfirmation() {
 
                 {/* Details Section */}
                 <div className="pt-4 space-y-3">
-                    <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] relative">
+                    <div className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] relative">
                         <span className="bg-[#f8f9fa] dark:bg-slate-950 px-4 z-10 relative">Your Details</span>
                         <div className="absolute top-1/2 left-0 w-full h-[1px] bg-slate-200 dark:bg-slate-800 -z-0"></div>
-                    </p>
+                    </div>
                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors">
                         <div className="text-left">
                             <p className="font-bold text-gray-900 dark:text-slate-100">{user?.name || "Shailu"}</p>

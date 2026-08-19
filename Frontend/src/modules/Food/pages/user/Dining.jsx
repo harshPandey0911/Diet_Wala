@@ -557,7 +557,10 @@ export default function Dining() {
             </div>
             <div className="flex items-center gap-3 pr-2">
               <div className="h-4 w-[1px] bg-gray-200 dark:bg-gray-700" />
-              <button className="flex items-center justify-center p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+              <button
+                onClick={() => openSearch({ autoStartVoice: true })}
+                className="flex items-center justify-center p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
                 <Mic className="h-4 w-4 text-primary" strokeWidth={2.5} />
               </button>
             </div>

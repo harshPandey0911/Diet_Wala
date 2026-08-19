@@ -261,9 +261,7 @@ export default function DiningExplore50() {
                 variant="ghost"
                 size="icon"
                 className="absolute right-2 sm:right-3 md:right-4 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-full hover:bg-gray-100"
-                onClick={() => {
-                  // Voice search functionality
-                }}
+                onClick={() => openSearch({ autoStartVoice: true })}
               >
                 <Mic className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gray-500" />
               </Button>

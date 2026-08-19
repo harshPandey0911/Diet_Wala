@@ -605,7 +605,7 @@ export async function getUserDiningBookings(userId) {
         restaurant: doc.restaurantId ? {
             ...doc.restaurantId,
             name: doc.restaurantId.restaurantName,
-            image: Array.isArray(doc.restaurantId.coverImages) ? doc.restaurantId.coverImages[0] : (doc.restaurantId.profileImage || '')
+            image: (Array.isArray(doc.restaurantId.coverImages) && doc.restaurantId.coverImages.length > 0) ? doc.restaurantId.coverImages[0] : (doc.restaurantId.profileImage || '')
         } : null
     }));
 }

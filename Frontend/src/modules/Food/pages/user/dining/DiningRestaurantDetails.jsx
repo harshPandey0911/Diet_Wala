@@ -169,7 +169,19 @@ export default function DiningRestaurantDetails() {
     fetchRestaurantData()
   }, [location.state?.restaurant, slug])
 
-  // Occupied seats are now fetched directly from the backend
+  const imageGallery = useMemo(() => buildImageList(restaurant), [restaurant])
+
+  const topTabs = useMemo(() => {
+    const tabs = []
+    if (menuSections.length > 0) {
+      tabs.push({ id: "menu", label: "Menu", target: "restaurant-menu" })
+    }
+    if (imageGallery.length > 0) {
+      tabs.push({ id: "photos", label: "Photos", target: "restaurant-photos" })
+    }
+    tabs.push({ id: "about", label: "About", target: "restaurant-about" })
+    return tabs
+  }, [menuSections, imageGallery])
 
   const maxCapacity = restaurant?.diningSettings?.maxGuests || 6
   const remainingSeats = Math.max(0, maxCapacity - occupiedSeats)
@@ -195,28 +207,20 @@ export default function DiningRestaurantDetails() {
 
   const restaurantName = restaurant.name || restaurant.restaurantName || "Restaurant"
   const address = formatAddress(restaurant) || "Address unavailable"
-  const imageGallery = buildImageList(restaurant)
   const heroImage = imageGallery[0] || ""
   const menuPreviewImages = imageGallery.length > 0 ? imageGallery : [""]
   const featuredSections = buildFeaturedSections(menuSections)
   const cuisines =
     Array.isArray(restaurant?.cuisines) && restaurant.cuisines.length > 0
       ? restaurant.cuisines.join(", ")
-      : "Asian, Italian, Continental, Chinese, North Indian, Desserts, Beverages, Coffee"
-  const costForTwo = restaurant?.costForTwo ? `${"\u20B9"}${restaurant.costForTwo} for two` : `${"\u20B9"}1900 for two`
+      : ""
+  const costForTwo = restaurant?.costForTwo ? `${"\u20B9"}${restaurant.costForTwo} for two` : ""
   const facilities = buildFacilities(restaurant)
   const rating = Number(restaurant?.rating || restaurant?.avgRating || 0).toFixed(1)
   const reviewCount = restaurant?.totalRatings || restaurant?.reviewCount || restaurant?.reviewsCount || 0
   const openingTime = formatTimeLabel(restaurant?.openingTime || restaurant?.diningSettings?.openingTime || "12:00")
   const closingTime = formatTimeLabel(restaurant?.closingTime || restaurant?.diningSettings?.closingTime || "23:59")
   const isDiningEnabled = restaurant?.diningSettings?.isEnabled !== false
-  const topTabs = [
-    { id: "prebook", label: "Pre-book offers", target: "restaurant-prebook" },
-    { id: "walkin", label: "Walk-in offers", target: "restaurant-prebook" },
-    { id: "menu", label: "Menu", target: "restaurant-menu" },
-    { id: "photos", label: "Photos", target: "restaurant-photos" },
-    { id: "about", label: "About", target: "restaurant-about" },
-  ]
 
   const handleShare = async () => {
     const shareData = {
@@ -318,54 +322,41 @@ export default function DiningRestaurantDetails() {
           <div className="absolute inset-x-0 bottom-0 px-3 pb-4 text-white">
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h1 className="text-[36px] font-black leading-none tracking-[-0.03em]">{restaurantName}</h1>
-                <p className="mt-2 max-w-[94%] text-[14px] leading-5 text-white/92">{address}</p>
-                <p className="mt-2 text-[14px] text-white/90">
-                  {costForTwo}
-                  <span className="mx-1.5 text-white/65">•</span>
-                  {cuisines}
-                </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/28 px-2.5 py-1 text-[13px] font-medium backdrop-blur-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[#48d597]" />
+                <h1 className="text-[20px] sm:text-[24px] font-bold leading-tight tracking-tight">{restaurantName}</h1>
+                <p className="mt-1 max-w-[94%] text-[11px] sm:text-[13px] leading-snug text-white/80">{address}</p>
+                {(costForTwo || cuisines) && (
+                  <p className="mt-1 text-[11px] sm:text-[13px] leading-snug text-white/80">
+                    {costForTwo}
+                    {costForTwo && cuisines && <span className="mx-1 text-white/60">•</span>}
+                    {cuisines}
+                  </p>
+                )}
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 text-[10px] sm:text-[12px] font-medium backdrop-blur-sm">
+                  <CheckCircle2 className="h-3 w-3 text-[#48d597]" />
                   <span>Open now</span>
-                  <span className="text-white/70">|</span>
+                  <span className="text-white/60">|</span>
                   <span>{openingTime} to {closingTime}</span>
                 </div>
               </div>
 
-              <div className="mb-1 shrink-0 rounded-[18px] bg-white dark:bg-slate-800 px-3 py-2 text-center text-[#1f2328] dark:text-slate-100 shadow-xl border border-white/20">
-                <div className="flex items-center justify-center gap-1 text-[31px] font-black leading-none">
+              <div className="mb-1 shrink-0 rounded-[14px] bg-white dark:bg-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 text-center text-[#1f2328] dark:text-slate-100 shadow-xl border border-white/20">
+                <div className="flex items-center justify-center gap-0.5 text-[18px] sm:text-[22px] font-bold leading-none">
                   <span>{rating}</span>
-                  <span className="text-[18px] text-[#18b54f]">★</span>
+                  <span className="text-[13px] sm:text-[16px] text-[#18b54f]">★</span>
                 </div>
-                <p className="mt-1 text-[13px] leading-4 text-[#6e7481] dark:text-slate-400">{reviewCount} Reviews</p>
+                <p className="mt-0.5 text-[9px] sm:text-[11px] leading-tight text-[#6e7481] dark:text-slate-400">{reviewCount} Reviews</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="px-3 pb-1 pt-3">
-          <div className="w-full">
-            <button
-              onClick={() => isDiningEnabled && setIsBookingSheetOpen(true)}
-              disabled={!isDiningEnabled}
-              className={`flex h-[52px] w-full items-center justify-center gap-2 rounded-full border px-3 text-[15px] font-medium shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all ${isDiningEnabled
-                ? "border-[#f1ebee] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2b2118] dark:text-slate-100"
-                : "cursor-not-allowed border-[#f2d7da] dark:border-red-900/30 bg-[#fff5f6] dark:bg-red-950/20 text-[#c06a79] opacity-80"
-                }`}
-            >
-              <Ticket className="h-[15px] w-[15px] text-primary" />
-              <span>{isDiningEnabled ? "Book a table" : "Dining paused"}</span>
-            </button>
-          </div>
-
-          {!isDiningEnabled && (
-            <div className="mt-3 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        {!isDiningEnabled && (
+          <div className="px-3 pt-2">
+            <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               Dining bookings are currently turned off by the restaurant.
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </section>
 
       <div className="sticky top-0 z-30 border-b border-[#ececf3] dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl transition-colors">
@@ -391,46 +382,21 @@ export default function DiningRestaurantDetails() {
       </div>
 
       <div className="mx-auto max-w-md px-4 pt-4">
-        <section id="restaurant-prebook">
-          <div>
-            <h2 className="text-[29px] font-black leading-none text-[#23180f] dark:text-slate-100">Pre-book offers</h2>
-            <p className="mt-1 text-[15px] text-primary dark:text-purple-400">Limited slots with extra offers</p>
-          </div>
 
-          <div className="mt-3 overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#0f4a87,#0b2954_70%)] text-white shadow-[0_10px_26px_rgba(8,52,95,0.25)]">
-            <div className="flex items-start justify-between px-4 pb-3 pt-4">
+        {menuSections.length > 0 && (
+          <section id="restaurant-menu" className="mt-5 border-t border-[#e8e8ef] dark:border-slate-800 pt-4">
+            <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-[28px] font-black leading-none">Flat 50% OFF</p>
-                <p className="mt-2 text-[14px] text-white/80">Dining Carnival offer</p>
+                <h2 className="text-[19px] sm:text-[22px] font-bold leading-none text-[#23180f] dark:text-slate-100">Menu</h2>
+                <p className="mt-2 text-[13px] text-[#e19135] dark:text-orange-400">Last updated a month ago</p>
               </div>
-              <button className="rounded-full bg-black/45 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm">
-                Book now
-              </button>
+              <div className="rounded-full bg-[#fff3e6] dark:bg-orange-950/30 px-3 py-1 text-xs font-semibold text-[#e58a2c] dark:text-orange-300">
+                {featuredSections.length} dishes
+              </div>
             </div>
-            <div className="border-t border-white/10 px-4 py-2 text-center text-[12px] text-white/75">
-              3 slots available from 3:30 PM today
-            </div>
-          </div>
-        </section>
 
-        <section id="restaurant-menu" className="mt-5 border-t border-[#e8e8ef] dark:border-slate-800 pt-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h2 className="text-[28px] font-black leading-none text-[#23180f] dark:text-slate-100">Menu</h2>
-              <p className="mt-2 text-[13px] text-[#e19135] dark:text-orange-400">Last updated a month ago</p>
-            </div>
-            <div className="rounded-full bg-[#fff3e6] dark:bg-orange-950/30 px-3 py-1 text-xs font-semibold text-[#e58a2c] dark:text-orange-300">
-              {featuredSections.length || 2} dishes
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {(featuredSections.length > 0
-              ? featuredSections
-              : [
-                { id: "food", title: "Food", pages: 16 },
-                { id: "beverages", title: "Beverages", pages: 10 },
-              ]).map((section, index) => (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {featuredSections.map((section, index) => (
                 <div key={section.id} className="overflow-hidden rounded-[18px] border border-[#ede8dd] dark:border-slate-800 bg-white dark:bg-slate-900">
                   <div className="aspect-[0.88] bg-[#f7f1e7] dark:bg-slate-800">
                     {menuPreviewImages[index] ? (
@@ -447,11 +413,12 @@ export default function DiningRestaurantDetails() {
                   </div>
                 </div>
               ))}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
 
         <section id="restaurant-photos" className="mt-5 border-t border-[#e8e8ef] dark:border-slate-800 pt-4">
-          <h2 className="text-[28px] font-black leading-none text-[#23180f] dark:text-slate-100">Photos</h2>
+          <h2 className="text-[19px] sm:text-[22px] font-bold leading-none text-[#23180f] dark:text-slate-100">Photos</h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {(imageGallery.length > 0 ? imageGallery.slice(0, 4) : menuPreviewImages.slice(0, 2)).map((image, index) => (
               <div
@@ -470,7 +437,7 @@ export default function DiningRestaurantDetails() {
         </section>
 
         <section id="restaurant-about" className="mt-5 border-t border-[#e8e8ef] dark:border-slate-800 pt-4">
-          <h2 className="text-[28px] font-black leading-none text-[#23180f] dark:text-slate-100">About the restaurant</h2>
+          <h2 className="text-[19px] sm:text-[22px] font-bold leading-none text-[#23180f] dark:text-slate-100">About the restaurant</h2>
           <div className="mt-4 rounded-[18px] border border-[#ececf4] dark:border-slate-800 bg-[#fafbff] dark:bg-slate-900 p-4 transition-colors">
             <div className="space-y-4 text-[14px] text-[#5f6474] dark:text-slate-400">
               <div className="flex items-start gap-3">
@@ -489,21 +456,6 @@ export default function DiningRestaurantDetails() {
               </div>
             </div>
 
-            <div className="mt-5 border-t border-[#e8e8ef] dark:border-slate-800 pt-4">
-              <h3 className="text-[20px] font-semibold text-[#23180f] dark:text-slate-100">Featured In</h3>
-              <div className="mt-3 overflow-hidden rounded-[16px] bg-white dark:bg-slate-800 shadow-sm">
-                <div className="aspect-[1.2] bg-[#efe8df] dark:bg-slate-700">
-                  {heroImage ? (
-                    <img src={heroImage} alt={restaurantName} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-[#a28868] dark:text-slate-400">Featured image</div>
-                  )}
-                </div>
-                <div className="-mt-14 bg-[linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.72))] p-3 pt-10 text-sm font-medium text-white">
-                  Pan-Asian Restaurants
-                </div>
-              </div>
-            </div>
 
             <div className="mt-5 border-t border-[#e8e8ef] dark:border-slate-800 pt-4">
               <h3 className="text-[20px] font-semibold text-[#23180f] dark:text-slate-100">Facilities</h3>
@@ -548,7 +500,7 @@ export default function DiningRestaurantDetails() {
 
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-black text-[#23180f] dark:text-slate-100">Select number of guests</h3>
+                <h3 className="text-[17px] font-bold text-[#23180f] dark:text-slate-100">Select number of guests</h3>
                 <p className="mt-1 text-sm text-[#7b6651] dark:text-slate-400">
                   {remainingSeats > 0
                     ? `Only ${remainingSeats} out of ${maxCapacity} seats available now.`

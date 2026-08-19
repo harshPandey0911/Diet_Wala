@@ -15,7 +15,7 @@ import {
   UtensilsCrossed,
   RefreshCw,
 } from "lucide-react"
-import { diningAPI } from "@food/api"
+import { diningAPI, restaurantAPI } from "@food/api"
 import { useAuthStore } from "@/core/auth/auth.store"
 import { toast } from "sonner"
 import useRestaurantBackNavigation from "@food/hooks/useRestaurantBackNavigation"
@@ -76,7 +76,6 @@ function isDateInFilter(bookingDate, filter) {
 
 export default function DiningReservations() {
   const goBack     = useRestaurantBackNavigation()
-  const restaurant = useAuthStore((s) => s.user)
 
   const [bookings,     setBookings]     = useState([])
   const [loading,      setLoading]      = useState(true)
@@ -89,7 +88,17 @@ export default function DiningReservations() {
     try {
       if (!silent) setLoading(true)
       else         setRefreshing(true)
-      const response = await diningAPI.getRestaurantBookings(restaurant)
+
+      const res = await restaurantAPI.getCurrentRestaurant()
+      const restaurantInfo = res.data?.data?.restaurant || res.data?.restaurant || res.data?.data
+      const restaurantId = restaurantInfo?._id || restaurantInfo?.id
+
+      if (!restaurantId) {
+        setError("Failed to resolve restaurant profile.")
+        return
+      }
+
+      const response = await diningAPI.getRestaurantBookings(restaurantId)
       if (response.data.success) {
         setBookings(Array.isArray(response.data.data) ? response.data.data : [])
         setError(null)
@@ -100,7 +109,7 @@ export default function DiningReservations() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [restaurant])
+  }, [])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
 
