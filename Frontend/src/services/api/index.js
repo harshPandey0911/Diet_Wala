@@ -2141,6 +2141,35 @@ export const diningAPI = {
 
   cancelBooking: (bookingId) =>
     userClient.patch(`/food/dining/bookings/${String(bookingId)}/cancel`),
+
+  // Public endpoint - no auth required, fetches occupied seats for a specific date+timeSlot
+  getSlotAvailability: (restaurantId, date, timeSlot) => {
+    const dateStr = (date instanceof Date ? date : new Date(date)).toISOString();
+    return apiClient.get(`/food/dining/restaurants/${String(restaurantId)}/slot-availability/public`, {
+      params: { date: dateStr, timeSlot: String(timeSlot) }
+    });
+  },
+
+  // ─── Table Management (Restaurant Auth) ──────────────────────────────────
+  addDiningTable: (payload) =>
+    restaurantClient.post('/food/dining/tables', payload),
+
+  getMyDiningTables: () =>
+    restaurantClient.get('/food/dining/tables/my'),
+
+  updateDiningTable: (id, payload) =>
+    restaurantClient.patch(`/food/dining/tables/${String(id)}`, payload),
+
+  deleteDiningTable: (id) =>
+    restaurantClient.delete(`/food/dining/tables/${String(id)}`),
+
+  // ─── Public: Available tables for user booking ────────────────────────────
+  getAvailableTables: (restaurantId, date, timeSlot) => {
+    const dateStr = (date instanceof Date ? date : new Date(date)).toISOString();
+    return apiClient.get(`/food/dining/restaurants/${String(restaurantId)}/tables/public`, {
+      params: { date: dateStr, timeSlot: String(timeSlot) }
+    });
+  },
 };
 export const heroBannerAPI = createStubAPI();
 export const publicAPI = {

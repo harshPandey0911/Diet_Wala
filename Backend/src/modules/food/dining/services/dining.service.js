@@ -5,6 +5,7 @@ import { FoodDiningCategory } from '../models/diningCategory.model.js';
 import { FoodDiningRestaurant } from '../models/diningRestaurant.model.js';
 import { FoodDiningRequest } from '../models/diningRequest.model.js';
 import { FoodDiningBooking } from '../models/diningBooking.model.js';
+import { FoodDiningTable } from '../models/diningTable.model.js';
 import { notifyOwnerSafely } from '../../../../core/notifications/firebase.service.js';
 import { createInboxNotifications } from '../../../../core/notifications/notification.service.js';
 import { normalizeStoredUploadPath } from '../../../../services/upload.service.js';
@@ -563,31 +564,120 @@ export async function createDiningBooking(userId, payload = {}) {
         throw new ValidationError('Restaurant not found');
     }
 
-    const bookingId = `TB${Date.now().toString().slice(-8)}`;
-    
+    // Check if dining is enabled for this restaurant
+    if (restaurant.diningSettings?.isEnabled === false) {
+        throw new ValidationError('Dining bookings are currently disabled for this restaurant.');
+    }
+
+    const requestedGuests = Math.max(1, Number(payload.guests) || 1);
+    const bookingDate = payload.date || new Date();
+    const bookingTimeSlot = String(payload.timeSlot || '').trim();
+
     const userPayload = payload.user || payload.userRef || {};
     const name = (userPayload.name || userPayload.fullName || 'Guest').trim();
     const phone = (userPayload.phone || userPayload.mobile || userPayload.phoneNumber || '').trim();
     const email = (userPayload.email || '').trim();
 
+    // ── TABLE-BASED BOOKING ────────────────────────────────────────────────────
+    if (payload.tableId) {
+        if (!mongoose.Types.ObjectId.isValid(payload.tableId)) {
+            throw new ValidationError('Invalid table ID.');
+        }
+
+        // Verify table exists, belongs to this restaurant, and is active
+        const table = await FoodDiningTable.findOne({
+            _id: payload.tableId,
+            restaurantId,
+            isActive: true,
+            status: 'active'
+        }).lean();
+
+        if (!table) {
+            throw new ValidationError('Selected table is not available or does not belong to this restaurant.');
+        }
+
+        // Validate guest count against table capacity
+        if (requestedGuests > table.capacity) {
+            throw new ValidationError(
+                `Guest count (${requestedGuests}) exceeds table capacity (${table.capacity}).`
+            );
+        }
+
+        // Build startTime / endTime for overlap detection (90 min default)
+        const { startTime, endTime } = buildStartEndTime(bookingDate, bookingTimeSlot);
+
+        // ── RACE CONDITION PROTECTION: Re-check availability atomically ────────
+        if (startTime && endTime) {
+            const now = new Date();
+            const conflicting = await FoodDiningBooking.findOne({
+                tableId: payload.tableId,
+                status: { $in: BLOCKING_STATUSES },
+                $or: [
+                    { holdExpiresAt: null },
+                    { holdExpiresAt: { $gt: now } }
+                ],
+                startTime: { $lt: endTime },
+                endTime: { $gt: startTime }
+            }).lean();
+
+            if (conflicting) {
+                const err = new ValidationError(
+                    'This table is no longer available for the selected time. Please select another table.'
+                );
+                err.statusCode = 409;
+                throw err;
+            }
+        }
+
+        const bookingId = `TB${Date.now().toString().slice(-8)}`;
+
+        const booking = await FoodDiningBooking.create({
+            bookingId,
+            restaurantId,
+            userId,
+            user: { name, phone, email },
+            guests: requestedGuests,
+            date: new Date(bookingDate),
+            timeSlot: bookingTimeSlot,
+            tableId: table._id,
+            tableNumber: table.tableNumber,
+            startTime: startTime || null,
+            endTime: endTime || null,
+            specialRequest: String(payload.specialRequest || '').trim(),
+            status: 'pending'
+        });
+
+        return booking.toObject();
+    }
+
+    // ── LEGACY FLOW (no tableId) — slot-wise capacity check ───────────────────
+    const maxGuests = Math.max(1, Number(restaurant.diningSettings?.maxGuests) || 10);
+    if (bookingTimeSlot) {
+        const occupied = await getRestaurantOccupiedSeats(restaurantId, bookingDate, bookingTimeSlot);
+        if (occupied + requestedGuests > maxGuests) {
+            throw new ValidationError(
+                `Not enough seats available for the selected time slot. Only ${Math.max(0, maxGuests - occupied)} seat(s) remaining.`
+            );
+        }
+    }
+
+    const bookingId = `TB${Date.now().toString().slice(-8)}`;
+
     const booking = await FoodDiningBooking.create({
         bookingId,
         restaurantId,
         userId,
-        user: {
-            name,
-            phone,
-            email
-        },
-        guests: Math.max(1, Number(payload.guests) || 1),
-        date: new Date(payload.date || Date.now()),
-        timeSlot: String(payload.timeSlot || '').trim(),
+        user: { name, phone, email },
+        guests: requestedGuests,
+        date: new Date(bookingDate),
+        timeSlot: bookingTimeSlot,
         specialRequest: String(payload.specialRequest || '').trim(),
         status: 'pending'
     });
 
     return booking.toObject();
 }
+
 
 export async function getUserDiningBookings(userId) {
     if (!mongoose.Types.ObjectId.isValid(userId)) return [];
@@ -610,10 +700,27 @@ export async function getUserDiningBookings(userId) {
     }));
 }
 
-export async function getRestaurantDiningBookings(restaurantId) {
+export async function getRestaurantDiningBookings(restaurantId, filters = {}) {
     if (!mongoose.Types.ObjectId.isValid(restaurantId)) return [];
 
-    return await FoodDiningBooking.find({ restaurantId })
+    const query = { restaurantId };
+
+    // Optional date filter
+    if (filters.date) {
+        const targetDate = new Date(filters.date);
+        const dayStart = new Date(targetDate);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(targetDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        query.date = { $gte: dayStart, $lte: dayEnd };
+    }
+
+    // Optional timeSlot filter
+    if (filters.timeSlot) {
+        query.timeSlot = filters.timeSlot;
+    }
+
+    return await FoodDiningBooking.find(query)
         .populate({
             path: 'userId',
             select: 'name phone email'
@@ -732,23 +839,230 @@ export async function cancelUserDiningBooking(userId, bookingId) {
     return booking.toObject();
 }
 
-export async function getRestaurantOccupiedSeats(restaurantId) {
+export async function getRestaurantOccupiedSeats(restaurantId, date, timeSlot) {
     if (!mongoose.Types.ObjectId.isValid(restaurantId)) return 0;
 
     const now = new Date();
     const THIRTY_MINUTES = 30 * 60 * 1000;
     const expiryLimit = new Date(now.getTime() - THIRTY_MINUTES);
 
-    // Only count approved/confirmed bookings or recent pending ones
-    const bookings = await FoodDiningBooking.find({
+    const query = {
         restaurantId,
         $or: [
             { status: 'approved' },
             { status: 'confirmed' },
             { status: 'pending', createdAt: { $gte: expiryLimit } }
         ]
-    }).select('guests').lean();
+    };
 
+    // Filter by specific date if provided
+    if (date) {
+        const targetDate = new Date(date);
+        const dayStart = new Date(targetDate);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(targetDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        query.date = { $gte: dayStart, $lte: dayEnd };
+    }
+
+    // Filter by specific time slot if provided
+    if (timeSlot) {
+        query.timeSlot = String(timeSlot).trim();
+    }
+
+    const bookings = await FoodDiningBooking.find(query).select('guests').lean();
     return bookings.reduce((sum, b) => sum + (Number(b.guests) || 0), 0);
 }
 
+// ─── HELPER: Parse timeSlot string → minutes since midnight ──────────────────
+function parseSlotToMinutes(slot) {
+    if (!slot) return null;
+    const raw = String(slot).trim();
+    // HH:MM format
+    const hhmmMatch = raw.match(/^(\d{1,2}):(\d{2})$/);
+    if (hhmmMatch) return Number(hhmmMatch[1]) * 60 + Number(hhmmMatch[2]);
+    // 12-hour format with AM/PM
+    const meridiemMatch = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+    if (!meridiemMatch) return null;
+    let hour = Number(meridiemMatch[1]);
+    const minute = Number(meridiemMatch[2] || 0);
+    const meridiem = meridiemMatch[3].toUpperCase();
+    if (meridiem === 'PM' && hour !== 12) hour += 12;
+    if (meridiem === 'AM' && hour === 12) hour = 0;
+    return hour * 60 + minute;
+}
+
+// ─── HELPER: Build startTime/endTime Date objects from date + timeSlot ────────
+function buildStartEndTime(date, timeSlot, durationMinutes = 90) {
+    const baseDate = new Date(date);
+    const slotMinutes = parseSlotToMinutes(timeSlot);
+    if (slotMinutes === null) return { startTime: null, endTime: null };
+
+    const startTime = new Date(baseDate);
+    startTime.setHours(Math.floor(slotMinutes / 60), slotMinutes % 60, 0, 0);
+
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+    return { startTime, endTime };
+}
+
+// ─── HELPER: Active booking statuses that block a table ──────────────────────
+const BLOCKING_STATUSES = ['pending', 'held', 'confirmed', 'accepted', 'checked-in'];
+
+// ─── TABLE CRUD SERVICES ─────────────────────────────────────────────────────
+
+export async function createDiningTable(restaurantId, body = {}) {
+    const tableNumber = String(body.tableNumber || '').trim();
+    const capacity = Number(body.capacity);
+
+    if (!tableNumber) throw new ValidationError('Table number is required.');
+    if (!capacity || capacity < 1) throw new ValidationError('Capacity must be at least 1.');
+
+    try {
+        const table = await FoodDiningTable.create({
+            restaurantId,
+            tableNumber,
+            capacity,
+            isActive: body.isActive !== false,
+            status: body.status || 'active'
+        });
+        return table.toObject();
+    } catch (err) {
+        if (err.code === 11000) {
+            throw new ValidationError(`Table number "${tableNumber}" already exists for this restaurant.`);
+        }
+        throw err;
+    }
+}
+
+export async function getMyDiningTables(restaurantId) {
+    return FoodDiningTable.find({ restaurantId })
+        .sort({ tableNumber: 1 })
+        .lean();
+}
+
+export async function updateDiningTable(restaurantId, tableId, body = {}) {
+    if (!mongoose.Types.ObjectId.isValid(tableId)) throw new ValidationError('Invalid table ID.');
+
+    const table = await FoodDiningTable.findOne({ _id: tableId, restaurantId });
+    if (!table) throw new ValidationError('Table not found or access denied.');
+
+    const updates = {};
+
+    if (body.tableNumber !== undefined) {
+        const tableNumber = String(body.tableNumber).trim();
+        if (!tableNumber) throw new ValidationError('Table number cannot be empty.');
+        // Check duplicate within same restaurant
+        const existing = await FoodDiningTable.findOne({
+            restaurantId,
+            tableNumber,
+            _id: { $ne: tableId }
+        }).lean();
+        if (existing) throw new ValidationError(`Table number "${tableNumber}" already exists.`);
+        updates.tableNumber = tableNumber;
+    }
+
+    if (body.capacity !== undefined) {
+        const capacity = Number(body.capacity);
+        if (!capacity || capacity < 1) throw new ValidationError('Capacity must be at least 1.');
+        // Warn if reducing capacity below any upcoming booking
+        const now = new Date();
+        const upcomingBookings = await FoodDiningBooking.find({
+            tableId,
+            status: { $in: BLOCKING_STATUSES },
+            startTime: { $gt: now }
+        }).lean();
+        const maxGuests = upcomingBookings.reduce((m, b) => Math.max(m, b.guests || 0), 0);
+        if (maxGuests > capacity) {
+            throw new ValidationError(
+                `Cannot reduce capacity to ${capacity}. Upcoming reservation requires ${maxGuests} seats.`
+            );
+        }
+        updates.capacity = capacity;
+    }
+
+    if (body.isActive !== undefined) updates.isActive = Boolean(body.isActive);
+    if (body.status !== undefined) {
+        const allowed = ['active', 'inactive', 'maintenance'];
+        if (!allowed.includes(body.status)) throw new ValidationError('Invalid table status.');
+        updates.status = body.status;
+        // sync isActive with status
+        if (body.status === 'active') updates.isActive = true;
+        else updates.isActive = false;
+    }
+
+    Object.assign(table, updates);
+    await table.save();
+    return table.toObject();
+}
+
+export async function deleteDiningTable(restaurantId, tableId) {
+    if (!mongoose.Types.ObjectId.isValid(tableId)) throw new ValidationError('Invalid table ID.');
+
+    const table = await FoodDiningTable.findOne({ _id: tableId, restaurantId });
+    if (!table) throw new ValidationError('Table not found or access denied.');
+
+    // Check for upcoming active bookings
+    const now = new Date();
+    const upcoming = await FoodDiningBooking.countDocuments({
+        tableId,
+        status: { $in: BLOCKING_STATUSES },
+        startTime: { $gt: now }
+    });
+    if (upcoming > 0) {
+        throw new ValidationError(
+            'This table has upcoming reservations and cannot be deleted. Disable the table instead.'
+        );
+    }
+
+    // Soft-delete: mark inactive rather than hard delete to preserve booking history
+    table.isActive = false;
+    table.status = 'inactive';
+    await table.save();
+    return { message: 'Table disabled successfully.' };
+}
+
+// ─── PUBLIC: Get available tables for a slot ─────────────────────────────────
+
+export async function getAvailableTablesForSlot(restaurantId, dateStr, timeSlot) {
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) return [];
+
+    // Fetch all active tables for this restaurant
+    const tables = await FoodDiningTable.find({
+        restaurantId,
+        isActive: true,
+        status: 'active'
+    }).sort({ tableNumber: 1 }).lean();
+
+    if (tables.length === 0) return [];
+
+    const { startTime, endTime } = buildStartEndTime(dateStr, timeSlot);
+    if (!startTime || !endTime) return tables.map(t => ({ ...t, available: true }));
+
+    // Find all overlapping bookings for this restaurant/time window
+    // Overlap condition: existing.startTime < new.endTime AND existing.endTime > new.startTime
+    const now = new Date();
+    const overlappingBookings = await FoodDiningBooking.find({
+        restaurantId,
+        tableId: { $in: tables.map(t => t._id) },
+        status: { $in: BLOCKING_STATUSES },
+        // Non-expired holds only
+        $or: [
+            { status: { $ne: 'pending' } },
+            { holdExpiresAt: { $gt: now } },
+            { holdExpiresAt: null }
+        ],
+        startTime: { $lt: endTime },
+        endTime: { $gt: startTime }
+    }).select('tableId').lean();
+
+    const bookedTableIds = new Set(overlappingBookings.map(b => String(b.tableId)));
+
+    return tables.map(t => ({
+        _id: t._id,
+        id: t._id,
+        tableNumber: t.tableNumber,
+        capacity: t.capacity,
+        status: t.status,
+        available: !bookedTableIds.has(String(t._id))
+    }));
+}

@@ -198,7 +198,7 @@
   transition: all 0.2s ease;
 }
 
-.delivery-v2-theme input,
+.delivery-v2-theme input:not(.border-0):not(.bg-transparent),
 .delivery-v2-theme textarea,
 .delivery-v2-theme select {
   border-color: #e8dee7 !important;
@@ -206,7 +206,7 @@
   color: var(--dv-text) !important;
 }
 
-.delivery-v2-theme input:focus,
+.delivery-v2-theme input:not(.border-0):not(.bg-transparent):focus,
 .delivery-v2-theme textarea:focus,
 .delivery-v2-theme select:focus {
   border-color: color-mix(in srgb, var(--dv-primary) 55%, #fff) !important;

@@ -12,10 +12,226 @@ import {
   Send,
   ToggleLeft,
   ToggleRight,
+  Plus,
+  Pencil,
+  Trash2,
+  X,
 } from "lucide-react"
 import { restaurantAPI, diningAPI } from "@food/api"
 import { toast } from "sonner"
 import useRestaurantBackNavigation from "@food/hooks/useRestaurantBackNavigation"
+
+// ─── Table Management Component ──────────────────────────────────────────────
+const CAPACITY_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20]
+
+function TableManagement() {
+  const [tables, setTables] = useState([])
+  const [loadingTables, setLoadingTables] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editTable, setEditTable] = useState(null) // null = add mode
+  const [formData, setFormData] = useState({ tableNumber: '', capacity: 2 })
+  const [saving, setSaving] = useState(false)
+
+  const fetchTables = async () => {
+    try {
+      setLoadingTables(true)
+      const res = await diningAPI.getMyDiningTables()
+      if (res?.data?.success) setTables(res.data.data || [])
+    } catch {
+      toast.error('Failed to load tables.')
+    } finally {
+      setLoadingTables(false)
+    }
+  }
+
+  useEffect(() => { fetchTables() }, [])
+
+  const openAdd = () => {
+    setEditTable(null)
+    setFormData({ tableNumber: '', capacity: 2 })
+    setShowModal(true)
+  }
+
+  const openEdit = (table) => {
+    setEditTable(table)
+    setFormData({ tableNumber: table.tableNumber, capacity: table.capacity })
+    setShowModal(true)
+  }
+
+  const handleSave = async () => {
+    if (!formData.tableNumber.trim()) { toast.error('Table number is required.'); return }
+    if (!formData.capacity || formData.capacity < 1) { toast.error('Capacity must be at least 1.'); return }
+    try {
+      setSaving(true)
+      if (editTable) {
+        await diningAPI.updateDiningTable(editTable._id || editTable.id, formData)
+        toast.success('Table updated!')
+      } else {
+        await diningAPI.addDiningTable(formData)
+        toast.success('Table added!')
+      }
+      setShowModal(false)
+      fetchTables()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save table.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleToggleStatus = async (table) => {
+    try {
+      const newStatus = table.status === 'active' ? 'inactive' : 'active'
+      await diningAPI.updateDiningTable(table._id || table.id, { status: newStatus })
+      toast.success(newStatus === 'active' ? 'Table enabled.' : 'Table disabled.')
+      fetchTables()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update table.')
+    }
+  }
+
+  const handleDelete = async (table) => {
+    if (!window.confirm(`Disable "${table.tableNumber}"? It will be removed from bookings.`)) return
+    try {
+      await diningAPI.deleteDiningTable(table._id || table.id)
+      toast.success('Table disabled.')
+      fetchTables()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to disable table.')
+    }
+  }
+
+  const statusColor = (s) => {
+    if (s === 'active') return 'bg-green-50 text-green-700'
+    if (s === 'maintenance') return 'bg-amber-50 text-amber-700'
+    return 'bg-slate-100 text-slate-500'
+  }
+
+  return (
+    <div className="mt-6 border border-slate-200 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div>
+          <p className="font-bold text-slate-800 text-sm">Manage Tables</p>
+          <p className="text-xs text-slate-500 mt-0.5">Add physical tables that customers can book</p>
+        </div>
+        <button
+          onClick={openAdd}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7e3866] text-white text-xs font-semibold hover:bg-[#6a2f56] transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add Table
+        </button>
+      </div>
+
+      {loadingTables ? (
+        <div className="p-6 text-center">
+          <Loader2 className="w-5 h-5 animate-spin mx-auto text-slate-400" />
+        </div>
+      ) : tables.length === 0 ? (
+        <div className="p-6 text-center text-sm text-slate-400">
+          No tables added yet. Click "Add Table" to get started.
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {tables.map(table => (
+            <div key={table._id || table.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🪑</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">{table.tableNumber}</p>
+                  <p className="text-xs text-slate-500">{table.capacity} Seats</p>
+                </div>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusColor(table.status)}`}>
+                  {table.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => openEdit(table)}
+                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+                  title="Edit"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleToggleStatus(table)}
+                  className={`text-[10px] font-semibold px-2 py-1 rounded-lg transition-colors ${
+                    table.status === 'active'
+                      ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                  }`}
+                >
+                  {table.status === 'active' ? 'Disable' : 'Enable'}
+                </button>
+                <button
+                  onClick={() => handleDelete(table)}
+                  className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                  title="Remove"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-slate-800">{editTable ? 'Edit Table' : 'Add Table'}</h3>
+              <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-slate-100 rounded-full">
+                <X className="w-4 h-4 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Table Number / Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. T1, Table 2, Window Seat"
+                  value={formData.tableNumber}
+                  onChange={e => setFormData(f => ({ ...f, tableNumber: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7e3866]/30"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Capacity (Seats)</label>
+                <select
+                  value={formData.capacity}
+                  onChange={e => setFormData(f => ({ ...f, capacity: Number(e.target.value) }))}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7e3866]/30"
+                >
+                  {CAPACITY_OPTIONS.map(c => (
+                    <option key={c} value={c}>{c} {c === 1 ? 'seat' : 'seats'}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-[#7e3866] text-white text-sm font-semibold hover:bg-[#6a2f56] disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : (editTable ? 'Update Table' : 'Save Table')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── Toggle Component ────────────────────────────────────────────
 function Toggle({ value, onChange, disabled = false }) {
@@ -477,6 +693,10 @@ export default function DiningSettings() {
             )}
           </button>
         </div>
+
+        {/* ─── Table Management Section ─────────────────────────────── */}
+        <TableManagement />
+
       </div>
     </div>
   )

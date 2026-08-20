@@ -38,6 +38,29 @@ const diningBookingSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        // Table-based booking fields (optional for backward compat)
+        tableId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'FoodDiningTable',
+            default: null
+        },
+        tableNumber: {
+            type: String,
+            default: ''
+        },
+        startTime: {
+            type: Date,
+            default: null
+        },
+        endTime: {
+            type: Date,
+            default: null
+        },
+        // Temporary hold expires at (for payment flow)
+        holdExpiresAt: {
+            type: Date,
+            default: null
+        },
         specialRequest: {
             type: String,
             default: ''
@@ -61,5 +84,7 @@ const diningBookingSchema = new mongoose.Schema(
 
 diningBookingSchema.index({ restaurantId: 1, status: 1 });
 diningBookingSchema.index({ userId: 1, createdAt: -1 });
+diningBookingSchema.index({ restaurantId: 1, date: 1 });
+diningBookingSchema.index({ tableId: 1, startTime: 1, endTime: 1 });
 
 export const FoodDiningBooking = mongoose.model('FoodDiningBooking', diningBookingSchema);

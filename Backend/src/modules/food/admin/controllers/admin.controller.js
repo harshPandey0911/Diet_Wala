@@ -548,6 +548,7 @@ export async function createCategory(req, res, next) {
     try {
         const body = validateCategoryUpsertDto(req.body || {});
         const created = await adminService.createCategory(body);
+        await invalidateCache('categories:*');
         res.status(201).json({ success: true, message: 'Category created successfully', data: { category: created } });
     } catch (error) {
         next(error);
@@ -565,6 +566,7 @@ export async function updateCategory(req, res, next) {
         if (!updated) {
             return res.status(404).json({ success: false, message: 'Category not found' });
         }
+        await invalidateCache('categories:*');
         res.status(200).json({ success: true, message: 'Category updated successfully', data: { category: updated } });
     } catch (error) {
         next(error);
@@ -581,6 +583,7 @@ export async function deleteCategory(req, res, next) {
         if (!result) {
             return res.status(404).json({ success: false, message: 'Category not found' });
         }
+        await invalidateCache('categories:*');
         res.status(200).json({ success: true, message: 'Category deleted successfully', data: result });
     } catch (error) {
         next(error);
@@ -597,6 +600,7 @@ export async function toggleCategoryStatus(req, res, next) {
         if (!updated) {
             return res.status(404).json({ success: false, message: 'Category not found' });
         }
+        await invalidateCache('categories:*');
         res.status(200).json({ success: true, message: 'Category status updated successfully', data: { category: updated } });
     } catch (error) {
         next(error);

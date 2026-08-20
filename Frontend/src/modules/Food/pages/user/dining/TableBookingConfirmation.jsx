@@ -27,7 +27,7 @@ export default function TableBookingConfirmation() {
         }
     }, [])
     const resolvedState = location.state || fallbackDraft || {}
-    const { restaurant, guests, date, timeSlot, discount } = resolvedState
+    const { restaurant, guests, date, timeSlot, discount, tableId, tableNumber, tableCapacity } = resolvedState
 
     const [specialRequest, setSpecialRequest] = useState("")
     const [showRequestModal, setShowRequestModal] = useState(false)
@@ -90,7 +90,9 @@ export default function TableBookingConfirmation() {
                 guests,
                 date,
                 timeSlot,
-                specialRequest
+                specialRequest,
+                // Table-based fields
+                ...(tableId ? { tableId, tableNumber } : {})
             })
 
             if (response.data.success) {
@@ -103,7 +105,13 @@ export default function TableBookingConfirmation() {
             }
         } catch (error) {
             debugError("Booking error:", error)
-            toast.error(error.response?.data?.message || "Failed to confirm booking")
+            const status = error.response?.status
+            const message = error.response?.data?.message || "Failed to confirm booking"
+            if (status === 409) {
+                toast.error("Sorry, this table was just booked by someone else. Please go back and select another table.")
+            } else {
+                toast.error(message)
+            }
         } finally {
             setBookingInProgress(false)
         }
@@ -142,6 +150,13 @@ export default function TableBookingConfirmation() {
                                     <Users className="w-4 h-4" />
                                     <span>{guests} guests</span>
                                 </div>
+                                {tableNumber && (
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400 text-sm mt-0.5">
+                                        <span>🪑</span>
+                                        <span className="font-semibold" style={{ color: 'var(--primary)' }}>{tableNumber}</span>
+                                        {tableCapacity && <span className="text-xs">({tableCapacity} seats)</span>}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -171,8 +186,8 @@ export default function TableBookingConfirmation() {
                     className="w-full bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group transition-colors"
                 >
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl transition-colors ${specialRequest ? 'bg-purple-50 dark:bg-purple-950/30' : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'}`}>
-                            <Info className={`w-5 h-5 ${specialRequest ? 'text-primary' : 'text-slate-600 dark:text-slate-400'}`} />
+                        <div className={`p-2 rounded-xl transition-colors`} style={specialRequest ? { backgroundColor: 'var(--primary)1a' } : { backgroundColor: '#f1f5f9' }}>
+                            <Info className={`w-5 h-5`} style={specialRequest ? { color: 'var(--primary)' } : { color: '#64748b' }} />
                         </div>
                         <div className="text-left">
                             <span className="font-bold text-gray-700 dark:text-slate-200 block">
@@ -185,7 +200,7 @@ export default function TableBookingConfirmation() {
                     </div>
                     <div className="flex items-center gap-2">
                         {specialRequest && (
-                            <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest">Edit</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--primary)' }}>Edit</span>
                         )}
                         <ChevronRight className="w-5 h-5 text-slate-400" />
                     </div>
@@ -266,8 +281,8 @@ export default function TableBookingConfirmation() {
                     </div>
                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors">
                         <div className="text-left">
-                            <p className="font-bold text-gray-900 dark:text-slate-100">{user?.name || "Shailu"}</p>
-                            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">{user?.phone || user?.email || "8090512291"}</p>
+                            <p className="font-bold text-gray-900 dark:text-slate-100">{user?.name || user?.fullName || ""}</p>
+                            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">{user?.phone || user?.mobile || user?.email || ""}</p>
                         </div>
                         <button 
                             type="button"
@@ -277,7 +292,8 @@ export default function TableBookingConfirmation() {
                                     state: { restaurant, guests, date, timeSlot, discount, specialRequest, user }
                                 });
                             }}
-                            className="text-red-500 text-sm font-bold hover:underline"
+                            className="text-sm font-bold hover:underline"
+                            style={{ color: 'var(--primary)' }}
                         >
                             Edit
                         </button>
@@ -318,7 +334,8 @@ export default function TableBookingConfirmation() {
                 <Button
                     onClick={handleBooking}
                     disabled={bookingInProgress}
-                    className="w-full h-14 bg-[#ef4444] hover:bg-red-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-red-200 transition-all active:scale-[0.98]"
+                    className="w-full h-14 text-white font-bold text-lg rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: 'var(--primary)' }}
                 >
                     {bookingInProgress ? "Confirming..." : "Confirm your seat"}
                 </Button>

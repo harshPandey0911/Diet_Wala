@@ -3,8 +3,9 @@ import authRoutes from '../core/auth/auth.routes.js';
 import deliveryRoutes from '../modules/food/delivery/routes/delivery.routes.js';
 import restaurantRoutes from '../modules/food/restaurant/routes/restaurant.routes.js';
 import landingRoutes from '../modules/food/landing/routes/landing.routes.js';
-import { getPublicDiningCategories, getPublicDiningRestaurants, getPublicRestaurantOccupiedSeats } from '../modules/food/dining/controllers/diningPublic.controller.js';
+import { getPublicDiningCategories, getPublicDiningRestaurants, getPublicRestaurantOccupiedSeats, getPublicSlotAvailability } from '../modules/food/dining/controllers/diningPublic.controller.js';
 import { createBooking, getMyBookings, createReview, cancelMyBooking, getRestaurantBookings, updateBookingStatus } from '../modules/food/dining/controllers/diningBooking.controller.js';
+import { createDiningTable, getMyDiningTables, updateDiningTable, deleteDiningTable, getPublicAvailableTables } from '../modules/food/dining/controllers/diningTable.controller.js';
 import uploadRoutes from '../modules/uploads/routes/upload.routes.js';
 import restaurantAdminRoutes from '../modules/food/admin/routes/admin.routes.js';
 import userRoutes from '../modules/food/user/routes/user.routes.js';
@@ -48,6 +49,7 @@ router.use('/v1/food/promocodes', promocodeRoutes);
 router.get('/v1/food/dining/categories/public', getPublicDiningCategories);
 router.get('/v1/food/dining/restaurants/public', getPublicDiningRestaurants);
 router.get('/v1/food/dining/restaurants/:restaurantId/occupied-seats/public', getPublicRestaurantOccupiedSeats);
+router.get('/v1/food/dining/restaurants/:restaurantId/slot-availability/public', getPublicSlotAvailability);
 
 // Dining Booking Routes
 router.post('/v1/food/dining/bookings', authMiddleware, requireRoles('USER'), createBooking);
@@ -56,6 +58,15 @@ router.post('/v1/food/dining/bookings/:bookingId/review', authMiddleware, requir
 router.patch('/v1/food/dining/bookings/:bookingId/cancel', authMiddleware, requireRoles('USER'), cancelMyBooking);
 router.get('/v1/food/dining/bookings/restaurant/:restaurantId', authMiddleware, requireRoles('RESTAURANT', 'ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN'), getRestaurantBookings);
 router.patch('/v1/food/dining/bookings/:bookingId/status', authMiddleware, requireRoles('RESTAURANT', 'ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN'), updateBookingStatus);
+
+// Dining Table Routes (Restaurant-authenticated)
+router.post('/v1/food/dining/tables', authMiddleware, requireRoles('RESTAURANT'), createDiningTable);
+router.get('/v1/food/dining/tables/my', authMiddleware, requireRoles('RESTAURANT'), getMyDiningTables);
+router.patch('/v1/food/dining/tables/:id', authMiddleware, requireRoles('RESTAURANT'), updateDiningTable);
+router.delete('/v1/food/dining/tables/:id', authMiddleware, requireRoles('RESTAURANT'), deleteDiningTable);
+
+// Dining Table Availability (Public)
+router.get('/v1/food/dining/restaurants/:restaurantId/tables/public', getPublicAvailableTables);
 
 router.use('/v1/uploads', uploadRoutes);
 

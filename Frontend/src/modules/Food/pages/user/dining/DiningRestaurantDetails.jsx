@@ -524,25 +524,13 @@ export default function DiningRestaurantDetails() {
                 return (
                   <button
                     key={`sheet-${count}`}
-                    disabled={isBooked || isTooLarge}
                     onClick={() => setSelectedGuests(count)}
                     className={`relative rounded-2xl border px-3 py-4 text-sm font-bold transition-all ${selectedGuests === count
                       ? "border-primary bg-[#fdfafc] dark:bg-purple-950/30 text-primary scale-[1.02] shadow-sm"
-                      : isBooked
-                        ? "border-red-100 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-400 cursor-not-allowed opacity-70"
-                        : isTooLarge
-                          ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-gray-300 dark:text-slate-600 cursor-not-allowed"
-                          : "border-[#ece7de] dark:border-slate-800 bg-white dark:bg-slate-800 text-[#23180f] dark:text-slate-100 hover:border-primary/30"
+                      : "border-[#ece7de] dark:border-slate-800 bg-white dark:bg-slate-800 text-[#23180f] dark:text-slate-100 hover:border-primary/30"
                       }`}
                   >
-                    {isBooked ? (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-[10px] uppercase font-black tracking-tighter opacity-60">Booked</span>
-                        <span>{count}</span>
-                      </div>
-                    ) : (
-                      count
-                    )}
+                    {count}
                   </button>
                 )
               })}
@@ -550,10 +538,9 @@ export default function DiningRestaurantDetails() {
 
             <Button
               onClick={handleContinueBooking}
-              disabled={remainingSeats === 0 || selectedGuests > remainingSeats}
-              className="mt-6 h-12 w-full rounded-2xl bg-primary text-base font-bold text-white hover:bg-secondary disabled:bg-gray-200 disabled:text-gray-400"
+              className="mt-6 h-12 w-full rounded-2xl bg-primary text-base font-bold text-white hover:bg-secondary"
             >
-              {remainingSeats === 0 ? "Fully Booked" : "Continue"}
+              Continue
             </Button>
           </div>
         </div>
