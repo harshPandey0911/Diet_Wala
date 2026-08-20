@@ -95,9 +95,9 @@ export default function StickyCartCard() {
         >
           <Link
             to="/user/cart"
-            className="pointer-events-auto bg-orange-500 hover:bg-orange-600 shadow-[0_4px_15px_rgba(255,102,0,0.4)] border border-white/20 text-white rounded-full flex items-center justify-center p-3 transition-all transform hover:scale-105 active:scale-95 group relative"
+            className="pointer-events-auto bg-primary hover:bg-primary/90 shadow-md shadow-primary/40 border border-white/20 text-primary-foreground rounded-full flex items-center justify-center p-3 transition-all transform hover:scale-105 active:scale-95 group relative"
           >
-            <ShoppingCart className="h-6 w-6 text-white" />
+            <ShoppingCart className="h-6 w-6 text-primary-foreground" />
             <span className="absolute -top-1.5 -right-1.5 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white dark:border-[#0a0a0a]">
               {cartCount}
             </span>

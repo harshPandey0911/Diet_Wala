@@ -167,7 +167,7 @@ export default function MyBookings() {
     return (
         <AnimatedPage className="bg-slate-50 dark:bg-[#0a0a0a] min-h-screen pb-10 transition-colors">
             <div className="bg-white dark:bg-[#0a0a0a] p-4 flex items-center shadow-sm sticky top-0 z-10 border-b dark:border-gray-800">
-                <button onClick={() => navigate("/")}>
+                <button onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/user/profile')}>
                     <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-white cursor-pointer" />
                 </button>
                 <h1 className="ml-4 text-xl font-semibold text-gray-800 dark:text-white">My Table Bookings</h1>
