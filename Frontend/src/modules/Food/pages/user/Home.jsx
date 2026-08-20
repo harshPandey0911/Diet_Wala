@@ -2158,7 +2158,7 @@ export default function Home() {
               </div>
             )}
             
-            <div className="h-3 w-full" />
+            <div className="h-8 w-full" />
 
           <AnimatePresence mode="wait">
             {activeTab === "food" ? (
@@ -2186,7 +2186,7 @@ export default function Home() {
                   </div>
 
                   {/* Categories Horizontal Slider */}
-                  <div className="flex overflow-x-auto gap-1.5 pb-2 scrollbar-hide -mx-4 px-4 mask-edge-fade">
+                  <div className="flex overflow-x-auto gap-1.5 pt-2 pb-2 scrollbar-hide -mx-4 px-4 mask-edge-fade">
                     {[
                       {
                         id: "all",

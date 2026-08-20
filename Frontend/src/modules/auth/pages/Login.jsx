@@ -299,14 +299,12 @@ export default function UnifiedOTPFastLogin() {
           }
         }
       `}</style>
-      
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-15%] left-[-10%] w-[120%] h-[350px] bg-[#F76208]/10 blur-[100px] rounded-full pointer-events-none" />
 
-      {/* Main Content */}
-      <div className="absolute top-4 right-4 z-20">
-        <Link to="/user/auth/support" className="bg-[#FFFFFF]/80 dark:bg-[#141414]/80 backdrop-blur-md px-3.5 py-1.5 rounded-[12px] shadow-sm text-[#111111] dark:text-[#F5F5F5] hover:text-[#F76208] border border-[#E5E5E5] dark:border-[#2A2A2A] transition-all flex items-center gap-1.5 font-semibold text-[12px] uppercase tracking-wider">
-          <Info className="w-4 h-4 text-[#F76208]" />
+      {/* Decorative Background Elements */}
+      <div className="absolute top-[-15%] left-[-10%] w-[120%] h-[350px] bg-primary/10 blur-[100px] rounded-full pointer-events-none" />
+      <div className="w-full flex justify-end px-4 sm:px-6 pt-4 relative z-20 h-auto">
+        <Link to="/user/auth/support" className="bg-[#FFFFFF]/80 dark:bg-[#141414]/80 backdrop-blur-md px-3.5 py-1.5 rounded-[12px] shadow-sm text-[#111111] dark:text-[#F5F5F5] hover:text-primary border border-[#E5E5E5] dark:border-[#2A2A2A] transition-all flex items-center gap-1.5 font-semibold text-[12px] uppercase tracking-wider">
+          <Info className="w-4 h-4 text-primary" />
           <span>Support</span>
         </Link>
       </div>
@@ -323,12 +321,12 @@ export default function UnifiedOTPFastLogin() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-[0_8px_30px_rgba(247,98,8,0.2)] border-4 border-white dark:border-[#141414] mb-8 overflow-hidden bg-white"
+            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-md shadow-primary/20 border-4 border-white dark:border-[#141414] mb-8 overflow-hidden bg-white p-2"
           >
             <img
               src={logoNew}
-              alt="Tuggo Food Tuggo Logo"
-              className="w-full h-full object-cover"
+              alt="Fudron Food Fudron Logo"
+              className="w-full h-full object-contain"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/logo192.png'; // Fallback local logo
@@ -366,38 +364,40 @@ export default function UnifiedOTPFastLogin() {
                 onSubmit={handleSendOTP}
                 className="w-full space-y-6"
               >
-                <div className="relative flex items-center bg-[#FFFFFF]/90 dark:bg-[#141414]/90 backdrop-blur-md rounded-[14px] p-2 pl-4 pr-2 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)] border border-[#E5E5E5] dark:border-[#2A2A2A] transition-all hover:border-[#F76208]/30">
-                  {/* Country Code & Icon */}
-                  <div className="flex items-center gap-2 pr-3 border-r border-[#E5E5E5] dark:border-[#2A2A2A]">
-                    <span className="text-[18px] leading-none">🇮🇳</span>
-                    <span className="font-semibold text-[#111111] dark:text-[#F5F5F5]">+91</span>
-                  </div>
+                <div className="space-y-2 relative">
+                  <div className="relative flex items-center bg-[#FFFFFF]/90 dark:bg-[#141414]/90 backdrop-blur-md rounded-[14px] p-2 pl-4 pr-2 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)] border border-[#E5E5E5] dark:border-[#2A2A2A] transition-all hover:border-primary/30">
+                    {/* Country Code & Icon */}
+                    <div className="flex items-center gap-2 pr-3 border-r border-[#E5E5E5] dark:border-[#2A2A2A]">
+                      <span className="text-[18px] leading-none">🇮🇳</span>
+                      <span className="font-semibold text-[#111111] dark:text-[#F5F5F5]">+91</span>
+                    </div>
 
-                  {/* Phone Input */}
-                  <div className="flex-1 flex items-center pl-3">
-                    <Smartphone className="w-5 h-5 text-[#8A8A8A] mr-2 shrink-0" />
-                    <input
-                      type="tel"
-                      required
-                      autoFocus
-                      value={phoneNumber}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-                        setPhoneNumber(val);
-                        sessionStorage.setItem("draft_phone_login", val);
-                      }}
-                      maxLength={10}
-                      className="w-full bg-transparent border-0 outline-none focus:border-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-gray-800 dark:text-white font-semibold text-base placeholder:text-gray-400 placeholder:font-medium"
-                      style={{ boxShadow: "none", border: "none", outline: "none" }}
-                      placeholder="Enter your 10-digit number"
-                    />
+                    {/* Phone Input */}
+                    <div className="flex-1 flex items-center pl-3">
+                      <Smartphone className="w-5 h-5 text-[#8A8A8A] mr-2 shrink-0" />
+                      <input
+                        type="tel"
+                        required
+                        autoFocus
+                        value={phoneNumber}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setPhoneNumber(val);
+                          sessionStorage.setItem("draft_phone_login", val);
+                        }}
+                        maxLength={10}
+                        className="w-full bg-transparent border-0 outline-none focus:border-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-gray-800 dark:text-white font-semibold text-base placeholder:text-gray-400 placeholder:font-medium"
+                        style={{ boxShadow: "none", border: "none", outline: "none" }}
+                        placeholder="Enter your 10-digit number"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading || phoneNumber.length < 10}
-                  className="w-full h-[56px] rounded-full bg-gradient-to-r from-[#FF5252] to-[#E53935] text-white font-bold text-lg shadow-[0_10px_25px_rgba(229,57,53,0.4)] hover:shadow-[0_15px_35px_rgba(229,57,53,0.5)] hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-[0_10px_25px_rgba(229,57,53,0.4)]"
+                  className="w-full h-[56px] rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg shadow-md shadow-primary/40 hover:shadow-lg hover:shadow-primary/50 hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-md"
                 >
                   {loading ? (
                     <Loader2 className="w-6 h-6 animate-spin" />
@@ -447,7 +447,7 @@ export default function UnifiedOTPFastLogin() {
                           }
                         }
                       }}
-                      className="w-full h-16 text-center text-3xl font-bold bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-primary/50 rounded-2xl outline-none transition-all text-red-600 dark:text-red-500 shadow-sm"
+                      className="w-full h-16 text-center text-3xl font-bold bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-primary/50 rounded-2xl outline-none transition-all text-primary shadow-sm"
                       placeholder="•"
                     />
                   ))}
@@ -471,7 +471,7 @@ export default function UnifiedOTPFastLogin() {
                   <button
                     type="button"
                     onClick={handleEditNumber}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors"
+                    className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                   >
                     Edit phone number
                   </button>
@@ -480,7 +480,7 @@ export default function UnifiedOTPFastLogin() {
                 <button
                   type="submit"
                   disabled={loading || otp.length < 6}
-                  className="w-full h-[50px] rounded-[14px] bg-[#F76208] hover:bg-[#E55A06] text-white font-semibold text-[16px] shadow-[0_4px_14px_rgba(247,98,8,0.3)] transition-all hover:translate-y-[-1px] active:scale-[0.98] flex items-center justify-center disabled:opacity-50 disabled:bg-[#E5E5E5] dark:disabled:bg-[#2A2A2A] disabled:text-[#8A8A8A] disabled:shadow-none disabled:hover:translate-y-0"
+                  className="w-full h-[50px] rounded-[14px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[16px] shadow-md shadow-primary/30 transition-all hover:translate-y-[-1px] active:scale-[0.98] flex items-center justify-center disabled:opacity-50 disabled:bg-[#E5E5E5] dark:disabled:bg-[#2A2A2A] disabled:text-[#8A8A8A] disabled:shadow-none disabled:hover:translate-y-0"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Continue"}
                 </button>
@@ -491,13 +491,13 @@ export default function UnifiedOTPFastLogin() {
           {/* Footer Info */}
           <div className="mt-8 text-center">
             <p className="text-[12px] text-[#666666] dark:text-[#A3A3A3] font-medium">
-              By continuing, you agree to our <Link to="/profile/terms" className="text-[#111111] dark:text-[#F5F5F5] underline decoration-[#E5E5E5] dark:decoration-[#2A2A2A] underline-offset-2 hover:text-[#F76208] dark:hover:text-[#F76208] transition-colors">Terms</Link> & <Link to="/profile/privacy" className="text-[#111111] dark:text-[#F5F5F5] underline decoration-[#E5E5E5] dark:decoration-[#2A2A2A] underline-offset-2 hover:text-[#F76208] dark:hover:text-[#F76208] transition-colors">Privacy Policy</Link>
+              By continuing, you agree to our <Link to="/profile/terms" className="text-[#111111] dark:text-[#F5F5F5] underline decoration-[#E5E5E5] dark:decoration-[#2A2A2A] underline-offset-2 hover:text-primary dark:hover:text-primary transition-colors">Terms</Link> & <Link to="/profile/privacy" className="text-[#111111] dark:text-[#F5F5F5] underline decoration-[#E5E5E5] dark:decoration-[#2A2A2A] underline-offset-2 hover:text-primary dark:hover:text-primary transition-colors">Privacy Policy</Link>
             </p>
           </div>
         </motion.div>
       </div>
 
-      {/* Name Collection Modal */}
+      {/* Name Collection Modal */ }
       <style>{`
         [data-slot="dialog-overlay"] {
           background-color: rgba(17, 17, 17, 0.35) !important;
@@ -540,8 +540,8 @@ export default function UnifiedOTPFastLogin() {
                   id="name"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Full name"
-                  className="pl-[42px] h-[50px] bg-[#F8F8F8] dark:bg-[#171717] border border-[#E5E5E5] dark:border-[#2A2A2A] rounded-[14px] text-[#111111] dark:text-[#F5F5F5] placeholder:text-[#8A8A8A] focus:ring-1 focus:ring-[#F76208]/60 focus:border-[#F76208] transition-all text-[15px] outline-none shadow-none"
+                  placeholder="e.g. John Doe"
+                  className="pl-[42px] h-[50px] bg-[#F8F8F8] dark:bg-[#171717] border border-[#E5E5E5] dark:border-[#2A2A2A] rounded-[14px] text-[#111111] dark:text-[#F5F5F5] placeholder:text-[#8A8A8A] focus:ring-1 focus:ring-primary/60 focus:border-primary transition-all text-[15px] outline-none shadow-none"
                   autoFocus
                 />
               </div>
@@ -551,17 +551,17 @@ export default function UnifiedOTPFastLogin() {
             </div>
 
             <div className="flex flex-col gap-[12px] mt-[16px]">
-              <Button
-                type="submit"
-                disabled={isUpdatingName || (pendingVerify && !newName.trim())}
-                className="w-full h-[50px] bg-[#F76208] hover:bg-[#F76208]/90 text-white rounded-[14px] font-semibold text-[16px] shadow-[0_4px_12px_rgba(247,98,8,0.25)] transition-all hover:scale-[1.01] active:scale-[0.96] disabled:opacity-85 disabled:bg-[rgba(247,98,8,0.45)] disabled:text-white disabled:shadow-none disabled:hover:scale-100 disabled:active:scale-100"
-              >
-                {isUpdatingName ? (
+                <button
+                  type="submit"
+                  disabled={isUpdatingName || !newName.trim()}
+                  className="w-full h-[50px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-[14px] font-semibold text-[16px] shadow-md shadow-primary/25 transition-all hover:scale-[1.01] active:scale-[0.96] disabled:opacity-85 disabled:bg-primary/45 disabled:text-primary-foreground disabled:shadow-none disabled:hover:scale-100 disabled:active:scale-100"
+                >
+                  {isUpdatingName ? (
                   <Loader2 className="h-[20px] w-[20px] animate-spin" />
                 ) : (
                   "Complete Profile"
                 )}
-              </Button>
+              </button>
               {!pendingVerify && (
                 <button
                   type="button"
@@ -578,6 +578,6 @@ export default function UnifiedOTPFastLogin() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   )
 }

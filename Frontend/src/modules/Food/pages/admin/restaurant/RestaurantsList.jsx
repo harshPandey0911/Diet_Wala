@@ -151,9 +151,25 @@ export default function RestaurantsList() {
     closingTime: "",
     outletTimings: getDefaultDays(),
     isActive: true,
+    panNumber: "",
+    nameOnPan: "",
+    gstRegistered: false,
+    gstNumber: "",
+    gstLegalName: "",
+    gstAddress: "",
+    fssaiNumber: "",
+    fssaiExpiry: "",
+    accountHolderName: "",
+    accountType: "",
+    accountNumber: "",
+    ifscCode: "",
+    upiId: "",
   })
   const [profileImageFile, setProfileImageFile] = useState(null)
   const [profileImagePreview, setProfileImagePreview] = useState("")
+  const [panImageFile, setPanImageFile] = useState(null)
+  const [gstImageFile, setGstImageFile] = useState(null)
+  const [fssaiImageFile, setFssaiImageFile] = useState(null)
   const [isEditingLocation, setIsEditingLocation] = useState(false)
   const [savingLocation, setSavingLocation] = useState(false)
   const [locationEditError, setLocationEditError] = useState("")
@@ -765,6 +781,19 @@ export default function RestaurantsList() {
         closingTime: "",
         outletTimings: getDefaultDays(),
         isActive: true,
+        panNumber: "",
+        nameOnPan: "",
+        gstRegistered: false,
+        gstNumber: "",
+        gstLegalName: "",
+        gstAddress: "",
+        fssaiNumber: "",
+        fssaiExpiry: "",
+        accountHolderName: "",
+        accountType: "",
+        accountNumber: "",
+        ifscCode: "",
+        upiId: "",
       }
     }
 
@@ -799,6 +828,19 @@ export default function RestaurantsList() {
       closingTime: closingTimeValue,
       outletTimings: getDefaultDays(),
       isActive: restaurant.isActive !== false,
+      panNumber: restaurant.panNumber || restaurant.onboarding?.step3?.pan?.number || "",
+      nameOnPan: restaurant.nameOnPan || restaurant.onboarding?.step3?.pan?.nameOnPan || "",
+      gstRegistered: restaurant.gstRegistered !== undefined ? restaurant.gstRegistered : (restaurant.onboarding?.step3?.gst?.registered || false),
+      gstNumber: restaurant.gstNumber || restaurant.onboarding?.step3?.gst?.number || "",
+      gstLegalName: restaurant.gstLegalName || restaurant.onboarding?.step3?.gst?.legalName || "",
+      gstAddress: restaurant.gstAddress || restaurant.onboarding?.step3?.gst?.address || "",
+      fssaiNumber: restaurant.fssaiNumber || restaurant.onboarding?.step3?.fssai?.registrationNumber || "",
+      fssaiExpiry: restaurant.fssaiExpiry ? new Date(restaurant.fssaiExpiry).toISOString().split("T")[0] : (restaurant.onboarding?.step3?.fssai?.expiryDate ? new Date(restaurant.onboarding.step3.fssai.expiryDate).toISOString().split("T")[0] : ""),
+      accountHolderName: restaurant.accountHolderName || restaurant.onboarding?.step3?.bank?.accountHolderName || "",
+      accountType: restaurant.accountType || restaurant.onboarding?.step3?.bank?.accountType || "",
+      accountNumber: restaurant.accountNumber || restaurant.onboarding?.step3?.bank?.accountNumber || "",
+      ifscCode: restaurant.ifscCode || restaurant.onboarding?.step3?.bank?.ifscCode || "",
+      upiId: restaurant.upiId || "",
     }
   }
 
@@ -806,6 +848,9 @@ export default function RestaurantsList() {
     const source = getDetailsEditSource()
     setDetailsForm(buildDetailsFormFromRestaurant(source))
     setProfileImageFile(null)
+    setPanImageFile(null)
+    setGstImageFile(null)
+    setFssaiImageFile(null)
     setProfileImagePreview(getPrimaryRestaurantImage(source))
     setIsEditingLocation(true)
     setIsEditingDetails(true)
@@ -851,6 +896,33 @@ export default function RestaurantsList() {
         }
       }
 
+      let panImage = undefined
+      if (panImageFile) {
+        const imageValidationError = getImageValidationError(panImageFile)
+        if (imageValidationError) { toast.error(imageValidationError); setSavingDetails(false); return }
+        const uploadRes = await uploadAPI.uploadMedia(panImageFile, { folder: "tuggo/restaurant/pan" })
+        const media = uploadRes?.data?.data?.file || uploadRes?.data?.data || uploadRes?.data?.file
+        if (media?.url) panImage = { url: media.url, publicId: media.publicId || media.public_id }
+      }
+
+      let gstImage = undefined
+      if (gstImageFile) {
+        const imageValidationError = getImageValidationError(gstImageFile)
+        if (imageValidationError) { toast.error(imageValidationError); setSavingDetails(false); return }
+        const uploadRes = await uploadAPI.uploadMedia(gstImageFile, { folder: "tuggo/restaurant/gst" })
+        const media = uploadRes?.data?.data?.file || uploadRes?.data?.data || uploadRes?.data?.file
+        if (media?.url) gstImage = { url: media.url, publicId: media.publicId || media.public_id }
+      }
+
+      let fssaiImage = undefined
+      if (fssaiImageFile) {
+        const imageValidationError = getImageValidationError(fssaiImageFile)
+        if (imageValidationError) { toast.error(imageValidationError); setSavingDetails(false); return }
+        const uploadRes = await uploadAPI.uploadMedia(fssaiImageFile, { folder: "tuggo/restaurant/fssai" })
+        const media = uploadRes?.data?.data?.file || uploadRes?.data?.data || uploadRes?.data?.file
+        if (media?.url) fssaiImage = { url: media.url, publicId: media.publicId || media.public_id }
+      }
+
       const normalizedOpeningTime = normalizeTimeValue(detailsForm.openingTime.trim())
       const normalizedClosingTime = normalizeTimeValue(detailsForm.closingTime.trim())
 
@@ -866,11 +938,25 @@ export default function RestaurantsList() {
         openingTime: normalizedOpeningTime,
         closingTime: normalizedClosingTime,
         isActive: detailsForm.isActive,
+        panNumber: detailsForm.panNumber?.trim() || "",
+        nameOnPan: detailsForm.nameOnPan?.trim() || "",
+        gstRegistered: detailsForm.gstRegistered === true,
+        gstNumber: detailsForm.gstNumber?.trim() || "",
+        gstLegalName: detailsForm.gstLegalName?.trim() || "",
+        gstAddress: detailsForm.gstAddress?.trim() || "",
+        fssaiNumber: detailsForm.fssaiNumber?.trim() || "",
+        fssaiExpiry: detailsForm.fssaiExpiry || undefined,
+        accountHolderName: detailsForm.accountHolderName?.trim() || "",
+        accountType: detailsForm.accountType?.trim() || "",
+        accountNumber: detailsForm.accountNumber?.trim() || "",
+        ifscCode: detailsForm.ifscCode?.trim() || "",
+        upiId: detailsForm.upiId?.trim() || "",
       }
 
-      if (profileImage) {
-        payload.profileImage = profileImage
-      }
+      if (profileImage) payload.profileImage = profileImage
+      if (panImage) payload.panImage = panImage
+      if (gstImage) payload.gstImage = gstImage
+      if (fssaiImage) payload.fssaiImage = fssaiImage
 
       const response = await adminAPI.updateRestaurant(restaurantId, payload)
       const updatedRestaurant = response?.data?.data?.restaurant
@@ -878,6 +964,34 @@ export default function RestaurantsList() {
       // Update outlet timings
       if (detailsForm.outletTimings) {
         await adminAPI.updateRestaurantOutletTimings(restaurantId, detailsForm.outletTimings)
+      }
+
+      // Update location if coordinates exist
+      if (locationForm.zoneId && locationForm.formattedAddress) {
+        const latitude = Number(locationForm.latitude)
+        const longitude = Number(locationForm.longitude)
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          const locationPayload = {
+            zoneId: locationForm.zoneId,
+            latitude,
+            longitude,
+            coordinates: [longitude, latitude],
+            formattedAddress: locationForm.formattedAddress || "",
+            address: locationForm.formattedAddress || "",
+            addressLine1: locationForm.addressLine1 || locationForm.formattedAddress || "",
+            addressLine2: locationForm.addressLine2 || "",
+            area: locationForm.area || "",
+            city: locationForm.city || "",
+            state: locationForm.state || "",
+            landmark: locationForm.landmark || "",
+            pincode: locationForm.pincode || "",
+          }
+          try {
+             await adminAPI.updateRestaurantLocation(restaurantId, locationPayload)
+          } catch(e) {
+             console.error("Location save error", e)
+          }
+        }
       }
 
       if (updatedRestaurant) {
@@ -906,6 +1020,9 @@ export default function RestaurantsList() {
 
       setIsEditingDetails(false)
       setProfileImageFile(null)
+      setPanImageFile(null)
+      setGstImageFile(null)
+      setFssaiImageFile(null)
       alert("Restaurant details updated successfully")
     } catch (err) {
       debugError("Error updating restaurant details:", err)
@@ -918,6 +1035,9 @@ export default function RestaurantsList() {
   const closeDetailsModal = () => {
     setIsEditingDetails(false)
     setProfileImageFile(null)
+    setPanImageFile(null)
+    setGstImageFile(null)
+    setFssaiImageFile(null)
     setProfileImagePreview("")
     setIsEditingLocation(false)
     setLocationEditError("")
@@ -1706,9 +1826,207 @@ export default function RestaurantsList() {
                         Restaurant is active
                       </label>
                     </div>
+
+                    {/* PAN / GST / FSSAI Edit Section */}
+                    <div className="md:col-span-2 pt-6 border-t border-slate-200">
+                      <h4 className="text-sm font-medium text-slate-900 mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-500" />
+                        PAN / GST / FSSAI
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">PAN Number</label>
+                          <input type="text" value={detailsForm.panNumber} onChange={(e) => setDetailsForm((prev) => ({ ...prev, panNumber: e.target.value.toUpperCase() }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm uppercase" placeholder="ABCDE1234F" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Name on PAN</label>
+                          <input type="text" value={detailsForm.nameOnPan} onChange={(e) => setDetailsForm((prev) => ({ ...prev, nameOnPan: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm" placeholder="John Doe" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-slate-500 mb-1">PAN Document (Optional new upload)</label>
+                          <input type="file" accept="image/*,.pdf" onChange={(e) => setPanImageFile(e.target.files?.[0] || null)} className="w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" />
+                        </div>
+
+                        <div className="md:col-span-2 flex items-center gap-3 mt-2">
+                          <input id="gst-registered" type="checkbox" checked={detailsForm.gstRegistered} onChange={(e) => setDetailsForm((prev) => ({ ...prev, gstRegistered: e.target.checked }))} className="h-4 w-4 rounded border-slate-300 text-blue-600" />
+                          <label htmlFor="gst-registered" className="text-sm text-slate-700 font-medium">GST Registered</label>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">GST Number</label>
+                          <input type="text" disabled={!detailsForm.gstRegistered} value={detailsForm.gstNumber} onChange={(e) => setDetailsForm((prev) => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm uppercase disabled:bg-slate-100 disabled:text-slate-400" placeholder="22AAAAA0000A1Z5" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">GST Legal Name</label>
+                          <input type="text" disabled={!detailsForm.gstRegistered} value={detailsForm.gstLegalName} onChange={(e) => setDetailsForm((prev) => ({ ...prev, gstLegalName: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm disabled:bg-slate-100 disabled:text-slate-400" placeholder="Legal Entity Name" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-slate-500 mb-1">GST Address</label>
+                          <textarea disabled={!detailsForm.gstRegistered} value={detailsForm.gstAddress} onChange={(e) => setDetailsForm((prev) => ({ ...prev, gstAddress: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm disabled:bg-slate-100 disabled:text-slate-400 h-20 resize-none" placeholder="Full registered address" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-slate-500 mb-1">GST Document (Optional new upload)</label>
+                          <input disabled={!detailsForm.gstRegistered} type="file" accept="image/*,.pdf" onChange={(e) => setGstImageFile(e.target.files?.[0] || null)} className="w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50" />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">FSSAI Number</label>
+                          <input type="text" value={detailsForm.fssaiNumber} onChange={(e) => setDetailsForm((prev) => ({ ...prev, fssaiNumber: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm" placeholder="14 digits" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">FSSAI Expiry</label>
+                          <input type="date" value={detailsForm.fssaiExpiry} onChange={(e) => setDetailsForm((prev) => ({ ...prev, fssaiExpiry: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-slate-500 mb-1">FSSAI Document (Optional new upload)</label>
+                          <input type="file" accept="image/*,.pdf" onChange={(e) => setFssaiImageFile(e.target.files?.[0] || null)} className="w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bank & UPI Details Edit Section */}
+                    <div className="md:col-span-2 pt-6 border-t border-slate-200">
+                      <h4 className="text-sm font-medium text-slate-900 mb-3 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-slate-500" />
+                        Bank & UPI Details
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Account Holder Name</label>
+                          <input type="text" value={detailsForm.accountHolderName} onChange={(e) => setDetailsForm((prev) => ({ ...prev, accountHolderName: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm" placeholder="John Doe" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Account Type</label>
+                          <select value={detailsForm.accountType} onChange={(e) => setDetailsForm((prev) => ({ ...prev, accountType: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white">
+                            <option value="">Select Type</option>
+                            <option value="Savings">Savings</option>
+                            <option value="Current">Current</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Account Number</label>
+                          <input type="text" inputMode="numeric" value={detailsForm.accountNumber} onChange={(e) => setDetailsForm((prev) => ({ ...prev, accountNumber: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm" placeholder="000000000000" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">IFSC Code</label>
+                          <input type="text" value={detailsForm.ifscCode} onChange={(e) => setDetailsForm((prev) => ({ ...prev, ifscCode: e.target.value.toUpperCase() }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm uppercase" placeholder="ABCD0001234" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-slate-500 mb-1">UPI ID (Optional)</label>
+                          <input type="text" value={detailsForm.upiId} onChange={(e) => setDetailsForm((prev) => ({ ...prev, upiId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm" placeholder="name@upi" />
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               )}
+
+              {isEditingLocation && (
+                <div className="pt-6 border-t border-slate-200 mt-6">
+                  <h4 className="text-lg font-semibold text-slate-900 mb-4">Location Editor</h4>
+                  <div className="space-y-3 border border-indigo-100 bg-indigo-50/40 rounded-xl p-4">
+                    <p className="text-xs text-indigo-700 font-semibold">
+                      Update restaurant location using dropdown (accurate) + select service zone.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs text-slate-600 mb-1 font-semibold">Service Zone*</label>
+                        <select
+                          value={locationForm.zoneId || ""}
+                          onChange={(e) => setLocationForm((prev) => ({ ...prev, zoneId: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+                        >
+                          <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
+                          {zones.map((z) => (
+                            <option key={z._id || z.id} value={z._id || z.id}>
+                              {z.name || z.zoneName || z.serviceLocation || "Zone"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs text-slate-600 mb-1 font-semibold">Search location*</label>
+                        <input
+                          ref={locationSearchInputRef}
+                          type="text"
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+                          placeholder="Start typing and choose from dropdown..."
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Select from dropdown to auto-fill address and coordinates.
+                        </p>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs text-slate-500 mb-1">Formatted Address</label>
+                        <input
+                          type="text"
+                          value={locationForm.formattedAddress}
+                          readOnly
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Area</label>
+                        <input
+                          type="text"
+                          value={locationForm.area}
+                          readOnly
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">City</label>
+                        <input
+                          type="text"
+                          value={locationForm.city}
+                          readOnly
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">State</label>
+                        <input
+                          type="text"
+                          value={locationForm.state}
+                          readOnly
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Pincode</label>
+                        <input
+                          type="text"
+                          value={locationForm.pincode}
+                          readOnly
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs text-slate-500 mb-1">Landmark (optional)</label>
+                        <input
+                          type="text"
+                          value={locationForm.landmark}
+                          onChange={(e) => setLocationForm((prev) => ({ ...prev, landmark: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {locationEditError && <p className="text-xs text-red-600">{locationEditError}</p>}
+                    <button
+                      onClick={handleSaveLocation}
+                      disabled={savingLocation}
+                      className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white ${savingLocation ? "bg-indigo-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                    >
+                      {savingLocation ? "Saving..." : "Save Location"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {!loadingDetails && !isEditingDetails && (restaurantDetails || selectedRestaurant) && (() => {
                 const r = restaurantDetails || selectedRestaurant?.originalData || selectedRestaurant
                 const detailsApprovalStatus = normalizeApprovalStatus(r)
@@ -2476,110 +2794,6 @@ export default function RestaurantsList() {
                     </div>
                   )}
 
-                  {isEditingLocation && (
-                    <div className="pt-6 border-t border-slate-200">
-                      <h4 className="text-lg font-semibold text-slate-900 mb-4">Location Editor</h4>
-                      <div className="space-y-3 border border-indigo-100 bg-indigo-50/40 rounded-xl p-4">
-                        <p className="text-xs text-indigo-700 font-semibold">
-                          Update restaurant location using dropdown (accurate) + select service zone.
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div className="md:col-span-2">
-                            <label className="block text-xs text-slate-600 mb-1 font-semibold">Service Zone*</label>
-                            <select
-                              value={locationForm.zoneId || ""}
-                              onChange={(e) => setLocationForm((prev) => ({ ...prev, zoneId: e.target.value }))}
-                              className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
-                            >
-                              <option value="">{zonesLoading ? "Loading zones..." : "Select a zone"}</option>
-                              {zones.map((z) => (
-                                <option key={z._id || z.id} value={z._id || z.id}>
-                                  {z.name || z.zoneName || z.serviceLocation || "Zone"}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-xs text-slate-600 mb-1 font-semibold">Search location*</label>
-                            <input
-                              ref={locationSearchInputRef}
-                              type="text"
-                              className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
-                              placeholder="Start typing and choose from dropdown..."
-                            />
-                            <p className="text-[11px] text-slate-500 mt-1">
-                              Select from dropdown to auto-fill address and coordinates.
-                            </p>
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-xs text-slate-500 mb-1">Formatted Address</label>
-                            <input
-                              type="text"
-                              value={locationForm.formattedAddress}
-                              readOnly
-                              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">Area</label>
-                            <input
-                              type="text"
-                              value={locationForm.area}
-                              readOnly
-                              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">City</label>
-                            <input
-                              type="text"
-                              value={locationForm.city}
-                              readOnly
-                              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">State</label>
-                            <input
-                              type="text"
-                              value={locationForm.state}
-                              readOnly
-                              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">Pincode</label>
-                            <input
-                              type="text"
-                              value={locationForm.pincode}
-                              readOnly
-                              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-xs text-slate-500 mb-1">Landmark (optional)</label>
-                            <input
-                              type="text"
-                              value={locationForm.landmark}
-                              onChange={(e) => setLocationForm((prev) => ({ ...prev, landmark: e.target.value }))}
-                              className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
-                            />
-                          </div>
-                        </div>
-
-                        {locationEditError && <p className="text-xs text-red-600">{locationEditError}</p>}
-                        <button
-                          onClick={handleSaveLocation}
-                          disabled={savingLocation}
-                          className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white ${savingLocation ? "bg-indigo-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"}`}
-                        >
-                          {savingLocation ? "Saving..." : "Save Location"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 )
               })()}

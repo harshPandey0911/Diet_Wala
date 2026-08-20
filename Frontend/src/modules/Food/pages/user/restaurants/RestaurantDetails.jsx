@@ -1069,17 +1069,17 @@ function RestaurantDetailsContent() {
       }
     }
 
-    // Reset fetched flag only when URL slug or zoneId changes.
+    // Reset fetched flag only when URL slug changes.
     // Do not compare with restaurant.slug because canonical API slug may differ
     // from route slug (e.g. "restaurant-2513"), causing refetch loops.
-    if (fetchedRestaurantRef.current && (fetchedSlugRef.current !== slug || fetchedZoneIdRef.current !== zoneId)) {
+    if (fetchedRestaurantRef.current && fetchedSlugRef.current !== slug) {
       fetchedRestaurantRef.current = false
       fetchedSlugRef.current = null
       fetchedZoneIdRef.current = null
     }
 
     fetchRestaurant()
-  }, [slug, zoneId])
+  }, [slug])
 
   // Track previous values to prevent unnecessary recalculations
   const prevCoordsRef = useRef({ userLat: null, userLng: null, restaurantLat: null, restaurantLng: null })

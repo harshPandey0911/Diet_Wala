@@ -38,21 +38,21 @@ function HeroBannerSkeleton({ className, compact = false }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[28px] border border-white/50 bg-[linear-gradient(135deg,#fff8ef_0%,#fff0de_48%,#ffe3c5_100%)] shadow-[0_18px_60px_rgba(235,89,14,0.14)]",
+        "relative overflow-hidden rounded-[28px] border border-white/50 bg-[linear-gradient(135deg,#fff8ef_0%,#fff0de_48%,#ffe3c5_100%)] shadow-[0_18px_60px_rgba(235,89,14,0.14)] dark:border-white/10 dark:bg-slate-800 dark:bg-none dark:shadow-none",
         compact ? "h-40 sm:h-48" : "h-56 sm:h-64 md:h-72 lg:h-80",
         className
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(235,89,14,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.2),transparent_28%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(235,89,14,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.2),transparent_28%)] dark:bg-none" />
       <div className="relative flex h-full flex-col justify-between p-5 sm:p-6 md:p-8">
         <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-10 w-10 rounded-full bg-white/60" />
-          <Skeleton className="h-10 w-24 rounded-full bg-white/65" />
+          <Skeleton className="h-10 w-10 rounded-full bg-white/60 dark:bg-white/10" />
+          <Skeleton className="h-10 w-24 rounded-full bg-white/65 dark:bg-white/10" />
         </div>
         <div className="max-w-[70%] space-y-3">
-          <Skeleton className="h-4 w-24 rounded-full bg-white/55" />
-          <Skeleton className="h-9 w-3/4 rounded-2xl bg-white/70" />
-          <Skeleton className="h-4 w-2/3 rounded-full bg-white/55" />
+          <Skeleton className="h-4 w-24 rounded-full bg-white/55 dark:bg-white/10" />
+          <Skeleton className="h-9 w-3/4 rounded-2xl bg-white/70 dark:bg-white/10" />
+          <Skeleton className="h-4 w-2/3 rounded-full bg-white/55 dark:bg-white/10" />
         </div>
       </div>
     </div>
