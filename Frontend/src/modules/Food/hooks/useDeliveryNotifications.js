@@ -507,6 +507,19 @@ export const useDeliveryNotifications = () => {
   }, [deliveryPartnerId, isConnected]);
 
   // Step 4: All effects (unconditional hook calls, conditional logic inside)
+  // Sync deliverySessionToken state with actual localStorage token value
+  useEffect(() => {
+    const syncToken = () => {
+      const currentToken = getDeliveryAuthToken();
+      if (currentToken !== deliverySessionToken) {
+        setDeliverySessionToken(currentToken);
+      }
+    };
+    syncToken();
+    const interval = setInterval(syncToken, 1000);
+    return () => clearInterval(interval);
+  }, [deliverySessionToken]);
+
   useEffect(() => {
     if (!supportsBrowserNotifications()) return;
 

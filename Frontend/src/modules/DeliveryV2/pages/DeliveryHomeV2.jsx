@@ -576,10 +576,13 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     }
   }, [distanceToTarget]);
 
-  // 2. Online/Offline Status Sync (Low Frequency)
+  // 2. Online/Offline Status Sync (Low Frequency - Only on toggle)
   useEffect(() => {
     deliveryAPI.updateOnlineStatus(isOnline).catch(() => {});
+  }, [isOnline]);
 
+  // Real-time Firebase Location Sync
+  useEffect(() => {
     const partnerId = getDeliveryPartnerId();
     if (!partnerId) return;
 
@@ -1420,6 +1423,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                  pushRoutePolylineToCustomer(poly);
                }}
                zoom={zoom}
+               isSimMode={isSimMode}
              />
              
              {/* SIMULATION INDICATOR */}

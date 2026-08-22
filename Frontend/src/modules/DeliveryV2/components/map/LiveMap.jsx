@@ -41,7 +41,7 @@ const mapOptions = {
 };
 const LIBRARIES = ['places', 'geometry'];
 
-export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineReceived, zoom = 12 }) => {
+export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineReceived, zoom = 12, isSimMode = false }) => {
   const { riderLocation, activeOrder, tripStatus } = useDeliveryStore();
   const googleMapsApiKey = useGoogleMapsApiKey();
   
@@ -73,7 +73,11 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
       tilt: 45, // 3D Perspective
     });
     setMapInternal(mapInstance);
-    if (onMapLoad) onMapLoad(mapInstance);
+    if (onMapLoad) {
+      setTimeout(() => {
+        onMapLoad(mapInstance);
+      }, 0);
+    }
   };
 
   useEffect(() => {
@@ -88,6 +92,14 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     const lat = parseFloat(raw.lat ?? raw.latitude);
     const lng = parseFloat(raw.lng ?? raw.longitude);
     return (Number.isFinite(lat) && Number.isFinite(lng)) ? { lat, lng } : null;
+  }, []);
+
+  const toLatLng = useCallback((p) => {
+    if (!p) return null;
+    if (p instanceof window.google.maps.LatLng) return p;
+    const lat = typeof p.lat === 'function' ? p.lat() : (p.lat ?? p.latitude);
+    const lng = typeof p.lng === 'function' ? p.lng() : (p.lng ?? p.longitude);
+    return new window.google.maps.LatLng(lat, lng);
   }, []);
 
   const restaurantPoint = useMemo(() => parsePoint(activeOrder?.restaurantLocation), [activeOrder?.restaurantLocation, parsePoint]);
@@ -127,14 +139,15 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     for (let i = 0; i < fullPath.length; i += 1) {
       const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
         riderLatLng,
-        fullPath[i],
+        toLatLng(fullPath[i]),
       );
       if (distance < minDistance) minDistance = distance;
     }
     return minDistance > 100;
-  }, [directions, parsedRiderLocation]);
+  }, [directions, parsedRiderLocation, toLatLng]);
 
   const shouldUpdateRoute = useMemo(() => {
+    if (isSimMode && directions) return false;
     const now = Date.now();
     if (!directions) return true;
     if (isOffCurrentRoute) return true;
@@ -151,7 +164,7 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
       } catch (e) {}
     }
     return (now - lastDirectionsAt) >= throttleMs;
-  }, [lastDirectionsAt, directions, parsedRiderLocation, targetLocation, isOffCurrentRoute]);
+  }, [lastDirectionsAt, directions, parsedRiderLocation, targetLocation, isOffCurrentRoute, isSimMode]);
 
   useEffect(() => {
     if (directions && onPathReceived) {
@@ -161,7 +174,9 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
           lat: typeof p.lat === 'function' ? p.lat() : (p.lat || p.latitude),
           lng: typeof p.lng === 'function' ? p.lng() : (p.lng || p.longitude)
         }));
-        onPathReceived(simplePath);
+        setTimeout(() => {
+          onPathReceived(simplePath);
+        }, 0);
       }
     }
   }, [directions, onPathReceived]);
@@ -174,7 +189,11 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
       const rawPolyline = result.routes?.[0]?.overview_polyline;
       const encodedPolyline =
         typeof rawPolyline === 'string' ? rawPolyline : rawPolyline?.points || '';
-      if (encodedPolyline && onPolylineReceived) onPolylineReceived(encodedPolyline);
+      if (encodedPolyline && onPolylineReceived) {
+        setTimeout(() => {
+          onPolylineReceived(encodedPolyline);
+        }, 0);
+      }
     }
   }, [onPolylineReceived]);
 
@@ -250,7 +269,7 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     const riderLatLng = new window.google.maps.LatLng(parsedRiderLocation.lat, parsedRiderLocation.lng);
 
     for (let i = 0; i < fullPath.length; i++) {
-      const distance = window.google.maps.geometry.spherical.computeDistanceBetween(riderLatLng, fullPath[i]);
+      const distance = window.google.maps.geometry.spherical.computeDistanceBetween(riderLatLng, toLatLng(fullPath[i]));
       if (distance < minDistance) {
         minDistance = distance;
         closestIndex = i;
@@ -259,9 +278,9 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
 
     let startIndex = closestIndex;
     if (closestIndex < fullPath.length - 1) {
-      const distToCurrent = window.google.maps.geometry.spherical.computeDistanceBetween(riderLatLng, fullPath[closestIndex]);
-      const distToNext = window.google.maps.geometry.spherical.computeDistanceBetween(riderLatLng, fullPath[closestIndex + 1]);
-      const segmentLen = window.google.maps.geometry.spherical.computeDistanceBetween(fullPath[closestIndex], fullPath[closestIndex + 1]);
+      const distToCurrent = window.google.maps.geometry.spherical.computeDistanceBetween(riderLatLng, toLatLng(fullPath[closestIndex]));
+      const distToNext = window.google.maps.geometry.spherical.computeDistanceBetween(riderLatLng, toLatLng(fullPath[closestIndex + 1]));
+      const segmentLen = window.google.maps.geometry.spherical.computeDistanceBetween(toLatLng(fullPath[closestIndex]), toLatLng(fullPath[closestIndex + 1]));
       
       if (distToNext < segmentLen && distToNext < distToCurrent) {
         startIndex = closestIndex + 1;
@@ -280,7 +299,7 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     const remaining = [riderPoint, ...fullPath.slice(startIndex).map(toObj)];
 
     return { remainingPath: remaining, traveledPath: traveled };
-  }, [directions, parsedRiderLocation]);
+  }, [directions, parsedRiderLocation, toLatLng]);
 
   if (loadError) return <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-red-500 font-bold">Map Load Error</div>;
   if (!isLoaded) return <div className="absolute inset-0 flex items-center justify-center bg-gray-50"><div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" /></div>;
@@ -382,6 +401,13 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
           <Polygon key={zone._id} paths={zone.paths} options={{ fillColor: "#22c55e", fillOpacity: 0.03, strokeColor: "#22c55e", strokeOpacity: 0.1, strokeWeight: 1, zIndex: 1 }} />
         ))}
       </GoogleMap>
+
+      {/* Debug Overlay */}
+      <div className="absolute top-28 left-4 z-[999] bg-black/80 text-white p-3 rounded-lg text-xs font-mono">
+        Rider: {parsedRiderLocation ? `${parsedRiderLocation.lat.toFixed(6)}, ${parsedRiderLocation.lng.toFixed(6)}` : 'NULL'}
+        <br />
+        Remaining: {remainingPath.length} | Traveled: {traveledPath.length}
+      </div>
     </div>
   );
 };
