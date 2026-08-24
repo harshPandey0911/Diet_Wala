@@ -1339,7 +1339,7 @@ export default function ExploreMore() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 z-50"
+              className="fixed inset-0 bg-black/50 z-[1000]"
               onClick={() => setProfileOpen(false)}
             />
 
@@ -1353,7 +1353,7 @@ export default function ExploreMore() {
                 damping: 30,
                 stiffness: 300
               }}
-              className="restaurant-modal-sheet bg-white rounded-t-[2.5rem] shadow-[0_-15px_50px_-12px_rgba(0,0,0,0.3)] z-50 max-h-[90vh] overflow-y-auto"
+              className="restaurant-modal-sheet bg-white rounded-t-[2.5rem] shadow-[0_-15px_50px_-12px_rgba(0,0,0,0.3)] z-[1000] max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

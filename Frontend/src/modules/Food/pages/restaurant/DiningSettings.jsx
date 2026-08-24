@@ -674,11 +674,11 @@ export default function DiningSettings() {
         </div>
 
         {/* Submit Button in flow */}
-        <div className="pt-4">
+        <div className="pt-2">
           <button
             onClick={handleSubmitRequest}
             disabled={submitting}
-            className="w-full h-14 bg-[#7e3866] hover:bg-[#6a2e54] text-white font-bold rounded-2xl shadow-lg shadow-[#7e3866]/25 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+            className="w-full h-11 bg-[#7e3866] hover:bg-[#6a2e54] text-white font-bold rounded-xl shadow-md shadow-[#7e3866]/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
           >
             {submitting ? (
               <>

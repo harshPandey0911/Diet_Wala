@@ -225,7 +225,7 @@ export const PocketV2 = () => {
        {/* Top Header */}
        <div className="w-full safe-top sticky top-0 z-50 shadow-sm" style={{ backgroundColor: 'var(--dv-primary)' }}>
          <div className="flex items-center justify-center px-4 py-4">
-            <h1 className="text-lg font-black text-white uppercase tracking-wider">Pocket details</h1>
+            <h1 className="text-base font-black text-white uppercase tracking-wider">Pocket details</h1>
          </div>
        </div>
 
@@ -248,125 +248,125 @@ export const PocketV2 = () => {
          </div>
        )}
 
-       <div className="px-4 py-6 bg-gray-100">
+       <div className="px-3 sm:px-4 py-3 sm:py-6 bg-gray-100">
           
           {/* 2. WEEKLY EARNINGS CARD */}
           <div 
             onClick={() => navigate('/food/delivery/earnings')}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center mb-5 transition-all active:scale-[0.98]"
+            className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 text-center mb-3.5 sm:mb-5 transition-all active:scale-[0.98]"
           >
-             <p className="text-gray-500 text-[11px] font-bold uppercase tracking-widest mb-2">Earnings: {getCurrentWeekRange()}</p>
-             <h2 className="text-4xl font-black text-black tracking-tighter">
+             <p className="text-gray-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest mb-1.5 sm:mb-2">Earnings: {getCurrentWeekRange()}</p>
+             <h2 className="text-2xl sm:text-4xl font-black text-black tracking-tighter">
                 ₹{Number(walletState.weeklyEarnings || 0).toFixed(0)}
              </h2>
           </div>
 
           {/* 3. EARNINGS GUARANTEE - API DRIVEN (NO STATIC VALUES) */}
           {hasActiveOffer && (
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 mb-6">
-             <div className="bg-black p-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 mb-4 sm:mb-6">
+             <div className="bg-black p-3.5 sm:p-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-black text-white leading-none mb-1">Earnings Guarantee</h3>
+                  <h3 className="text-base sm:text-lg font-black text-white leading-none mb-1">Earnings Guarantee</h3>
                   <div className="flex items-center gap-2">
-                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valid till {formatOfferValidTill(activeOffer.validTill)}</span>
+                     <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valid till {formatOfferValidTill(activeOffer.validTill)}</span>
                      {activeOffer.isLive && (
                        <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                          <span className="text-[10px] font-bold text-green-500 uppercase">Live</span>
+                          <span className="text-[9px] sm:text-[10px] font-bold text-green-500 uppercase">Live</span>
                        </div>
                      )}
                   </div>
                 </div>
-                <div className="bg-white/10 px-4 py-2 rounded-xl text-center border border-white/5">
-                   <p className="text-lg font-black text-white leading-none mb-0.5">₹{activeOffer.targetAmount}</p>
-                   <p className="text-[9px] font-bold text-gray-400 uppercase">{activeOffer.targetOrders} orders</p>
+                <div className="bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-center border border-white/5">
+                   <p className="text-base sm:text-lg font-black text-white leading-none mb-0.5">₹{activeOffer.targetAmount}</p>
+                   <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase">{activeOffer.targetOrders} orders</p>
                 </div>
              </div>
 
-             <div className="p-8 pb-10 flex items-center justify-around gap-8">
+             <div className="p-5 sm:p-8 pb-7 sm:pb-10 flex items-center justify-around gap-4 sm:gap-8">
                 {/* Orders Circle */}
                 <div className="flex flex-col items-center">
-                   <div className="relative w-28 h-28">
-                      <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 100 100">
-                         <circle cx="50" cy="50" r="45" fill="none" stroke="#f3f4f6" strokeWidth="8" />
-                         <motion.circle 
-                            cx="50" cy="50" r="45" fill="none" stroke="#000" strokeWidth="8" strokeLinecap="round"
-                            initial={{ pathLength: 0 }} animate={{ pathLength: ordersProgress }} transition={{ duration: 1.5, ease: "easeOut" }}
-                         />
+                   <div className="relative w-20 h-20 sm:w-28 sm:h-28">
+                      <svg className="w-20 h-20 sm:w-28 sm:h-28 transform -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="45" fill="none" stroke="#f3f4f6" strokeWidth="8" />
+                          <motion.circle 
+                             cx="50" cy="50" r="45" fill="none" stroke="#000" strokeWidth="8" strokeLinecap="round"
+                             initial={{ pathLength: 0 }} animate={{ pathLength: ordersProgress }} transition={{ duration: 1.5, ease: "easeOut" }}
+                          />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                         <span className="text-xl font-black text-black leading-none">{activeOffer.currentOrders}</span>
-                         <span className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">of {activeOffer.targetOrders}</span>
+                          <span className="text-lg sm:text-xl font-black text-black leading-none">{activeOffer.currentOrders}</span>
+                          <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase mt-0.5">of {activeOffer.targetOrders}</span>
                       </div>
                    </div>
-                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-4">Orders Done</p>
+                   <p className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 sm:mt-4">Orders Done</p>
                 </div>
 
                 {/* Earnings Circle */}
                 <div className="flex flex-col items-center">
-                   <div className="relative w-28 h-28">
-                      <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 100 100">
-                         <circle cx="50" cy="50" r="45" fill="none" stroke="#f3f4f6" strokeWidth="8" />
-                         <motion.circle 
-                            cx="50" cy="50" r="45" fill="none" stroke="#ff8100" strokeWidth="8" strokeLinecap="round"
-                            initial={{ pathLength: 0 }} animate={{ pathLength: earningsProgress }} transition={{ duration: 1.5, ease: "easeOut" }}
-                         />
+                   <div className="relative w-20 h-20 sm:w-28 sm:h-28">
+                      <svg className="w-20 h-20 sm:w-28 sm:h-28 transform -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="45" fill="none" stroke="#f3f4f6" strokeWidth="8" />
+                          <motion.circle 
+                             cx="50" cy="50" r="45" fill="none" stroke="#ff8100" strokeWidth="8" strokeLinecap="round"
+                             initial={{ pathLength: 0 }} animate={{ pathLength: earningsProgress }} transition={{ duration: 1.5, ease: "easeOut" }}
+                          />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
-                         <span className="text-base font-black text-black leading-none truncate">₹{activeOffer.currentEarnings}</span>
-                        <HelpCircle className="w-2.5 h-2.5 text-gray-300 mt-1 cursor-help" />
+                          <span className="text-sm sm:text-base font-black text-black leading-none truncate">₹{activeOffer.currentEarnings}</span>
+                         <HelpCircle className="w-2.5 h-2.5 text-gray-300 mt-1 cursor-help" />
                       </div>
                    </div>
-                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-4">Earned Yet</p>
+                   <p className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 sm:mt-4">Earned Yet</p>
                 </div>
              </div>
           </div>
           )}
 
           {/* 4. POCKET ACTION BUTTONS */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 sm:mb-6">
              <button 
                 onClick={() => navigate('/food/delivery/pocket/balance')}
-                className="w-full p-5 border-b border-gray-50 flex items-center justify-between active:bg-gray-50"
+                className="w-full p-2.5 sm:p-5 border-b border-gray-50 flex items-center justify-between active:bg-gray-50"
              >
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-black border border-gray-100">
-                      <Wallet className="w-6 h-6" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-xl flex items-center justify-center text-black border border-gray-100 shrink-0">
+                      <Wallet className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                    </div>
-                   <div>
-                      <span className="text-sm font-bold text-gray-800 block">Pocket balance</span>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Withdrawal Hub</p>
+                   <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-gray-800 block">Pocket balance</span>
+                      <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-tight">Withdrawal Hub</p>
                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                   <span className="text-base font-black text-black">₹{Number(walletState.totalBalance || 0).toFixed(2)}</span>
-                   <ChevronRight className="w-4 h-4 text-gray-300" />
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                   <span className="text-sm sm:text-base font-black text-black">₹{Number(walletState.totalBalance || 0).toFixed(2)}</span>
+                   <ChevronRight className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-300" />
                 </div>
              </button>
 
              <button 
                 onClick={() => navigate('/food/delivery/pocket/cash-limit')}
-                className="w-full p-5 border-b border-gray-50 flex items-center justify-between active:bg-gray-50"
+                className="w-full p-2.5 sm:p-5 border-b border-gray-50 flex items-center justify-between active:bg-gray-50"
              >
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-black border border-gray-100">
-                      <ShieldCheck className="w-6 h-6" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-xl flex items-center justify-center text-black border border-gray-100 shrink-0">
+                      <ShieldCheck className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                    </div>
-                   <div>
-                      <span className="text-sm font-bold text-gray-800 block">Available cash limit</span>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Spend Control</p>
+                   <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-gray-800 block">Available cash limit</span>
+                      <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-tight">Spend Control</p>
                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                   <span className="text-base font-black text-black">₹{Number(walletState.availableCashLimit || 0).toFixed(2)}</span>
-                   <ChevronRight className="w-4 h-4 text-gray-300" />
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                   <span className="text-sm sm:text-base font-black text-black">₹{Number(walletState.availableCashLimit || 0).toFixed(2)}</span>
+                   <ChevronRight className="w-3.5 h-3.5 sm:w-4 h-4 text-gray-300" />
                 </div>
              </button>
 
-             <div className="p-5">
+             <div className="p-2.5 sm:p-5">
                 <button 
                    onClick={() => setShowDepositPopup(true)}
-                   className="w-full py-4 bg-primary hover:bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                   className="w-full py-2 sm:py-4 bg-primary hover:bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
                 >
                    Deposit Cash
                 </button>
@@ -374,38 +374,38 @@ export const PocketV2 = () => {
           </div>
 
           {/* 5. MORE SERVICES - Vertical List */}
-          <div className="space-y-4">
-             <div className="grid grid-cols-2 gap-4">
-                <div onClick={() => navigate('/food/delivery/pocket/payout')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 active:bg-gray-50">
-                   <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-4 border border-blue-100">
-                      <IndianRupee className="w-5 h-5" />
+          <div className="space-y-3 sm:space-y-4">
+             <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div onClick={() => navigate('/food/delivery/pocket/payout')} className="bg-white p-2.5 sm:p-5 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50">
+                   <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-1.5 sm:mb-4 border border-blue-100">
+                      <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
                    </div>
-                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Last Payout</p>
-                   <p className="text-xl font-black text-black leading-none mb-1">₹{Number(walletState.payoutAmount || 0).toFixed(2)}</p>
-                   <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Prev Week Info</p>
+                   <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 sm:mb-1.5">Last Payout</p>
+                   <p className="text-lg sm:text-xl font-black text-black leading-none mb-1">₹{Number(walletState.payoutAmount || 0).toFixed(2)}</p>
+                   <p className="text-[8px] sm:text-[9px] text-gray-400 font-bold uppercase tracking-tight">Prev Week Info</p>
                 </div>
 
-                <div onClick={() => navigate('/food/delivery/pocket/limit-settlement')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 active:bg-gray-50 flex flex-col justify-between">
-                   <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-primary mb-4 border border-orange-100">
-                      <Receipt className="w-5 h-5" />
+                <div onClick={() => navigate('/food/delivery/pocket/limit-settlement')} className="bg-white p-2.5 sm:p-5 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 flex flex-col justify-between">
+                   <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 bg-orange-50 rounded-xl flex items-center justify-center text-primary mb-1.5 sm:mb-4 border border-orange-100">
+                      <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
                    </div>
-                   <p className="text-sm font-bold text-gray-800 leading-tight">Limit Settlement</p>
+                   <p className="text-xs sm:text-sm font-bold text-gray-800 leading-tight">Limit Settlement</p>
                 </div>
              </div>
 
-             <div className="grid grid-cols-2 gap-4">
-                <div onClick={() => navigate('/food/delivery/pocket/deductions')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 active:bg-gray-50 flex flex-col justify-between">
-                   <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-600 mb-4 border border-red-100">
-                      <FileText className="w-5 h-5" />
+             <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div onClick={() => navigate('/food/delivery/pocket/deductions')} className="bg-white p-2.5 sm:p-5 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 flex flex-col justify-between">
+                   <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-600 mb-1.5 sm:mb-4 border border-red-100">
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                    </div>
-                   <p className="text-sm font-bold text-gray-800 leading-tight">Deduction List</p>
+                   <p className="text-xs sm:text-sm font-bold text-gray-800 leading-tight">Deduction List</p>
                 </div>
 
-                <div onClick={() => navigate('/food/delivery/pocket/details')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 active:bg-gray-50 flex flex-col justify-between">
-                   <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4 border border-purple-100">
-                      <LayoutGrid className="w-5 h-5" />
+                <div onClick={() => navigate('/food/delivery/pocket/details')} className="bg-white p-2.5 sm:p-5 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 flex flex-col justify-between">
+                   <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-1.5 sm:mb-4 border border-purple-100">
+                      <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
                    </div>
-                   <p className="text-sm font-bold text-gray-800 leading-tight">Pocket statement</p>
+                   <p className="text-xs sm:text-sm font-bold text-gray-800 leading-tight">Pocket statement</p>
                 </div>
              </div>
           </div>

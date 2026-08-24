@@ -1202,17 +1202,17 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
 
   return (
     <div className="relative h-screen w-full bg-white text-gray-900 overflow-hidden flex flex-col">
-      {/* â”€â”€â”€ 1. TOP HEADER (Dynamic Theme Gradient) â”€â”€â”€ */}
+      {/* ─── 1. TOP HEADER (Dynamic Theme Gradient) ─── */}
       {currentTab !== 'history' && currentTab !== 'profile' && currentTab !== 'pocket' && (
       <div 
         className="absolute top-0 inset-x-0 backdrop-blur-2xl shadow-2xl z-[200] safe-top pb-2 border-b border-white/10"
         style={{ backgroundColor: 'var(--dv-primary)' }}
       >
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-2 xs:px-4 py-2">
+          <div className="flex items-center gap-1.5 xs:gap-3">
              <div 
                 onClick={() => navigate('/food/delivery/profile')}
-                className="w-10 h-10 rounded-full border border-white/40 shadow-xl overflow-hidden bg-white cursor-pointer active:scale-95 transition-all p-1 flex items-center justify-center shrink-0"
+                className="w-8 h-8 xs:w-10 xs:h-10 rounded-full border border-white/40 shadow-xl overflow-hidden bg-white cursor-pointer active:scale-95 transition-all p-0.5 xs:p-1 flex items-center justify-center shrink-0"
                 title="View Profile"
              >
                 <img 
@@ -1250,48 +1250,51 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                       deliveryAPI.updateOnlineStatus(false).catch(() => {});
                   }
                 }}
-                className={`delivery-online-toggle relative w-[92px] h-8 rounded-full p-1 transition-all duration-500 flex items-center ${isOnline ? 'is-online bg-green-500 shadow-lg shadow-green-500/20' : 'is-offline bg-green-400 shadow-lg shadow-green-400/20'}`}
+                className={`delivery-online-toggle relative w-[80px] xs:w-[92px] h-7.5 xs:h-8 rounded-full p-0.5 xs:p-1 transition-all duration-500 flex items-center ${isOnline ? 'is-online bg-green-500 shadow-lg shadow-green-500/20' : 'is-offline bg-green-400 shadow-lg shadow-green-400/20'}`}
               >
-                <div className={`flex items-center justify-between w-full px-2 text-[8.5px] font-black uppercase tracking-widest text-white`}>
+                <div className={`flex items-center justify-between w-full px-1.5 xs:px-2 text-[9px] xs:text-[10px] font-black uppercase tracking-widest text-white`}>
                   <span>{isOnline ? 'Online' : ''}</span>
                   <span>{!isOnline ? 'Offline' : ''}</span>
                 </div>
-                <motion.div animate={{ x: isOnline ? 59 : 0 }} className="absolute left-1 w-6 h-6 bg-white rounded-full shadow-sm" />
+                <motion.div 
+                  animate={{ x: isOnline ? (window.innerWidth < 375 ? 49 : 59) : 0 }} 
+                  className="absolute left-1 w-5.5 h-5.5 xs:w-6 xs:h-6 bg-white rounded-full shadow-sm" 
+                />
               </button>
 
               {/* DEV SIMULATION TOGGLE */}
               {import.meta.env.DEV && (
                  <button 
                    onClick={() => setIsSimMode(!isSimMode)}
-                   className={`px-3 h-8 rounded-lg text-[9px] font-black border transition-all ${isSimMode ? 'bg-orange-500 border-orange-400 text-white animate-pulse' : 'bg-white/10 border-white/20 text-white/40'}`}
+                   className={`px-2 xs:px-3 h-7.5 xs:h-8 rounded-lg text-[9px] font-black border transition-all ${isSimMode ? 'bg-orange-500 border-orange-400 text-white animate-pulse' : 'bg-white/10 border-white/20 text-white/40'}`}
                  >
                    SIM
                  </button>
               )}
            </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 xs:gap-2.5">
              <button 
                onClick={() => setShowEmergencyPopup(true)} 
-               className="w-9 h-9 rounded-full bg-white text-red-600 flex items-center justify-center border border-white/80 active:scale-95 transition-all shadow-md hover:bg-red-50 shrink-0"
+               className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-white text-red-600 flex items-center justify-center border border-white/80 active:scale-95 transition-all shadow-md hover:bg-red-50 shrink-0"
                title="Emergency SOS"
              >
                <AlertTriangle className="w-4.5 h-4.5 text-red-600 fill-red-600/20" />
              </button>
              <button 
                onClick={() => navigate('/food/delivery/help/id-card')} 
-               className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center border border-white/30 active:scale-95 transition-all shadow-md hover:bg-white/30 shrink-0"
+               className="w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-white/20 text-white flex items-center justify-center border border-white/30 active:scale-95 transition-all shadow-md hover:bg-white/30 shrink-0"
                title="ID Card"
              >
                <Contact className="w-4.5 h-4.5 text-white" />
              </button>
              <button 
                onClick={() => setShowNotifications(true)} 
-               className="relative w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center border border-white/30 active:scale-95 transition-all shadow-md hover:bg-white/30 shrink-0"
+               className="relative w-8 h-8 xs:w-9 xs:h-9 rounded-full bg-white/20 text-white flex items-center justify-center border border-white/30 active:scale-95 transition-all shadow-md hover:bg-white/30 shrink-0"
                title="Notifications"
              >
                 <Bell className="w-4.5 h-4.5 text-white" />
                 {notificationUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-600 flex items-center justify-center text-[9px] font-black text-white border-2 border-[#121212] shadow-xl animate-in zoom-in duration-300">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] xs:min-w-[18px] xs:h-[18px] px-1 rounded-full bg-orange-600 flex items-center justify-center text-[9px] font-black text-white border-2 border-[#121212] shadow-xl animate-in zoom-in duration-300">
                     {notificationUnreadCount > 9 ? '9+' : notificationUnreadCount}
                   </span>
                 )}
@@ -1299,7 +1302,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
           </div>
         </div>
 
-        {/* â”€â”€â”€ LIVE STATUS / PROGRESS BADGE (MATCHED PRO) â”€â”€â”€ */}
+        {/* ─── LIVE STATUS / PROGRESS BADGE (MATCHED PRO) ─── */}
         <AnimatePresence>
           {currentTab === 'feed' && (
             <motion.div 

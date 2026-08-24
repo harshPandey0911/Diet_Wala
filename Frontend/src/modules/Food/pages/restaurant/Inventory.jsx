@@ -2035,11 +2035,11 @@ export default function Inventory() {
     <div className="restaurant-page min-h-full bg-[#f3f5f8]">
       {/* Navbar */}
       {/* Tabs */}
-      <div className="bg-[#f3f5f8] px-4 pt-4 pb-4">
-        <div ref={tabBarRef} className="grid grid-cols-2 gap-3">
+      <div className="bg-[#f3f5f8] px-4 pt-3 pb-2.5">
+        <div ref={tabBarRef} className="grid grid-cols-2 gap-2.5">
           <motion.button
             onClick={() => setActiveTab("all-items")}
-            className={`relative overflow-hidden rounded-[24px] border px-4 py-3 text-sm font-semibold ${
+            className={`relative overflow-hidden rounded-[18px] border px-3 py-2 text-sm font-semibold ${
               activeTab === "all-items"
                 ? "border-primary text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.6)]"
                 : "border-[#ead6e3] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
@@ -2052,7 +2052,7 @@ export default function Inventory() {
             {activeTab === "all-items" && (
               <motion.div
                 layoutId="activeTabBackground"
-                className="absolute inset-0 rounded-[24px] bg-primary -z-10"
+                className="absolute inset-0 rounded-[18px] bg-primary -z-10"
                 initial={false}
                 transition={{
                   type: "spring",
@@ -2061,9 +2061,9 @@ export default function Inventory() {
                 }}
               />
             )}
-            <span className="relative z-10 flex min-h-7 items-center justify-center gap-2 leading-none">
+            <span className="relative z-10 flex min-h-5 items-center justify-center gap-1.5 leading-none">
               <span className="whitespace-nowrap">All items</span>
-              <span className={`inline-flex min-h-5 min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+              <span className={`inline-flex min-h-4.5 min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
                 activeTab === "all-items" ? "bg-white text-primary" : "bg-[#f6ecf3] text-[#6d6470]"
               }`}>
                 {totalItems}
@@ -2073,7 +2073,7 @@ export default function Inventory() {
 
           <motion.button
             onClick={() => setActiveTab("add-ons")}
-            className={`relative overflow-hidden rounded-[24px] border px-4 py-3 text-sm font-semibold ${
+            className={`relative overflow-hidden rounded-[18px] border px-3 py-2 text-sm font-semibold ${
               activeTab === "add-ons"
                 ? "border-primary text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.6)]"
                 : "border-[#ead6e3] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
@@ -2086,7 +2086,7 @@ export default function Inventory() {
             {activeTab === "add-ons" && (
               <motion.div
                 layoutId="activeTabBackground"
-                className="absolute inset-0 rounded-[24px] bg-primary -z-10"
+                className="absolute inset-0 rounded-[18px] bg-primary -z-10"
                 initial={false}
                 transition={{
                   type: "spring",
@@ -2095,9 +2095,9 @@ export default function Inventory() {
                 }}
               />
             )}
-            <span className="relative z-10 flex min-h-7 items-center justify-center gap-2 leading-none">
+            <span className="relative z-10 flex min-h-5 items-center justify-center gap-1.5 leading-none">
               <span className="whitespace-nowrap">Add ons</span>
-              <span className={`inline-flex min-h-5 min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+              <span className={`inline-flex min-h-4.5 min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
                 activeTab === "add-ons" ? "bg-white text-primary" : "bg-[#f6ecf3] text-[#6d6470]"
               }`}>
                 {addons.length}
@@ -2173,14 +2173,14 @@ export default function Inventory() {
         }}
       >
         {/* Search and Filter */}
-        <div className="sticky top-0 z-30 -mx-4 px-4 pb-4 bg-[#f3f5f8]/95 backdrop-blur supports-[backdrop-filter]:bg-[#f3f5f8]/80">
-          <div className="overflow-hidden rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-[0_20px_48px_-34px_rgba(15,23,42,0.45)] backdrop-blur">
+        <div className="sticky top-0 z-30 -mx-4 px-4 pb-3 bg-[#f3f5f8]/95 backdrop-blur supports-[backdrop-filter]:bg-[#f3f5f8]/80">
+          <div className="overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-3 sm:p-4 shadow-[0_20px_48px_-34px_rgba(15,23,42,0.45)] backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-slate-950">
                   {activeTab === "add-ons" ? "Search and review add-ons" : "Search and manage menu inventory"}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500">
                   {activeTab === "add-ons"
                     ? `${filteredAddons.length} add-on${filteredAddons.length !== 1 ? "s" : ""} in this view`
                     : `${listToRender.length} categor${listToRender.length !== 1 ? "ies" : "y"} and ${activeFilterCount} item${activeFilterCount !== 1 ? "s" : ""} in focus`}
@@ -2193,28 +2193,28 @@ export default function Inventory() {
                     setSearchQuery("")
                     setSelectedFilter("all")
                   }}
-                  className="rounded-full border border-[#e7d5e0] px-3 py-1.5 text-xs font-semibold text-[#6b4d62] transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
+                  className="rounded-full border border-[#e7d5e0] px-2.5 py-1 text-[11px] font-semibold text-[#6b4d62] transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
                 >
                   Clear all
                 </button>
               ) : null}
             </div>
 
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="mt-2.5 flex flex-col gap-2">
               <div className="w-full relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={activeTab === "add-ons" ? "Search add-ons by name or status" : "Search categories or menu items"}
-                  className="h-12 w-full rounded-[20px] border border-[#e7d5e0] bg-[#fcf7fb] pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#c796b8] focus:bg-white focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-[#e7d5e0] bg-[#fcf7fb] pl-10 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#c796b8] focus:bg-white focus:outline-none"
                 />
                 {searchQuery ? (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                     aria-label="Clear search"
                   >
                     <X className="w-4 h-4" />
@@ -2225,37 +2225,37 @@ export default function Inventory() {
               <div className="flex gap-2 flex-wrap items-center">
                 <button
                   onClick={() => setFilterOpen(true)}
-                  className="relative flex h-12 items-center justify-center gap-2 rounded-[20px] border border-[#e7d5e0] bg-white px-4 text-sm font-semibold text-secondary transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
+                  className="relative flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[#e7d5e0] bg-white px-3.5 text-xs font-semibold text-secondary transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
                 >
-                <SlidersHorizontal className="w-4 h-4 text-primary" />
-                <span>Filters</span>
-                {selectedFilter !== "all" && (
-                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-white" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                  <span>Filters</span>
+                  {selectedFilter !== "all" && (
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-white" />
+                  )}
+                </button>
+
+                {activeTab !== "add-ons" && (
+                  <button
+                    onClick={() => setIsAddPopupOpen(true)}
+                    className="h-10 rounded-xl bg-primary px-3.5 text-xs font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-secondary"
+                  >
+                    + Add item
+                  </button>
                 )}
-              </button>
 
-              {activeTab !== "add-ons" && (
-                <button
-                  onClick={() => setIsAddPopupOpen(true)}
-                  className="h-12 rounded-[20px] bg-primary px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-secondary"
-                >
-                  + Add item
-                </button>
-              )}
-
-              {activeTab === "add-ons" && (
-                <button
-                  onClick={() => setIsAddAddonOpen((v) => !v)}
-                  className="h-12 rounded-[20px] bg-primary px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-secondary"
-                  style={{ minWidth: "128px" }}
-                >
-                  {isAddAddonOpen ? "Close" : "Add Add-on"}
-                </button>
+                {activeTab === "add-ons" && (
+                  <button
+                    onClick={() => setIsAddAddonOpen((v) => !v)}
+                    className="h-10 rounded-xl bg-primary px-3.5 text-xs font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-secondary"
+                    style={{ minWidth: "110px" }}
+                  >
+                    {isAddAddonOpen ? "Close" : "Add Add-on"}
+                  </button>
                 )}
               </div>
             </div>
 
-            <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <div className="mt-2 flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
               {activeFilterOptions.map((option) => {
                 const count = activeTab === "add-ons"
                   ? (addonFilterCounts[option.value] || 0)
@@ -2263,23 +2263,23 @@ export default function Inventory() {
 
                 const isActive = selectedFilter === option.value
                 return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSelectedFilter(option.value)}
-                    className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors ${
-                      isActive
-                        ? "border-primary bg-primary text-white shadow-[0_14px_28px_-24px_rgba(126,56,102,0.8)]"
-                        : "border-[#e7d5e0] bg-[#fcf7fb] text-[#6d6470] hover:border-[#d5bdd0] hover:bg-white"
-                    }`}
-                  >
-                    <span>{option.label}</span>
-                    <span className={`ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] ${
-                      isActive ? "bg-white/20 text-white" : "bg-white text-[#8a7a89]"
-                    }`}>
-                      {count}
-                    </span>
-                  </button>
+                   <button
+                     key={option.value}
+                     type="button"
+                     onClick={() => setSelectedFilter(option.value)}
+                     className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                       isActive
+                         ? "border-primary bg-primary text-white shadow-[0_14px_28px_-24px_rgba(126,56,102,0.8)]"
+                         : "border-[#e7d5e0] bg-[#fcf7fb] text-[#6d6470] hover:border-[#d5bdd0] hover:bg-white"
+                     }`}
+                   >
+                     <span>{option.label}</span>
+                     <span className={`ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-full px-1 py-0.5 text-[10px] ${
+                       isActive ? "bg-white/20 text-white" : "bg-white text-[#8a7a89]"
+                     }`}>
+                       {count}
+                     </span>
+                   </button>
                 )
               })}
             </div>
@@ -2502,7 +2502,7 @@ export default function Inventory() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: isLoading ? 0.6 : 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="relative overflow-hidden rounded-[30px] border border-white/80 bg-white shadow-[0_22px_52px_-36px_rgba(15,23,42,0.45)]"
+                className="relative overflow-hidden rounded-[20px] border border-white/80 bg-white shadow-[0_22px_52px_-36px_rgba(15,23,42,0.45)]"
                 ref={(el) => {
                   if (el) {
                     categoryRefs.current[category.id] = el
@@ -2514,7 +2514,7 @@ export default function Inventory() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="absolute inset-0 z-10 flex items-center justify-center rounded-[30px] bg-white/80"
+                    className="absolute inset-0 z-10 flex items-center justify-center rounded-[20px] bg-white/80"
                   >
                     <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
                   </motion.div>
@@ -2522,20 +2522,20 @@ export default function Inventory() {
 
                 {/* Category Header - Clickable */}
                 <div
-                  className="cursor-pointer bg-white dark:bg-gray-900 px-6 py-5 hover:bg-slate-50/50 transition-colors"
+                  className="cursor-pointer bg-white dark:bg-gray-900 px-4 py-3.5 hover:bg-slate-50/50 transition-colors"
                   onClick={() => toggleCategory(category.id)}
                 >
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h3 className="text-xl font-black tracking-tight text-slate-950 dark:text-white">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <h3 className="text-base font-bold tracking-tight text-slate-950 dark:text-white">
                           {category.name}
                         </h3>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-slate-100 dark:bg-gray-800 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <span className="rounded-full bg-slate-100 dark:bg-gray-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
                             {category.items?.length || category.itemCount || 0} items
                           </span>
-                          <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                             category.inStock
                               ? "bg-green-50 text-green-700 border border-green-100"
                               : "bg-amber-50 text-amber-700 border border-amber-100"
@@ -2545,33 +2545,33 @@ export default function Inventory() {
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-3 mt-4">
+                      <div className="flex flex-wrap items-center gap-2 mt-2.5">
                         {category.inStock ? (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50/50 rounded-xl border border-green-100/50">
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50/50 rounded-lg border border-green-100/50">
                             <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <p className="text-[10px] font-bold text-green-700">All items live</p>
+                            <p className="text-[9px] font-bold text-green-700">All items live</p>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50/50 rounded-xl border border-rose-100/50">
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-rose-50/50 rounded-lg border border-rose-100/50">
                             <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                            <p className="text-[10px] font-bold text-rose-700">
+                            <p className="text-[9px] font-bold text-rose-700">
                               {getOutOfStockCount(category)} Items paused
                             </p>
                           </div>
                         )}
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50/50 rounded-xl border border-blue-100/50">
-                          <p className="text-[10px] font-bold text-blue-700">
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                          <p className="text-[9px] font-bold text-blue-700">
                             {(categoryItems.filter((item) => item.isRecommended).length)} Recommended
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2.5">
                       {/* Category Toggle Switch */}
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="scale-110"
+                        className="scale-95"
                       >
                         <Switch
                           checked={category.inStock}
@@ -2587,14 +2587,14 @@ export default function Inventory() {
                           e.stopPropagation()
                           toggleCategory(category.id)
                         }}
-                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${
                           isExpanded ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                       >
                         {isExpanded ? (
-                          <ChevronUp className="h-5 w-5" />
+                          <ChevronUp className="h-4 w-4" />
                         ) : (
-                          <ChevronDown className="h-5 w-5" />
+                          <ChevronDown className="h-4 w-4" />
                         )}
                       </button>
                     </div>

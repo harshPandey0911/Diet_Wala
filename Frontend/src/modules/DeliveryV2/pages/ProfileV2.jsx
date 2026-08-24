@@ -256,7 +256,7 @@ export const ProfileV2 = () => {
         >
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-2xl md:text-3xl font-bold">{profile?.name || ""}</h2>
+              <h2 className="text-lg md:text-2xl font-bold">{profile?.name || ""}</h2>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-gray-600 text-sm md:text-base mb-3 font-medium">{profile?.deliveryId || ""}</p>

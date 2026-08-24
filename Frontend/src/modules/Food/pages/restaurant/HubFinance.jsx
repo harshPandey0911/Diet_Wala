@@ -757,7 +757,7 @@ export default function HubFinance() {
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("payouts")}
-            className={`flex-1 py-3 px-4 rounded-full font-medium text-sm transition-colors ${
+            className={`flex-1 py-2 px-4 rounded-full font-medium text-xs transition-colors ${
               activeTab === "payouts"
                 ? "bg-black text-white"
                 : "bg-white text-gray-600 border border-gray-300"
@@ -767,7 +767,7 @@ export default function HubFinance() {
           </button>
           <button
             onClick={() => setActiveTab("invoices")}
-            className={`flex-1 py-3 px-4 rounded-full font-medium text-sm transition-colors ${
+            className={`flex-1 py-2 px-4 rounded-full font-medium text-xs transition-colors ${
               activeTab === "invoices"
                 ? "bg-black text-white"
                 : "bg-white text-gray-600 border border-gray-300"
@@ -779,33 +779,33 @@ export default function HubFinance() {
       </div>
 
       {/* Content */}
-      <div className="px-4 pt-6 pb-28">
+      <div className="px-4 pt-3 pb-24">
         {activeTab === "payouts" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Current cycle */}
             <div>
-              <h2 className="text-base font-bold text-gray-900 mb-3">Current cycle</h2>
-              <div className="bg-white rounded-lg p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-2">Current cycle</h2>
+              <div className="bg-white rounded-xl p-3.5">
                 {loading ? (
                   <div className="py-8 text-center text-gray-500">Loading...</div>
                 ) : (
                   <>
-                    <p className="text-4xl font-bold text-gray-900 mb-2">
+                    <p className="text-2xl font-bold text-gray-900 mb-1.5">
                       ₹{(financeData?.currentCycle?.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-xs text-gray-600 mb-3">
                       {financeData?.currentCycle?.totalOrders || 0} {financeData?.currentCycle?.totalOrders === 1 ? 'order' : 'orders'}
                     </p>
                     <button
                       onClick={() => setShowWithdrawalModal(true)}
                       disabled={!(financeData?.currentCycle?.estimatedPayout > 0)}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2 mt-4 transition-colors ${
+                      className={`w-full py-2 px-4 rounded-lg font-semibold flex items-center justify-center gap-1.5 mt-2 transition-colors text-xs ${
                         financeData?.currentCycle?.estimatedPayout > 0
                           ? "bg-black text-white hover:bg-gray-800"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
                     >
-                      <Wallet className="h-5 w-5" />
+                      <Wallet className="h-4.5 w-4.5" />
                       Withdraw
                     </button>
                   </>
@@ -815,36 +815,36 @@ export default function HubFinance() {
 
             {/* Withdrawal Requests */}
             <div>
-              <h2 className="text-base font-bold text-gray-900 mb-3">Withdrawal requests</h2>
-              <div className="bg-white rounded-lg p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-2">Withdrawal requests</h2>
+              <div className="bg-white rounded-xl p-3.5">
                 {loadingWithdrawals ? (
-                  <div className="py-6 text-center text-sm text-gray-500">Loading withdrawal requests...</div>
+                  <div className="py-6 text-center text-xs text-gray-500">Loading withdrawal requests...</div>
                 ) : withdrawalRequests.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-gray-500">No withdrawal requests found.</div>
+                  <div className="py-6 text-center text-xs text-gray-500">No withdrawal requests found.</div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {withdrawalRequests.slice(0, 8).map((request, index) => {
                       const status = formatWithdrawalStatus(request?.status)
                       return (
                         <div
                           key={request?._id || request?.id || index}
-                          className="border border-gray-200 rounded-lg p-3"
+                          className="border border-gray-200 rounded-lg p-2.5"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-xs font-semibold text-gray-900">
                                 ₹{Number(request?.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-[10px] text-gray-500 mt-0.5">
                                 Requested: {formatDateTime(request?.createdAt || request?.requestedAt)}
                               </p>
                               {request?.processedAt ? (
-                                <p className="text-xs text-gray-500 mt-0.5">
+                                <p className="text-[10px] text-gray-500 mt-0.5">
                                   Processed: {formatDateTime(request?.processedAt)}
                                 </p>
                               ) : null}
                             </div>
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getWithdrawalStatusClass(request?.status)}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getWithdrawalStatusClass(request?.status)}`}>
                               {status}
                             </span>
                           </div>
@@ -855,7 +855,7 @@ export default function HubFinance() {
                       <button
                         type="button"
                         onClick={() => navigate("/restaurant/withdrawal-history")}
-                        className="w-full text-sm font-medium text-black hover:underline pt-1"
+                        className="w-full text-xs font-medium text-black hover:underline pt-0.5"
                       >
                         View all requests
                       </button>

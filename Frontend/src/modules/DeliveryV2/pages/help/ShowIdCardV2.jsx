@@ -131,7 +131,7 @@ export default function ShowIdCardV2() {
               <img
                 src={idCardData.profileImage}
                 alt={idCardData.name}
-                className="w-36 h-36 rounded-full object-cover border-4 border-gray-100"
+                className="w-36 h-36 rounded-full object-contain p-1 bg-white border-4 border-gray-100"
                 onError={(e) => {
                   const name = idCardData.name || "Delivery Partner";
                   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ff8100&color=fff&size=128`;
@@ -145,15 +145,15 @@ export default function ShowIdCardV2() {
         <div className="bg-white min-h-[calc(100vh-10rem)] relative pt-20 px-6 pb-12">
           <div className="flex flex-col items-center text-center">
             {/* Brand Name */}
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-500 mb-2">{companyName}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-orange-500 mb-2">{companyName}</p>
 
             {/* Delivery Partner Title */}
-            <h1 className="text-4xl font-black text-gray-900 mb-1 leading-tight">PARTNER</h1>
-            <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-6">ID CARD</h2>
+            <h1 className="text-xl font-bold text-gray-900 mb-1 leading-tight">PARTNER</h1>
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-6">ID CARD</h2>
 
             {/* Active Status Badge */}
             <div className="mb-8">
-              <span className={`${idCardData.statusColor} text-white px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-green-500/20`}>
+              <span className={`${idCardData.statusColor} text-white px-8 py-2 rounded-full text-xs font-bold uppercase tracking-[0.2em] shadow-lg shadow-green-500/20`}>
                 {idCardData.status}
               </span>
             </div>
@@ -161,30 +161,30 @@ export default function ShowIdCardV2() {
             {/* Details Grid */}
             <div className="w-full space-y-8 mt-4">
               <div className="flex flex-col items-center">
-                 <h3 className="text-2xl font-black text-gray-950 uppercase tracking-tight">{idCardData.name}</h3>
-                 <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Full Name</p>
+                 <h3 className="text-base font-bold text-gray-950 uppercase tracking-tight">{idCardData.name}</h3>
+                 <p className="text-gray-400 font-semibold uppercase text-[10px] tracking-[0.2em] mt-1">Full Name</p>
               </div>
 
               <div className="grid grid-cols-2 gap-8 w-full">
                  <div className="flex flex-col items-center">
-                    <span className="text-sm font-black text-gray-950">{idCardData.id}</span>
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Partner ID</span>
+                    <span className="text-sm font-bold text-gray-950">{idCardData.id}</span>
+                    <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">Partner ID</span>
                  </div>
                  <div className="flex flex-col items-center">
-                    <span className="text-sm font-black text-gray-950">{idCardData.phone}</span>
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Mobile</span>
+                    <span className="text-sm font-bold text-gray-950">{idCardData.phone}</span>
+                    <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">Mobile</span>
                  </div>
               </div>
 
               {idCardData.vehicle && (
                 <div className="flex flex-col items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                   <span className="text-sm font-black text-gray-950 uppercase">{idCardData.vehicle}</span>
-                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Registered Vehicle</span>
+                   <span className="text-sm font-bold text-gray-950 uppercase">{idCardData.vehicle}</span>
+                   <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">Registered Vehicle</span>
                 </div>
               )}
 
               <div className="pt-4 border-t border-gray-100">
-                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">
+                 <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest leading-loose">
                    This ID card is issued for essential delivery services only. <br/>
                    Valid On: {idCardData.validTill}
                  </p>

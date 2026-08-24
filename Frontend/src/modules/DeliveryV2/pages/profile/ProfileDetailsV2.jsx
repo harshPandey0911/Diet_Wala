@@ -460,7 +460,6 @@ export const ProfileDetailsV2 = () => {
       )}
     </div>
   )
-
   return (
     <div className="min-h-screen bg-[#FDFEFE] font-poppins pb-24">
       {/* ─── HEADER ─── */}
@@ -469,9 +468,9 @@ export const ProfileDetailsV2 = () => {
           <button onClick={goBack} className="p-2 hover:bg-gray-100 rounded-xl transition-all active:scale-90">
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="text-lg font-black text-black uppercase tracking-tight leading-none">Profile</h1>
+          <h1 className="text-base font-bold text-black uppercase tracking-tight leading-none">Profile</h1>
         </div>
-        <div className="bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
+        <div className="bg-blue-600 text-white px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20">
           ID: {profile?.deliveryId || "..."}
         </div>
       </div>
@@ -512,35 +511,35 @@ export const ProfileDetailsV2 = () => {
         </div>
 
         <div className="text-center pt-6">
-          <h2 className="text-2xl font-black text-gray-900 leading-none">{profile?.name}</h2>
+          <h2 className="text-xl font-bold text-gray-900 leading-none">{profile?.name}</h2>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2 mb-4">Delivery Partner • {profile?.location?.city}</p>
 
           <div className="flex items-center justify-center gap-2">
-            <div className={`${isAdminApproved ? 'bg-blue-600 text-white' : 'bg-orange-500/10 text-orange-500'} px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border ${isAdminApproved ? 'border-blue-700 shadow-lg' : 'border-orange-500/20'} flex items-center gap-2`}>
-              <CheckCircle className="w-4 h-4" /> {isAdminApproved ? "Approved" : (profile?.status || "Pending")}
+            <div className={`${isAdminApproved ? 'bg-blue-600 text-white' : 'bg-orange-500/10 text-orange-500'} px-3 py-1.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest border ${isAdminApproved ? 'border-blue-700 shadow-lg' : 'border-orange-500/20'} flex items-center gap-1.5`}>
+              <CheckCircle className="w-3.5 h-3.5" /> {isAdminApproved ? "Approved" : (profile?.status || "Pending")}
             </div>
-            <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
-              <Smartphone className="w-4 h-4" /> {profile?.phone}
+            <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-blue-100 flex items-center gap-1.5">
+              <Smartphone className="w-3.5 h-3.5" /> {profile?.phone}
             </div>
           </div>
         </div>
 
         {/* ─── RIDER STATS ─── */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white border border-gray-100 p-4 rounded-3xl shadow-sm text-center">
+          <div className="bg-white border border-gray-100 p-3.5 rounded-3xl shadow-sm text-center">
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rider Level</p>
-            <h4 className="text-xl font-black text-gray-900">{riderLevel}</h4>
+            <h4 className="text-base font-bold text-gray-900">{riderLevel}</h4>
           </div>
-          <div className="bg-white border border-gray-100 p-4 rounded-3xl shadow-sm text-center">
+          <div className="bg-white border border-gray-100 p-3.5 rounded-3xl shadow-sm text-center">
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Rating</p>
-            <h4 className="text-xl font-black text-gray-900">{ratingDisplay}</h4>
+            <h4 className="text-base font-bold text-gray-900">{ratingDisplay}</h4>
           </div>
         </div>
 
         {/* ─── VEHICLE SECTION ─── */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
               {(() => {
                 const type = String(profile?.vehicle?.type || "").toLowerCase();
                 if (type.includes("car")) return <Car className="w-4 h-4 text-gray-400" />;
@@ -571,8 +570,8 @@ export const ProfileDetailsV2 = () => {
 
         {/* ─── BANK & PAYMENTS SECTION (ENHANCED) ─── */}
         <section>
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest flex items-center gap-2">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
               <Banknote className="w-4 h-4 text-gray-400" /> Bank & Payments
             </h3>
             <button
@@ -591,7 +590,7 @@ export const ProfileDetailsV2 = () => {
                 setUpiQrPreview(null)
                 setShowBankDetailsPopup(true)
               }}
-              className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+              className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline"
             >
               Edit Details
             </button>
@@ -604,7 +603,7 @@ export const ProfileDetailsV2 = () => {
                 <div className="flex justify-between items-start mb-10">
                   <div>
                     <p className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Bank Account</p>
-                    <h4 className="text-lg font-bold tracking-tight">{bankDetails.bankName || "Link Account"}</h4>
+                    <h4 className="text-base font-bold tracking-tight">{bankDetails.bankName || "Link Account"}</h4>
                   </div>
                   <Banknote className="w-8 h-8 text-blue-500/50" />
                 </div>
@@ -617,29 +616,29 @@ export const ProfileDetailsV2 = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">IFSC Code</p>
-                    <p className="text-sm font-black tracking-widest">{bankDetails.ifscCode || "—"}</p>
+                    <p className="text-xs font-bold tracking-widest">{bankDetails.ifscCode || "—"}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* UPI Section */}
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-between group">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 border border-purple-100 group-hover:scale-105 transition-transform">
-                  <Smartphone className="w-7 h-7" />
+            <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex items-center justify-between group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 border border-purple-100 group-hover:scale-105 transition-transform">
+                  <Smartphone className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">UPI ID</p>
-                  <h4 className="text-base font-black text-gray-900">{bankDetails.upiId || "Not added"}</h4>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">UPI ID</p>
+                  <h4 className="text-sm font-bold text-gray-900">{bankDetails.upiId || "Not added"}</h4>
                 </div>
               </div>
               {bankDetails.upiQrCode && (
                 <button
                   onClick={() => { setSelectedDocument({ name: "UPI Scanner", url: bankDetails.upiQrCode }); setShowDocumentModal(true); }}
-                  className="w-14 h-14 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black hover:border-black/20 transition-all"
+                  className="w-12 h-12 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black hover:border-black/20 transition-all"
                 >
-                  <QrCode className="w-6 h-6" />
+                  <QrCode className="w-5 h-5" />
                 </button>
               )}
             </div>
@@ -648,8 +647,8 @@ export const ProfileDetailsV2 = () => {
 
         {/* ─── DOCUMENTS SECTION ─── */}
         <section>
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest flex items-center gap-2">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
               <Shield className="w-4 h-4 text-gray-400" /> Verification Docs
             </h3>
           </div>
@@ -664,9 +663,9 @@ export const ProfileDetailsV2 = () => {
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400"><item.icon className="w-5 h-5" /></div>
                   <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.label}</p>
-                    <p className="text-xs font-bold text-gray-600">{getDocumentVerificationLabel(item.doc)}</p>
-                    <p className="text-[11px] font-semibold text-gray-500 mt-0.5">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{item.label}</p>
+                    <p className="text-xs font-semibold text-gray-500">{getDocumentVerificationLabel(item.doc)}</p>
+                    <p className="text-[11px] font-medium text-gray-400 mt-0.5">
                       {item.number || getDocumentNumber(item.doc) || "Number not added"}
                     </p>
                   </div>

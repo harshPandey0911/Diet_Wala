@@ -529,14 +529,14 @@ export default function DeliveryOTP() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col justify-center px-6 pb-12 pt-4 relative z-10 w-full max-w-md mx-auto">
-        <div className="bg-white/70 dark:bg-[#1a1a1a]/80 backdrop-blur-2xl rounded-[3rem] p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-white/50 dark:border-gray-800 relative overflow-hidden w-full space-y-8">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 pb-12 pt-4 relative z-10 w-full max-w-md mx-auto">
+        <div className="bg-white/70 dark:bg-[#1a1a1a]/80 backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] p-5 xs:p-8 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-white/50 dark:border-gray-800 relative overflow-hidden w-full space-y-8">
           
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-[#4CB8C4]/40 to-transparent" />
 
           {/* Message */}
           <div className="text-center space-y-3">
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white font-['Outfit'] tracking-tight">
+            <h2 className="text-xl font-black text-gray-900 dark:text-white font-['Outfit'] tracking-tight">
               {showNameInput ? "Almost there!" : "Verify your number"}
             </h2>
             <div className="h-1 w-12 bg-gradient-to-r from-[#4CB8C4] to-[#3CD3AD] rounded-full mx-auto" />
@@ -613,7 +613,7 @@ export default function DeliveryOTP() {
           {/* OTP Input Fields */}
           {!showNameInput && !pendingMessage && (
             <div className="space-y-8">
-              <div className="flex justify-center gap-3 sm:gap-4">
+              <div className="flex justify-center gap-1.5 xs:gap-3 sm:gap-4">
                 {otp.map((digit, index) => (
                   <Input
                     key={index}
@@ -628,7 +628,7 @@ export default function DeliveryOTP() {
                     disabled={isLoading}
                     autoComplete="off"
                     autoFocus={false}
-                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-black p-0 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus-visible:ring-0 focus-visible:border-[#4CB8C4] bg-white/80 dark:bg-gray-900/50 shadow-sm transition-all text-gray-900 dark:text-white"
+                    className="w-8 h-10 xs:w-10 xs:h-12 sm:w-12 sm:h-14 text-center text-base xs:text-base font-black p-0 border-2 border-gray-200 dark:border-gray-700 rounded-xl xs:rounded-2xl focus-visible:ring-0 focus-visible:border-[#4CB8C4] bg-white/80 dark:bg-gray-900/50 shadow-sm transition-all text-gray-900 dark:text-white"
                   />
                 ))}
               </div>
@@ -686,7 +686,7 @@ export default function DeliveryOTP() {
               <button
                 onClick={handleSubmitName}
                 disabled={isLoading}
-                className="w-full py-4 bg-gradient-to-r from-[#4CB8C4] to-[#3CD3AD] hover:from-[#3BA0AB] hover:to-[#2BB896] text-white rounded-2xl font-bold text-lg shadow-[0_15px_30px_-10px_rgba(76,184,196,0.5)] transition-all active:scale-[0.98] disabled:opacity-70 disabled:scale-100 flex justify-center items-center"
+                className="w-full py-3 bg-gradient-to-r from-[#4CB8C4] to-[#3CD3AD] hover:from-[#3BA0AB] hover:to-[#2BB896] text-white rounded-2xl font-bold text-base shadow-[0_15px_30px_-10px_rgba(76,184,196,0.5)] transition-all active:scale-[0.98] disabled:opacity-70 disabled:scale-100 flex justify-center items-center"
               >
                 {isLoading ? "Continuing..." : "Continue"}
               </button>

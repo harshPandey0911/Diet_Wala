@@ -136,189 +136,189 @@ export const HistoryV2 = () => {
           </button>
        </div>
 
-       {/* 2. Selection Tabs (Matched to Image) */}
-       <div className="bg-white px-4 flex items-center gap-8 sticky top-[61px] z-[90] border-b border-gray-100">
-          {['daily', 'weekly', 'monthly'].map((tab) => (
-             <button
-               key={tab}
-               onClick={() => setActiveTab(tab)}
-               className={`py-4 text-base font-medium capitalize relative ${activeTab === tab ? 'text-[#10B981]' : 'text-gray-400'}`}
-             >
-                {tab}
-                {activeTab === tab && <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10B981]" />}
-             </button>
-          ))}
-       </div>
+        {/* 2. Selection Tabs (Matched to Image) */}
+        <div className="bg-white px-4 flex items-center gap-8 sticky top-[61px] z-[90] border-b border-gray-100">
+           {['daily', 'weekly', 'monthly'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-2.5 sm:py-4 text-base font-medium capitalize relative ${activeTab === tab ? 'text-[#10B981]' : 'text-gray-400'}`}
+              >
+                 {tab}
+                 {activeTab === tab && <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10B981]" />}
+              </button>
+           ))}
+        </div>
 
-       {/* 3. Filter Controls (Matched to Image) */}
-       <div className="bg-white px-4 py-4 flex gap-3 sticky top-[118px] z-[80]">
-          <button 
-             onClick={() => { setShowDatePicker(!showDatePicker); setShowTripTypePicker(false); }}
-             className="flex-1 px-4 py-3 bg-[#f8f9fa] border border-gray-100 rounded-xl flex items-center justify-between text-gray-800"
-          >
-             <span className="text-sm font-medium">{formatDateDisplay(selectedDate)}</span>
-             <ChevronDown className={`w-4 h-4 text-gray-400 transform transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
-          </button>
-          <button 
-             onClick={() => { setShowTripTypePicker(!showTripTypePicker); setShowDatePicker(false); }}
-             className="w-[140px] px-4 py-3 bg-[#f8f9fa] border border-gray-100 rounded-xl flex items-center justify-between text-gray-800"
-          >
-             <span className="text-sm font-medium">{selectedTripType}</span>
-             <ChevronDown className={`w-4 h-4 text-gray-400 transform transition-transform ${showTripTypePicker ? 'rotate-180' : ''}`} />
-          </button>
-       </div>
+        {/* 3. Filter Controls (Matched to Image) */}
+        <div className="bg-white px-4 py-2.5 sm:py-4 flex gap-3 sticky top-[108px] z-[80]">
+           <button 
+              onClick={() => { setShowDatePicker(!showDatePicker); setShowTripTypePicker(false); }}
+              className="flex-1 px-4 py-2 sm:py-3 bg-[#f8f9fa] border border-gray-100 rounded-xl flex items-center justify-between text-gray-800"
+           >
+              <span className="text-sm font-medium">{formatDateDisplay(selectedDate)}</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transform transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+           </button>
+           <button 
+              onClick={() => { setShowTripTypePicker(!showTripTypePicker); setShowDatePicker(false); }}
+              className="w-[140px] px-4 py-2 sm:py-3 bg-[#f8f9fa] border border-gray-100 rounded-xl flex items-center justify-between text-gray-800"
+           >
+              <span className="text-sm font-medium">{selectedTripType}</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transform transition-transform ${showTripTypePicker ? 'rotate-180' : ''}`} />
+           </button>
+        </div>
 
-       {/* Dropdowns */}
-       <AnimatePresence>
-          {showDatePicker && (
-             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="fixed left-4 right-4 top-[185px] z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-[300px] overflow-y-auto p-2">
-                {recentDates.map((date, idx) => (
-                   <button 
-                      key={idx} 
-                      onClick={() => { setSelectedDate(date); setShowDatePicker(false); }}
-                      className={`w-full text-left p-4 rounded-xl text-sm font-medium ${date.toDateString() === selectedDate.toDateString() ? 'bg-green-50 text-[#10B981] font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
-                   >
-                      {formatDateDisplay(date)}
-                   </button>
-                ))}
-             </motion.div>
-          )}
-          {showTripTypePicker && (
-             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="fixed right-4 top-[185px] w-48 z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 p-2">
-                {tripTypes.map((type, idx) => (
-                   <button 
-                      key={idx} 
-                      onClick={() => { setSelectedTripType(type); setShowTripTypePicker(false); }}
-                      className={`w-full text-left p-4 rounded-xl text-sm font-medium ${type === selectedTripType ? 'bg-green-50 text-[#10B981] font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
-                   >
-                      {type}
-                   </button>
-                ))}
-             </motion.div>
-          )}
-       </AnimatePresence>
+        {/* Dropdowns */}
+        <AnimatePresence>
+           {showDatePicker && (
+              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="fixed left-4 right-4 top-[165px] z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-[300px] overflow-y-auto p-2">
+                 {recentDates.map((date, idx) => (
+                    <button 
+                       key={idx} 
+                       onClick={() => { setSelectedDate(date); setShowDatePicker(false); }}
+                       className={`w-full text-left p-4 rounded-xl text-sm font-medium ${date.toDateString() === selectedDate.toDateString() ? 'bg-green-50 text-[#10B981] font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                       {formatDateDisplay(date)}
+                    </button>
+                 ))}
+              </motion.div>
+           )}
+           {showTripTypePicker && (
+              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="fixed right-4 top-[165px] w-48 z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 p-2">
+                 {tripTypes.map((type, idx) => (
+                    <button 
+                       key={idx} 
+                       onClick={() => { setSelectedTripType(type); setShowTripTypePicker(false); }}
+                       className={`w-full text-left p-4 rounded-xl text-sm font-medium ${type === selectedTripType ? 'bg-green-50 text-[#10B981] font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                       {type}
+                    </button>
+                 ))}
+              </motion.div>
+           )}
+        </AnimatePresence>
 
-       {/* 4. Page Content */}
-       <div className="px-4 py-2 space-y-5">
-          {/* Performance Summary Banner (Matched to Image) */}
-          <div className="bg-[#E9F9F4] rounded-2xl p-6 border border-[#D1F2E8] flex justify-between items-center">
-             <div>
-                <p className="text-[11px] font-bold text-[#10B981] mb-1">COD Collected</p>
-                <h3 className="text-xl font-bold text-gray-950">₹{metrics.cod.toFixed(2)}</h3>
-             </div>
-             <div className="text-right">
-                <p className="text-[11px] font-bold text-[#10B981] mb-1">Earnings</p>
-                <h3 className="text-xl font-bold text-gray-950">₹{metrics.earnings.toFixed(2)}</h3>
-             </div>
-          </div>
+        {/* 4. Page Content */}
+        <div className="px-3 sm:px-4 py-1.5 sm:py-2 space-y-3.5 sm:space-y-5">
+           {/* Performance Summary Banner (Matched to Image) */}
+           <div className="bg-[#E9F9F4] rounded-xl p-4 sm:p-6 border border-[#D1F2E8] flex justify-between items-center">
+              <div>
+                 <p className="text-[11px] font-bold text-[#10B981] mb-1">COD Collected</p>
+                 <h3 className="text-xl font-bold text-gray-950">₹{metrics.cod.toFixed(2)}</h3>
+              </div>
+              <div className="text-right">
+                 <p className="text-[11px] font-bold text-[#10B981] mb-1">Earnings</p>
+                 <h3 className="text-xl font-bold text-gray-950">₹{metrics.earnings.toFixed(2)}</h3>
+              </div>
+           </div>
 
-          {/* Trip List */}
-          {loading ? (
-             <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-[#10B981]" />
-                <p className="text-gray-400 text-xs font-medium">Fetching trips...</p>
-             </div>
-          ) : trips.length > 0 ? (
-             <div className="space-y-4">
-                {trips.map((trip, idx) => {
-                   const isCompleted = (trip.status || '').toLowerCase() === 'completed';
-                   const isCancelled = (trip.status || '').toLowerCase() === 'cancelled';
-                   const isPending = !isCompleted && !isCancelled;
-                   const payout = Number(trip.riderEarning || trip.deliveryEarning || trip?.pricing?.deliveryFee || trip.amount || trip.earningAmount || 0);
-                   const isQR = (trip.paymentMethod || '').toLowerCase() === 'razorpay_qr';
-                   const isCOD = (trip.paymentMethod || '').toLowerCase() === 'cash' || (trip.paymentMethod || '').toLowerCase() === 'cod';
-                   const collection = (isCOD || isQR) ? Number(trip.codCollectedAmount || trip.orderTotal || 0) : 0;
+           {/* Trip List */}
+           {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                 <Loader2 className="w-8 h-8 animate-spin text-[#10B981]" />
+                 <p className="text-gray-400 text-xs font-medium">Fetching trips...</p>
+              </div>
+           ) : trips.length > 0 ? (
+              <div className="space-y-3">
+                 {trips.map((trip, idx) => {
+                    const isCompleted = (trip.status || '').toLowerCase() === 'completed';
+                    const isCancelled = (trip.status || '').toLowerCase() === 'cancelled';
+                    const isPending = !isCompleted && !isCancelled;
+                    const payout = Number(trip.riderEarning || trip.deliveryEarning || trip?.pricing?.deliveryFee || trip.amount || trip.earningAmount || 0);
+                    const isQR = (trip.paymentMethod || '').toLowerCase() === 'razorpay_qr';
+                    const isCOD = (trip.paymentMethod || '').toLowerCase() === 'cash' || (trip.paymentMethod || '').toLowerCase() === 'cod';
+                    const collection = (isCOD || isQR) ? Number(trip.codCollectedAmount || trip.orderTotal || 0) : 0;
 
-                   return (
-                      <div key={trip.orderId || idx} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm active:scale-[0.99] transition-all">
-                         <div className="flex justify-between items-start mb-2">
+                    return (
+                       <div key={trip.orderId || idx} className="bg-white rounded-xl p-3.5 sm:p-5 border border-gray-100 shadow-sm active:scale-[0.99] transition-all">
+                          <div className="flex justify-between items-start mb-1">
+                              <div>
+                                 <h4 className="text-base font-bold text-gray-950">{trip.orderId || 'ORDER-ID'}</h4>
+                                 <p className="text-sm font-medium text-gray-500 mt-0.5">{trip.restaurant || trip.restaurantName || 'Sayaji'}</p>
+                                 <p className="text-xs text-gray-400 font-medium mt-0.5 line-clamp-1">{extractItems(trip)}</p>
+                              </div>
+                              <span className={`text-sm font-bold ${isCompleted ? 'text-[#0066FF]' : isCancelled ? 'text-red-500' : 'text-orange-500'}`}>
+                                 {trip.status || 'Status'}
+                              </span>
+                          </div>
+                          
+                          <div className="flex gap-2 mb-2 mt-2">
+                              <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${(isCOD || isQR) ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-[#0066FF]'}`}>
+                                 {isQR ? 'COD (QR)' : isCOD ? 'COD' : 'Online'}
+                              </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-2.5 border-t border-gray-50">
+                              <div>
+                                 <p className="text-[11px] font-medium text-gray-400 mb-1">Time</p>
+                                 <p className="text-sm font-bold text-gray-950">{trip.time || '--:--'}</p>
+                              </div>
+                              <div className="text-center">
+                                 <p className="text-[11px] font-medium text-gray-400 mb-1">{(isCOD || isQR) ? 'COD' : 'Payment'}</p>
+                                 <p className="text-sm font-bold text-gray-950">{(isCOD || isQR) ? `₹${collection.toFixed(2)}` : 'Online'}</p>
+                              </div>
+                              <div className="text-right">
+                                 <p className="text-[11px] font-medium text-gray-400 mb-1">Earning</p>
+                                 <p className="text-sm font-bold text-gray-950">₹{payout.toFixed(2)}</p>
+                              </div>
+                          </div>
+                       </div>
+                    );
+                 })}
+              </div>
+           ) : (
+              <div className="py-20 text-center flex flex-col items-center">
+                 <Clock className="w-12 h-12 text-gray-100 mb-4" />
+                 <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No Trips Recorded</p>
+              </div>
+           )}
+        </div>
+
+        {/* Bonus Drawer (The Gift Modal) */}
+        <AnimatePresence>
+           {showBonusModal && (
+              <div className="fixed inset-0 z-[1000] flex items-end">
+                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowBonusModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                 <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="relative w-full bg-white rounded-t-[2rem] sm:rounded-t-[2.5rem] p-5 sm:p-8 max-h-[85vh] flex flex-col shadow-2xl">
+                    <div className="w-12 h-1 bg-gray-100 rounded-full mx-auto mb-4 sm:mb-8 shrink-0" />
+                    <div className="flex items-center justify-between mb-4 sm:mb-8 shrink-0">
+                       <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-50 rounded-xl flex items-center justify-center text-[#10B981] border border-green-100 shrink-0">
+                             <Gift className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                          </div>
+                          <div>
+                             <h3 className="text-base sm:text-lg font-bold text-gray-950">Incentive Records</h3>
+                             <p className="text-xs text-gray-400 font-medium">Extra bonuses credited by team</p>
+                          </div>
+                       </div>
+                       <button onClick={() => setShowBonusModal(false)} className="p-2 text-gray-400"><X className="w-5 h-5" /></button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+                       {bonusLoading ? (
+                          <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#10B981]" /></div>
+                       ) : bonusTransactions.length > 0 ? bonusTransactions.map((tx, i) => (
+                          <div key={i} className="bg-gray-50 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 border border-gray-100 flex justify-between items-center">
                              <div>
-                                <h4 className="text-base font-bold text-gray-950">{trip.orderId || 'ORDER-ID'}</h4>
-                                <p className="text-sm font-medium text-gray-500 mt-0.5">{trip.restaurant || trip.restaurantName || 'Sayaji'}</p>
-                                <p className="text-xs text-gray-400 font-medium mt-0.5 line-clamp-1">{extractItems(trip)}</p>
+                                <p className="text-base sm:text-lg font-bold text-gray-950 mb-0.5">₹{Number(tx.amount || 0).toFixed(2)}</p>
+                                <p className="text-sm font-medium text-gray-600 line-clamp-1">{tx.description || 'Bonus Payout'}</p>
+                                <p className="text-[10px] text-gray-400 font-medium mt-1">{new Date(tx.createdAt || tx.date).toLocaleDateString()}</p>
                              </div>
-                             <span className={`text-sm font-bold ${isCompleted ? 'text-[#0066FF]' : isCancelled ? 'text-red-500' : 'text-orange-500'}`}>
-                                {trip.status || 'Status'}
-                             </span>
-                         </div>
-                         
-                         <div className="flex gap-2 mb-4 mt-3">
-                             <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${(isCOD || isQR) ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-[#0066FF]'}`}>
-                                {isQR ? 'COD (QR)' : isCOD ? 'COD' : 'Online'}
-                             </span>
-                         </div>
-
-                         <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-50">
-                             <div>
-                                <p className="text-[11px] font-medium text-gray-400 mb-1">Time</p>
-                                <p className="text-sm font-bold text-gray-950">{trip.time || '--:--'}</p>
-                             </div>
-                             <div className="text-center">
-                                <p className="text-[11px] font-medium text-gray-400 mb-1">{(isCOD || isQR) ? 'COD' : 'Payment'}</p>
-                                <p className="text-sm font-bold text-gray-950">{(isCOD || isQR) ? `₹${collection.toFixed(2)}` : 'Online'}</p>
-                             </div>
-                             <div className="text-right">
-                                <p className="text-[11px] font-medium text-gray-400 mb-1">Earning</p>
-                                <p className="text-sm font-bold text-gray-950">₹{payout.toFixed(2)}</p>
-                             </div>
-                         </div>
-                      </div>
-                   );
-                })}
-             </div>
-          ) : (
-             <div className="py-20 text-center flex flex-col items-center">
-                <Clock className="w-12 h-12 text-gray-100 mb-4" />
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No Trips Recorded</p>
-             </div>
-          )}
-       </div>
-
-       {/* Bonus Drawer (The Gift Modal) */}
-       <AnimatePresence>
-          {showBonusModal && (
-             <div className="fixed inset-0 z-[1000] flex items-end">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowBonusModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="relative w-full bg-white rounded-t-[2.5rem] p-8 max-h-[85vh] flex flex-col shadow-2xl">
-                   <div className="w-12 h-1 bg-gray-100 rounded-full mx-auto mb-8 shrink-0" />
-                   <div className="flex items-center justify-between mb-8 shrink-0">
-                      <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-[#10B981] border border-green-100">
-                            <Gift className="w-6 h-6" />
-                         </div>
-                         <div>
-                            <h3 className="text-lg font-bold text-gray-950">Incentive Records</h3>
-                            <p className="text-xs text-gray-400 font-medium">Extra bonuses credited by team</p>
-                         </div>
-                      </div>
-                      <button onClick={() => setShowBonusModal(false)} className="p-2 text-gray-400"><X className="w-5 h-5" /></button>
-                   </div>
-                   
-                   <div className="flex-1 overflow-y-auto pr-1 space-y-4">
-                      {bonusLoading ? (
-                         <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#10B981]" /></div>
-                      ) : bonusTransactions.length > 0 ? bonusTransactions.map((tx, i) => (
-                         <div key={i} className="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex justify-between items-center">
-                            <div>
-                               <p className="text-lg font-bold text-gray-950 mb-0.5">₹{Number(tx.amount || 0).toFixed(2)}</p>
-                               <p className="text-sm font-medium text-gray-600 line-clamp-1">{tx.description || 'Bonus Payout'}</p>
-                               <p className="text-[10px] text-gray-400 font-medium mt-1">{new Date(tx.createdAt || tx.date).toLocaleDateString()}</p>
-                            </div>
-                            <span className="bg-green-100 text-[#10B981] text-[10px] font-bold px-3 py-1 rounded-full uppercase">DELIVERED</span>
-                         </div>
-                      )) : (
-                         <div className="py-20 text-center flex flex-col items-center">
-                             <Search className="w-12 h-12 text-gray-100 mb-4" />
-                             <p className="text-sm font-bold text-gray-400">Nothing to show</p>
-                         </div>
-                      )}
-                   </div>
-                   
-                   <button onClick={() => setShowBonusModal(false)} className="w-full py-5 bg-black text-white rounded-2xl font-bold text-base mt-8 shrink-0 active:scale-95 transition-all">Okay, Got it</button>
-                </motion.div>
-             </div>
-          )}
-       </AnimatePresence>
+                             <span className="bg-green-100 text-[#10B981] text-[10px] font-bold px-3 py-1 rounded-full uppercase">DELIVERED</span>
+                          </div>
+                       )) : (
+                          <div className="py-20 text-center flex flex-col items-center">
+                              <Search className="w-12 h-12 text-gray-100 mb-4" />
+                              <p className="text-sm font-bold text-gray-400">Nothing to show</p>
+                          </div>
+                       )}
+                    </div>
+                    
+                    <button onClick={() => setShowBonusModal(false)} className="w-full py-2.5 bg-black text-white rounded-xl font-bold text-sm mt-4 sm:mt-8 shrink-0 active:scale-95 transition-all">Okay, Got it</button>
+                 </motion.div>
+              </div>
+           )}
+        </AnimatePresence>
     </div>
   );
 };

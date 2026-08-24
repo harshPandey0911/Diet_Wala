@@ -27,24 +27,9 @@ export default function DeliverySettings() {
   const [toastMessage, setToastMessage] = useState("")
   const [savingStatus, setSavingStatus] = useState(false)
 
-  // Lenis smooth scrolling
+  // Scroll to top on mount and prevent Lenis scroll locking
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    })
-
-    function raf(time) {
-      lenis.raf(time)
-      requestAnimationFrame(raf)
-    }
-
-    requestAnimationFrame(raf)
-
-    return () => {
-      lenis.destroy()
-    }
+    window.scrollTo(0, 0)
   }, [])
 
   const syncStatusLocally = (status) => {
@@ -203,7 +188,7 @@ export default function DeliverySettings() {
   }
 
   return (
-    <div className="restaurant-page min-h-full bg-gray-100">
+    <div className="restaurant-page min-h-screen bg-gray-100 overflow-y-auto pb-24">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50">
         <div className="flex items-center gap-3">

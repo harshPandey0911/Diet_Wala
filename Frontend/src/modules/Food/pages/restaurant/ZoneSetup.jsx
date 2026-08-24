@@ -73,6 +73,7 @@ export default function ZoneSetup() {
   const polygonRefs = useRef([])
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     fetchRestaurantData()
     fetchZones()
     bootstrapZoneMap()
@@ -582,7 +583,7 @@ export default function ZoneSetup() {
   }
 
   return (
-    <div className="restaurant-page min-h-full bg-gray-50">
+    <div className="restaurant-page min-h-screen bg-gray-50 overflow-y-auto pb-24">
       <div className="p-4 md:p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">

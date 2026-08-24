@@ -122,7 +122,7 @@ export default function DeliverySignIn() {
       </motion.div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10 w-full max-w-md mx-auto">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12 relative z-10 w-full max-w-md mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -152,10 +152,10 @@ export default function DeliverySignIn() {
 
           {/* Typography Section */}
           <div className="text-center mb-8 px-2">
-            <h1 className="text-[28px] md:text-[32px] font-black text-[#3c2a21] dark:text-white leading-tight tracking-tight mb-2 font-['Outfit']">
+            <h1 className="text-xl sm:text-[28px] md:text-[32px] font-black text-[#3c2a21] dark:text-white leading-tight tracking-tight mb-2 font-['Outfit']">
               Deliver smiles, <br/> earn on your schedule.
             </h1>
-            <h2 className="text-[22px] text-[#5e4b3c] dark:text-gray-300 font-semibold mb-1">
+            <h2 className="text-base sm:text-[22px] text-[#5e4b3c] dark:text-gray-300 font-semibold mb-1">
               Delivery Partner Login
             </h2>
             <p className="text-sm text-[#8c7a6b] dark:text-gray-400 font-medium">
@@ -193,7 +193,7 @@ export default function DeliverySignIn() {
                     localStorage.setItem("delivery_draft_phone", val);
                   }}
                   maxLength={10}
-                  className="flex-1 bg-transparent border-0 outline-none focus:border-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-gray-900 dark:text-white font-bold text-lg placeholder:text-gray-400 placeholder:font-medium placeholder:text-sm py-2 px-1"
+                  className="flex-1 w-full min-w-0 bg-transparent border-0 outline-none focus:border-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-gray-900 dark:text-white font-bold text-base placeholder:text-gray-400 placeholder:font-medium placeholder:text-sm py-2 px-1"
                   style={{ boxShadow: "none", border: "none", outline: "none" }}
                   placeholder="Enter your 10-digit registered..."
                 />
@@ -204,7 +204,7 @@ export default function DeliverySignIn() {
             <button
               type="submit"
               disabled={loading || phone.length < 10}
-              className="w-full py-4.5 bg-gradient-to-r from-[#4CB8C4] to-[#3CD3AD] hover:from-[#3BA0AB] hover:to-[#2BB896] disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white rounded-[2rem] font-bold text-[17px] shadow-[0_15px_30px_-10px_rgba(76,184,196,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full py-3 bg-gradient-to-r from-[#4CB8C4] to-[#3CD3AD] hover:from-[#3BA0AB] hover:to-[#2BB896] disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white rounded-[2rem] font-bold text-base shadow-[0_15px_30px_-10px_rgba(76,184,196,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {loading ? (
                 <Loader2 className="w-6 h-6 animate-spin" />
