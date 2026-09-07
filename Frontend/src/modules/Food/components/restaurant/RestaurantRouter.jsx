@@ -43,6 +43,7 @@ const WithdrawalHistoryPage = lazy(() => import("@food/pages/restaurant/Withdraw
 const PhoneNumbersPage = lazy(() => import("@food/pages/restaurant/PhoneNumbersPage"))
 const DownloadReport = lazy(() => import("@food/pages/restaurant/DownloadReport"))
 const Promocodes = lazy(() => import("@food/pages/restaurant/Promocodes"))
+const RestaurantMySubscription = lazy(() => import("@food/pages/restaurant/RestaurantMySubscription"))
 
 const ManageOutlets = lazy(() => import("@food/pages/restaurant/ManageOutlets"))
 const UpdateBankDetails = lazy(() => import("@food/pages/restaurant/UpdateBankDetails"))
@@ -115,6 +116,7 @@ export default function RestaurantRouter() {
             <Route path="phone" element={<PhoneNumbersPage />} />
             <Route path="download-report" element={<DownloadReport />} />
             <Route path="promocodes" element={<Promocodes />} />
+            <Route path="subscription" element={<RestaurantMySubscription />} />
             <Route path="manage-outlets" element={<ManageOutlets />} />
             <Route path="update-bank-details" element={<UpdateBankDetails />} />
             <Route path="reservations" element={<DiningReservations />} />

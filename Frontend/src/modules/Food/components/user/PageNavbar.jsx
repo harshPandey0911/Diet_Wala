@@ -8,6 +8,7 @@ import { useLocationSelector } from "./UserLayout"
 import { FaLocationDot } from "react-icons/fa6"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
 import { useAppLogo } from "@food/hooks/useAppLogo"
+import DietValaLogo from "@/shared/components/DietValaLogo"
 import { toast } from "sonner"
 import { readStoredUserLocation } from "@food/utils/locationPersistence"
 
@@ -1011,21 +1012,7 @@ export default function PageNavbar({
         {/* Left: Company Logo */}
         {showLogo && (
           <Link to="/food/user" className="flex-shrink-0 mr-3 sm:mr-4">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={companyName || "Company Logo"}
-                className="h-8 w-auto sm:h-10 md:h-12 object-contain scale-[1.2] sm:scale-[1.3] origin-left"
-                crossOrigin="anonymous"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-            ) : (
-              <span className={`text-base font-bold ${textColorClass}`}>
-                {companyName || "Tuggo"}
-              </span>
-            )}
+            <DietValaLogo size="sm" showTagline={false} stacked={false} />
           </Link>
         )}
 

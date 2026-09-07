@@ -63,12 +63,12 @@ export default function RestaurantSidebar({
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--rt-border)] px-4 py-4">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className={cn("flex items-center justify-between gap-1 border-b border-[var(--rt-border)] py-4", collapsed ? "px-2 flex-col gap-2" : "px-4")}>
+          <div className="flex min-w-0 items-center justify-center">
             {!collapsed ? (
               <DietValaLogo size="md" showTagline={false} stacked={false} />
             ) : (
-              <DietValaLogo size="sm" showTagline={false} stacked={true} />
+              <DietValaLogo size="md" showTagline={false} showText={false} stacked={true} />
             )}
           </div>
           <button
@@ -82,11 +82,11 @@ export default function RestaurantSidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:flex"
+            className="hidden rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 lg:flex items-center justify-center"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             ) : (
               <ChevronLeft className="h-5 w-5" />
             )}

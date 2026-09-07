@@ -391,9 +391,6 @@ export default function RestaurantNavbar({
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="shrink-0">
-          <DietValaLogo size="sm" showTagline={false} stacked={true} />
-        </div>
         <div className="min-w-0 flex-1">
           {/* Restaurant Name */}
           <div className="flex items-baseline min-w-0">

@@ -85,6 +85,7 @@ export const adminSidebarMenu = [
         icon: "UtensilsCrossed",
         suTuggoms: [
           { label: "Restaurants List", path: "/admin/food/restaurants" },
+          { label: "Subscriptions & Plans", path: "/admin/food/restaurants/subscriptions" },
           { label: "Menu Bulk Upload", path: "/admin/food/restaurants/menu-bulk-upload" },
           { label: "New Joining Request", path: "/admin/food/restaurants/joining-request" },
           { label: "Restaurant Commission", path: "/admin/food/restaurants/commission" },

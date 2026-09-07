@@ -9,6 +9,7 @@ import {
 } from "@food/components/ui/popover";
 import { Badge } from "@food/components/ui/badge";
 import useNotificationInbox from "@food/hooks/useNotificationInbox";
+import DietValaLogo from "@/shared/components/DietValaLogo";
 
 const ICON_MAP = {
   CheckCircle2,
@@ -112,15 +113,15 @@ export default function HomeHeader({
 
   return (
     <>
-      <div id="home-header-loc-row" className="relative pt-2 pb-2 px-3.5 transition-all duration-500 bg-[#FFFBEB] dark:bg-[#18150c]">
+      <div id="home-header-loc-row" className="relative pt-0.5 pb-2 px-3.5 transition-all duration-500 bg-[#FFFBEB] dark:bg-[#18150c] md:hidden">
         <div className="relative z-10 space-y-2">
           
           {/* Row 1: Top Navigation - Menu Icon, DietVala Logo & Tagline, Bell Notification Icon */}
-          <div className="flex items-center justify-between gap-2 pb-0.5">
+          <div className="flex items-center justify-between gap-2 pb-0.5 pt-0.5">
             {/* Left: White Circle Hamburger Menu Icon */}
             <button 
               type="button" 
-              className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-2xs border border-gray-100 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-800 dark:text-gray-200 active:scale-95 flex-shrink-0"
+              className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-2xs border border-gray-100 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-800 dark:text-gray-200 active:scale-95 flex-shrink-0 -mt-1"
               aria-label="Open menu"
             >
               <Menu className="h-4 w-4" strokeWidth={2.5} />
@@ -128,37 +129,13 @@ export default function HomeHeader({
 
             {/* Center: DietVala Branding Logo */}
             <Link to="/food/user/" className="flex flex-col items-center justify-center group flex-1">
-              <div className="flex flex-col items-center justify-center">
-                {/* Stylized D Leaf Logo Mark on Top */}
-                <div className="w-8 h-8 relative flex items-center justify-center flex-shrink-0 mb-0.5">
-                  <svg className="w-8 h-8" viewBox="0 0 100 100" fill="none">
-                    {/* Gold D path */}
-                    <path d="M22 14 H56 C76 14, 88 28, 88 48 C88 68, 76 82, 56 82 H22 V14 Z" fill="#FFC700" />
-                    {/* Inner cut */}
-                    <path d="M34 26 H53 C66 26, 75 36, 75 48 C75 60, 66 70, 53 70 H34 V26 Z" fill="#FFFBEB" />
-                    {/* Green Leaf inside D */}
-                    <path d="M42 42 C42 30, 62 33, 62 48 C62 62, 47 60, 42 42 Z" fill="#16A34A" />
-                  </svg>
-                </div>
-                {/* DietVala Text Centered Below D */}
-                <span className="text-lg sm:text-xl font-black tracking-tight flex items-center leading-none">
-                  <span className="text-[#262626] dark:text-white">Diet</span>
-                  <span className="text-[#16A34A]">Vala</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="h-[1.5px] w-6 bg-[#FFC700]" />
-                <span className="text-[8px] font-bold text-gray-700 dark:text-gray-300 tracking-tight">
-                  Healthy khana, Aapke ghar tak
-                </span>
-                <div className="h-[1.5px] w-6 bg-[#FFC700]" />
-              </div>
+              <DietValaLogo size="lg" showTagline={true} stacked={true} />
             </Link>
 
             {/* Right: White Circle Notification Bell */}
             <Popover>
               <PopoverTrigger asChild>
-                <div className="w-8 h-8 relative flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-2xs border border-gray-100 dark:border-gray-700 cursor-pointer active:scale-95 transition-all text-gray-800 dark:text-gray-200 flex-shrink-0">
+                <div className="w-8 h-8 relative flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-2xs border border-gray-100 dark:border-gray-700 cursor-pointer active:scale-95 transition-all text-gray-800 dark:text-gray-200 flex-shrink-0 -mt-1">
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
                     <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-[#16A34A] border border-white dark:border-gray-900 animate-pulse" />
@@ -247,7 +224,7 @@ export default function HomeHeader({
       </div>
 
       {/* Sticky Search Bar and Veg Toggle */}
-      <div id="home-header-search-row" className={`relative sticky z-[60] px-3 pb-1 transition-all duration-300 pointer-events-none mt-0.5 ${isCategoryStuck ? 'top-0 pt-1 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border-b border-gray-100 dark:border-gray-800' : 'top-0.5 pt-1 bg-transparent'}`}>
+      <div id="home-header-search-row" className={`relative sticky z-[60] px-3 pb-1 transition-all duration-300 pointer-events-none mt-0.5 md:hidden ${isCategoryStuck ? 'top-0 pt-1 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border-b border-gray-100 dark:border-gray-800' : 'top-0.5 pt-1 bg-transparent'}`}>
         <div className="flex items-center gap-1.5 w-full pointer-events-auto">
           {/* Search Bar */}
           <div

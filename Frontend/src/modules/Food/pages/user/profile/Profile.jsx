@@ -547,72 +547,107 @@ export default function Profile() {
   };
 
   return (
-    <AnimatedPage className="min-h-screen bg-[#f5f5f5] dark:bg-[#0a0a0a]">
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-4 sm:py-6 md:py-8 lg:py-10 pb-20 sm:pb-24">
-        {/* Header: Back Arrow */}
-        <div className="flex items-center mb-4">
-          <Link to="/user">
-            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-              <ArrowLeft className="h-5 w-5 text-black dark:text-white" />
-            </Button>
-          </Link>
+    <AnimatedPage className="min-h-screen bg-[#f8fafc] dark:bg-[#0a0a0a]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-6 md:py-10 pb-24">
+        {/* Header: Page Title */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link to="/user">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white dark:bg-gray-800 shadow-xs border border-gray-200 dark:border-gray-700">
+                <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+              </Button>
+            </Link>
+            <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white">My Profile</h1>
+          </div>
         </div>
 
-        {/* Profile Info Card */}
-        <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl py-0 pt-1 shadow-sm mb-0 border-0 dark:border-gray-800 overflow-hidden">
-          <CardContent className="p-4 py-0 pt-2">
-            <div className="flex items-start gap-4 mb-4">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ duration: 0.3, type: "spring", stiffness: 300 }}>
-                <Avatar className="h-16 w-16 bg-primary/20 border-0">
-                  {userProfile?.profileImage && (
-                    <AvatarImage
-                      src={
-                        userProfile.profileImage &&
-                          userProfile.profileImage.trim()
-                          ? userProfile.profileImage
-                          : undefined
-                      }
-                      alt={displayName}
-                    />
+        {/* Desktop Responsive Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Column: User Card & Quick Stats */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Profile Info Card */}
+            <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center text-center">
+                  <motion.div
+                    whileHover={{ scale: 1.05, rotate: 3 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+                    className="relative mb-3"
+                  >
+                    <Avatar className="h-24 w-24 bg-emerald-100 dark:bg-emerald-950 border-4 border-white dark:border-gray-800 shadow-md">
+                      {userProfile?.profileImage && (
+                        <AvatarImage
+                          src={
+                            userProfile.profileImage &&
+                              userProfile.profileImage.trim()
+                              ? userProfile.profileImage
+                              : undefined
+                          }
+                          alt={displayName}
+                        />
+                      )}
+                      <AvatarFallback className="bg-emerald-600 text-white text-3xl font-bold">
+                        {avatarInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.div>
+                  
+                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-1">
+                    {displayName}
+                  </h2>
+                  
+                  {hasValidEmail && (
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      {userProfile.email}
+                    </p>
                   )}
-                  <AvatarFallback className="bg-primary text-white text-2xl font-semibold">
-                    {avatarInitial}
-                  </AvatarFallback>
-                </Avatar>
-              </motion.div>
-              <div className="flex-1 pt-1">
-                <h2 className="text-xl font-bold text-black dark:text-white mb-1">
-                  {displayName}
-                </h2>
-                {hasValidEmail && (
-                  <p className="text-sm text-black dark:text-gray-300 mb-1">
-                    {userProfile.email}
-                  </p>
-                )}
-                {userProfile?.phone && (
-                  <p
-                    className={`text-sm ${hasValidEmail ? "text-gray-600 dark:text-gray-400" : "text-black dark:text-white"} mb-3`}>
-                    {userProfile.phone}
-                  </p>
-                )}
-                {!hasValidEmail && !userProfile?.phone && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    Not available
-                  </p>
-                )}
-                {/* <Link to="/user/profile/activity" className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  View activity
-                  <ChevronRight className="h-4 w-4" />
-                </Link> */}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  {userProfile?.phone && (
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-900/40 mb-3">
+                      {userProfile.phone}
+                    </p>
+                  )}
+                  
+                  {/* Edit Profile Button */}
+                  <Link to="/food/user/profile/edit" className="w-full mt-2">
+                    <Button variant="outline" className="w-full rounded-xl border-gray-200 dark:border-gray-700 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-gray-800">
+                      <PenSquare className="h-3.5 w-3.5" />
+                      Edit Profile
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Account Options */}
-        <div className="space-y-2 mb-3 mt-3">
+            {/* Quick Wallet & Loyalty Card */}
+            <div className="grid grid-cols-2 gap-3">
+              <Link to="/user/wallet" className="block">
+                <Card className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl shadow-xs p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2 opacity-90">
+                    <Wallet className="h-4 w-4" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Wallet</span>
+                  </div>
+                  <div className="text-xl font-black">
+                    {"\u20B9"}{Number(walletBalance || 0).toFixed(0)}
+                  </div>
+                </Card>
+              </Link>
+              <Link to="/user/loyalty-points" className="block">
+                <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl shadow-xs p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2 opacity-90">
+                    <Award className="h-4 w-4" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Points</span>
+                  </div>
+                  <div className="text-xl font-black">
+                    {Number(loyaltyPoints || 0)} Pts
+                  </div>
+                </Card>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Column: Account Sections */}
+          <div className="lg:col-span-8 space-y-4">
           <Link to="/user/wallet" className="block">
             <motion.div
               whileHover={{ x: 4, scale: 1.01 }}
@@ -853,397 +888,189 @@ export default function Profile() {
             </motion.div>
           </Link>
 
-          <Link to="/user/profile/dining-bookings" className="block">
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-              <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}>
-                      <Utensils className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                    </motion.div>
-                    <span className="text-base font-medium text-gray-900 dark:text-white">
-                      Your dining bookings
-                    </span>
-                  </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Link>
-
-          <motion.div
-            whileHover={{ x: 4, scale: 1.01 }}
-            transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-            <Card
-              className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer"
-              onClick={() => setVegModeOpen(true)}>
-              <CardContent className="p-4  flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                    whileHover={{ rotate: 15, scale: 1.1 }}
-                    transition={{ duration: 0.3 }}>
-                    <Leaf className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                  </motion.div>
-                  <span className="text-base font-medium text-gray-900 dark:text-white">
-                    Veg Mode
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <motion.span
-                    className="text-base font-medium text-gray-900 dark:text-white"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.2 }}>
-                    {vegMode ? "ON" : "OFF"}
-                  </motion.span>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ x: 4, scale: 1.01 }}
-            transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-            <Card
-              className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer"
-              onClick={() => setAppearanceOpen(true)}>
-              <CardContent className="p-4  flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                    whileHover={{ rotate: 15, scale: 1.1 }}
-                    transition={{ duration: 0.3 }}>
-                    <Palette className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                  </motion.div>
-                  <span className="text-base font-medium text-gray-900 dark:text-white">
-                    Appearance
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <motion.span
-                    className="text-base font-medium text-gray-900 dark:text-white capitalize"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.2 }}>
-                    {appearance}
-                  </motion.span>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Collections Section */}
-        <div className="mb-3">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <div className="w-1 h-4 bg-primary rounded"></div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Collections
-            </h3>
-          </div>
-          <Link to="/user/profile/favorites">
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-              <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                <CardContent className="p-4  flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}>
-                      <Bookmark className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                    </motion.div>
-                    <span className="text-base font-medium text-gray-900 dark:text-white">
-                      Your collections
-                    </span>
-                  </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Link>
-        </div>
-
-        {/* Dining Section 
-        <div className="mb-3">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <div className="w-1 h-4 bg-primary rounded"></div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Dining Bookings
-            </h3>
-          </div>
-          <Link to="/user/profile/dining-bookings">
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-              <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}>
-                      <Utensils className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                    </motion.div>
-                    <div className="flex flex-col">
-                      <span className="text-base font-medium text-gray-900 dark:text-white">
-                        Your reservations
-                      </span>
-                      <span className="text-[10px] text-gray-500">View table booking status</span>
-                    </div>
-                  </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Link>
-        </div>
-        */}
-
-        {/* Food Orders Section */}
-        <div className="mb-3">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <div className="w-1 h-4 bg-primary rounded"></div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Food Orders
-            </h3>
-          </div>
-          <div className="space-y-2">
-            <Link to="/user/orders" className="block">
-              <motion.div
-                whileHover={{ x: 4, scale: 1.01 }}
-                transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-                <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                  <CardContent className="p-4 flex items-center justify-between">
+          {/* Right Column: Account Sections */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* 1. Account & Preferences */}
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 shadow-xs border border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="w-1.5 h-4 bg-emerald-600 rounded-full"></div>
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+                  Account & Preferences
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Link to="/user/wallet" className="block">
+                  <div className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between group">
                     <div className="flex items-center gap-3">
-                      <motion.div
-                        className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                        whileHover={{ rotate: 15, scale: 1.1 }}
-                        transition={{ duration: 0.3 }}>
-                        <Building2 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                      </motion.div>
-                      <span className="text-base font-medium text-gray-900 dark:text-white">
-                        Your orders
-                      </span>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400">
+                        <Wallet className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">{companyName} Money</p>
+                        <p className="text-xs text-gray-400">Balance & Top-up</p>
+                      </div>
                     </div>
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      transition={{ duration: 0.2 }}>
-                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    </motion.div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Link>
-          </div>
-        </div>
-
-        {/* More Section */}
-        <div className="mb-8 pb-8">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <div className="w-1 h-4 bg-primary rounded"></div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              More
-            </h3>
-          </div>
-          <div className="space-y-2">
-            <Link to="/user/profile/support" className="block">
-              <motion.div
-                whileHover={{ x: 4, scale: 1.01 }}
-                transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-                <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <motion.div
-                        className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                        whileHover={{ rotate: 15, scale: 1.1 }}
-                        transition={{ duration: 0.3 }}>
-                        <SettingsIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                      </motion.div>
-                      <span className="text-base font-medium text-gray-900 dark:text-white">
-                        Help & Support
-                      </span>
-                    </div>
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      transition={{ duration: 0.2 }}>
-                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    </motion.div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Link>
-
-            <Link to="/user/profile/about" className="block">
-              <motion.div
-                whileHover={{ x: 4, scale: 1.01 }}
-                transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-                <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <motion.div
-                        className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                        whileHover={{ rotate: 15, scale: 1.1 }}
-                        transition={{ duration: 0.3 }}>
-                        <Info className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                      </motion.div>
-                      <span className="text-base font-medium text-gray-900 dark:text-white">
-                        About
-                      </span>
-                    </div>
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      transition={{ duration: 0.2 }}>
-                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    </motion.div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Link>
-
-            <Link to="/user/profile/report-safety-emergency" className="block">
-              <motion.div
-                whileHover={{ x: 4, scale: 1.01 }}
-                transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-                <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <motion.div
-                        className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                        whileHover={{ rotate: 15, scale: 1.1 }}
-                        transition={{ duration: 0.3 }}>
-                        <AlertTriangle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                      </motion.div>
-                      <span className="text-base font-medium text-gray-900 dark:text-white">
-                        Report a safety emergency
-                      </span>
-                    </div>
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      transition={{ duration: 0.2 }}>
-                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    </motion.div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Link>
-
-            {/* Test Notification (Debug) */}
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-              <Card
-                className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleTestNotification}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-blue-50 dark:bg-blue-900/20 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}>
-                      <Bell
-                        className={`h-5 w-5 text-blue-500 ${isTestingNotification ? "animate-pulse" : ""}`}
-                      />
-                    </motion.div>
-                    <span className="text-base font-medium text-gray-900 dark:text-white">
-                      {isTestingNotification ? "Sending test..." : "Test Notification"}
-                    </span>
+                    <span className="text-sm font-extrabold text-emerald-600">{"\u20B9"}{Number(walletBalance || 0).toFixed(0)}</span>
                   </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                </Link>
 
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-              <Card
-                className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleLogoutClick}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}>
-                      <Power
-                        className={`h-5 w-5 text-gray-700 dark:text-gray-300 ${isLoggingOut ? "animate-pulse" : ""}`}
-                      />
-                    </motion.div>
-                    <span className="text-base font-medium text-gray-900 dark:text-white">
-                      {isLoggingOut ? "Logging out..." : "Log out"}
-                    </span>
+                <Link to="/user/loyalty-points" className="block">
+                  <div className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-amber-200 dark:hover:border-gray-700 hover:bg-amber-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-xl text-amber-600 dark:text-amber-400">
+                        <Award className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-amber-600 transition-colors">Loyalty Points</p>
+                        <p className="text-xs text-gray-400">Rewards & Redeem</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-extrabold text-amber-600">{Number(loyaltyPoints || 0)} Pts</span>
                   </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                </Link>
 
-            {/* Delete Account */}
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
-              <Card
-                className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer"
-                onClick={() => { setDeleteStep(1); setDeleteCaptcha(""); setDeleteAccountOpen(true); }}>
-                <CardContent className="p-4 flex items-center justify-between">
+                <div 
+                  onClick={() => setVegModeOpen(true)}
+                  className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between cursor-pointer group"
+                >
                   <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-red-50 dark:bg-red-900/20 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}>
-                      <Trash2 className="h-5 w-5 text-red-500" />
-                    </motion.div>
-                    <span className="text-base font-medium text-red-500">
-                      Delete Account
-                    </span>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400">
+                      <Leaf className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">Veg Mode</p>
+                      <p className="text-xs text-gray-400">Filter dietary preferences</p>
+                    </div>
                   </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}>
-                    <ChevronRight className="h-5 w-5 text-red-300" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${vegMode ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{vegMode ? "ON" : "OFF"}</span>
+                </div>
+
+                <div 
+                  onClick={() => setAppearanceOpen(true)}
+                  className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-purple-50 dark:bg-purple-950/60 p-2.5 rounded-xl text-purple-600 dark:text-purple-400">
+                      <Palette className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">Appearance</p>
+                      <p className="text-xs text-gray-400">Theme mode</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-extrabold text-purple-600 capitalize">{appearance}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Collections & Saved Data */}
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 shadow-xs border border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="w-1.5 h-4 bg-emerald-600 rounded-full"></div>
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+                  Collections & Addresses
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Link to="/user/profile/favorites" className="block">
+                  <div className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-xl text-amber-600 dark:text-amber-400">
+                        <Bookmark className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">Your Collections</p>
+                        <p className="text-xs text-gray-400">Saved dishes & restaurants</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
+
+                <div onClick={openLocationSelector} className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 pr-2">
+                      <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors truncate">Saved Addresses</p>
+                      <p className="text-xs text-gray-400 truncate max-w-[150px]">{savedAddressSummary}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Orders & Support */}
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 shadow-xs border border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="w-1.5 h-4 bg-emerald-600 rounded-full"></div>
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+                  Orders & Support
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Link to="/user/orders" className="block">
+                  <div className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-50 dark:bg-blue-950/60 p-2.5 rounded-xl text-blue-600 dark:text-blue-400">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">Your Orders</p>
+                        <p className="text-xs text-gray-400">View past food orders</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
+
+                <Link to="/user/profile/support" className="block">
+                  <div className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-teal-50 dark:bg-teal-950/60 p-2.5 rounded-xl text-teal-600 dark:text-teal-400">
+                        <SettingsIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">Help & Support</p>
+                        <p className="text-xs text-gray-400">24/7 customer care</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* 4. Account Actions */}
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 shadow-xs border border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between gap-4">
+                <Button
+                  onClick={() => setLogoutConfirmOpen(true)}
+                  disabled={isLoggingOut}
+                  className="flex-1 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold text-xs h-11 flex items-center justify-center gap-2"
+                >
+                  <Power className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                  {isLoggingOut ? "Logging out..." : "Log out"}
+                </Button>
+
+                <Button
+                  onClick={() => { setDeleteStep(1); setDeleteCaptcha(""); setDeleteAccountOpen(true); }}
+                  variant="outline"
+                  className="rounded-xl border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 font-bold text-xs h-11 flex items-center justify-center gap-2 px-5"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Account
+                </Button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
+    </div>
 
       {/* Veg Mode Popup */}
       <Dialog open={vegModeOpen} onOpenChange={setVegModeOpen}>

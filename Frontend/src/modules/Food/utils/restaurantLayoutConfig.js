@@ -66,6 +66,7 @@ export const RESTAURANT_SIDEBAR_SECTIONS = [
   {
     title: "Finance",
     items: [
+      { label: "My Subscription", route: `${BASE}/subscription` },
       { label: "Payout", route: `${BASE}/hub-finance` },
       { label: "Bank details", route: `${BASE}/update-bank-details` },
       { label: "Withdrawal history", route: `${BASE}/withdrawal-history` },

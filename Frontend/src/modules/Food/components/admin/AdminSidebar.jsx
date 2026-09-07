@@ -712,12 +712,12 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
           <div className="flex items-center justify-between mb-3">
             {!isCollapsed && (
               <div className="flex items-center gap-2 animate-[slideIn_0.3s_ease-out]">
-                <DietValaLogo size="md" showTagline={true} stacked={false} />
+                <DietValaLogo size="md" showTagline={false} stacked={false} lightText={true} />
               </div>
             )}
             {isCollapsed && (
               <div className="w-full flex items-center justify-center">
-                <DietValaLogo size="sm" showTagline={false} stacked={true} />
+                <DietValaLogo size="md" showTagline={false} showText={false} stacked={true} lightText={true} />
               </div>
             )}
             <div className="flex items-center gap-2">

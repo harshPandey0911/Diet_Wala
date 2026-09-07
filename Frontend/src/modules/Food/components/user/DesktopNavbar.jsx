@@ -14,6 +14,7 @@ import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSet
 import { getPublicLandingSettings } from "@food/api"
 import { useAppLocation } from "@food/hooks/useAppLocation"
 import { useAppLogo } from "@food/hooks/useAppLogo"
+import DietValaLogo from "@/shared/components/DietValaLogo"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -175,34 +176,22 @@ export default function DesktopNavbar({ showLogo = true }) {
     return (
         <nav
             ref={navRef}
-            className={`hidden md:flex flex-col fixed top-0 left-0 right-0 z-50 py-2 transition-all duration-300 ${(isBannerRoute && !hasScrolledPastBanner)
-                ? "bg-transparent !bg-transparent border-0 shadow-none"
-                : "bg-background border-b border-border shadow-sm"
-                }`}
+            className={`hidden md:flex flex-col fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+                (isBannerRoute && !hasScrolledPastBanner)
+                    ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-amber-100/50 dark:border-gray-800 shadow-sm"
+                    : "bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-sm"
+            }`}
         >
             {/* Top Row: Location - Search - Icons */}
-            <div className={`w-full ${(isBannerRoute && !hasScrolledPastBanner) ? "border-b border-transparent" : "border-b border-border"}`}>
+            <div className="w-full border-b border-gray-100 dark:border-gray-800/60 py-2">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16 gap-4">
+                    <div className="flex items-center justify-between h-14 gap-6">
                         {/* Left: Logo & Location */}
-                        <div className="flex items-center gap-4 lg:gap-6 flex-shrink-0">
+                        <div className="flex items-center gap-6 flex-shrink-0">
                             {/* Logo */}
                             {showLogo && (
-                                <Link to="/" className="flex items-center justify-center flex-shrink-0">
-                                    {logoUrl ? (
-                                        <img
-                                            src={logoUrl}
-                                            alt={companyName || "Company Logo"}
-                                            className="h-10 w-auto md:h-14 lg:h-16 object-contain"
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none'
-                                            }}
-                                        />
-                                    ) : (
-                                        <span className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
-                                            {companyName || "Tuggo"}
-                                        </span>
-                                    )}
+                                <Link to="/food/user" className="flex items-center justify-center flex-shrink-0 hover:opacity-95 transition-opacity">
+                                    <DietValaLogo size="md" showTagline={false} stacked={false} />
                                 </Link>
                             )}
 
@@ -211,45 +200,42 @@ export default function DesktopNavbar({ showLogo = true }) {
                                 variant="ghost"
                                 onClick={handleLocationClick}
                                 disabled={locationLoading}
-                                className="h-auto px-0 py-0 hover:bg-transparent transition-colors flex-shrink-0"
+                                className="h-auto px-3 py-1.5 rounded-xl hover:bg-amber-50/60 dark:hover:bg-gray-800/60 transition-all border border-transparent hover:border-amber-200/50 flex-shrink-0 group"
                             >
                                 {locationLoading ? (
-                                    <span className="text-sm font-bold text-black dark:text-white">
+                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
                                         Loading...
                                     </span>
                                 ) : (
-                                    <div className="flex flex-col items-start min-w-0">
-                                        <div className="flex items-center gap-1.5 lg:gap-2">
-                                            <FaLocationDot
-                                                className="h-5 w-5 lg:h-6 lg:w-6 text-black dark:text-white flex-shrink-0"
-                                                fill="currentColor"
-                                                strokeWidth={2}
-                                            />
-                                            <span className="text-sm lg:text-base font-bold text-black dark:text-white whitespace-nowrap">
-                                                {mainLocationName}
-                                            </span>
-                                            <ChevronDown className="h-4 w-4 lg:h-5 lg:w-5 text-black dark:text-white flex-shrink-0" strokeWidth={2.5} />
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0 border border-emerald-200/60 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                                            <FaLocationDot className="h-4 w-4" fill="currentColor" />
                                         </div>
-                                        {baseAddress && (
-                                            <span className="text-[10px] lg:text-xs font-medium text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-                                                {baseAddress}
-                                            </span>
-                                        )}
-                                        <span className="text-[9px] lg:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
-                                            {bottomCity}
-                                        </span>
+                                        <div className="flex flex-col items-start min-w-0">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100 whitespace-nowrap group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                                    {mainLocationName}
+                                                </span>
+                                                <ChevronDown className="h-3.5 w-3.5 text-gray-500 group-hover:translate-y-0.5 transition-transform" strokeWidth={2.5} />
+                                            </div>
+                                            {baseAddress && (
+                                                <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 truncate max-w-[180px]">
+                                                    {baseAddress}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </Button>
                         </div>
 
                         {/* Center: Search Bar & Veg Mode */}
-                        <div className="flex-1 max-w-3xl mx-4 flex items-center gap-4">
+                        <div className="flex-1 max-w-2xl flex items-center gap-4">
                             {/* Search Bar */}
                             <div className="relative flex-1">
-                                <div className="relative bg-muted rounded-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-primary focus-within:bg-background border border-transparent focus-within:border-primary/20">
-                                    <div className="flex items-center px-3 py-2">
-                                        <Search className="h-4 w-4 text-muted-foreground flex-shrink-0 mr-3" />
+                                <div className="relative bg-gray-50 dark:bg-gray-800/80 rounded-2xl transition-all duration-300 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-white dark:focus-within:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 focus-within:border-emerald-500/40 shadow-2xs">
+                                    <div className="flex items-center px-3.5 py-2">
+                                        <Search className="h-4 w-4 text-gray-400 flex-shrink-0 mr-2.5" />
                                         <Input
                                             value={heroSearch}
                                             onChange={(e) => {
@@ -262,8 +248,8 @@ export default function DesktopNavbar({ showLogo = true }) {
                                                     navigate(`/food/search?q=${encodeURIComponent(heroSearch.trim())}`)
                                                 }
                                             }}
-                                            className="h-6 p-0 border-0 bg-transparent text-sm font-medium placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                            placeholder="Search for restaurants, food..."
+                                            className="h-6 p-0 border-0 bg-transparent text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-800 dark:text-gray-100"
+                                            placeholder="Search for restaurants, healthy meals..."
                                         />
                                         {heroSearch && (
                                             <Button
@@ -273,37 +259,37 @@ export default function DesktopNavbar({ showLogo = true }) {
                                                 onClick={() => setHeroSearch("")}
                                             >
                                                 <span className="sr-only">Clear</span>
-                                                <span aria-hidden="true">�</span>
+                                                <span aria-hidden="true">✕</span>
                                             </Button>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* VEG MODE Toggle - Moved here */}
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300 leading-none">VEG</span>
-                                    <span className="text-[8px] font-bold text-gray-500 dark:text-gray-400 leading-none">MODE</span>
+                            {/* VEG MODE Toggle */}
+                            <div className="flex items-center gap-2 flex-shrink-0 bg-emerald-50/60 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                                <div className="flex flex-col items-start">
+                                    <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 leading-none tracking-tight">VEG</span>
+                                    <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 leading-none">ONLY</span>
                                 </div>
                                 <Switch
                                     checked={vegMode}
                                     onCheckedChange={setVegMode}
-                                    className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-600 h-5 w-9"
+                                    className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-700 h-5 w-9"
                                 />
                             </div>
                         </div>
 
                         {/* Right: Wallet and Cart Icons */}
-                        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+                        <div className="flex items-center gap-3 flex-shrink-0">
                             {/* Wallet Icon */}
                             <Link to="/food/user/wallet">
                                 <Button
                                     variant="ghost"
-                                    className="h-12 w-12 lg:h-14 lg:w-14 rounded-full p-0 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    className="h-10 w-10 rounded-xl p-0 bg-gray-50 dark:bg-gray-800/80 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all text-gray-700 dark:text-gray-300"
                                     title="Wallet"
                                 >
-                                    <Wallet className="!h-5 !w-5 lg:!h-6 lg:!w-6 text-gray-700 dark:text-gray-300" strokeWidth={2} />
+                                    <Wallet className="h-4 w-4" strokeWidth={2} />
                                 </Button>
                             </Link>
 
@@ -311,13 +297,14 @@ export default function DesktopNavbar({ showLogo = true }) {
                             <Link to="/food/user/cart">
                                 <Button
                                     variant="ghost"
-                                    className="relative h-12 w-12 lg:h-14 lg:w-14 rounded-full p-0 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    className="relative h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow-md transition-all flex items-center gap-2 font-bold text-xs"
                                     title="Cart"
                                 >
-                                    <ShoppingCart className="!h-5 !w-5 lg:!h-6 lg:!w-6 text-gray-700 dark:text-gray-300" strokeWidth={2} />
+                                    <ShoppingCart className="h-4 w-4" strokeWidth={2.2} />
+                                    <span>Cart</span>
                                     {cartCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-800">
-                                            <span className="text-xs font-bold text-white">{cartCount > 99 ? "99+" : cartCount}</span>
+                                        <span className="ml-0.5 px-1.5 py-0.5 bg-amber-400 text-gray-950 text-[10px] font-black rounded-full">
+                                            {cartCount > 99 ? "99+" : cartCount}
                                         </span>
                                     )}
                                 </Button>
@@ -327,25 +314,25 @@ export default function DesktopNavbar({ showLogo = true }) {
                 </div>
             </div>
 
-            {/* Bottom Row: Navigation Tabs & Veg Mode */}
-            <div className={`w-full pb-3 ${(isBannerRoute && !hasScrolledPastBanner) ? "bg-transparent !bg-transparent" : "bg-background"}`}>
+            {/* Bottom Row: Navigation Tabs */}
+            <div className={`w-full ${(isBannerRoute && !hasScrolledPastBanner) ? "bg-transparent" : "bg-white dark:bg-gray-900"}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-center h-12">
+                    <div className="flex items-center justify-center h-10">
                         {/* Navigation Tabs - Centered with spacing */}
-                        <div className="flex items-center space-x-24">
+                        <div className="flex items-center space-x-16 lg:space-x-24">
                             {/* Delivery Tab */}
                             <Link
                                 to="/food/user/"
-                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isDelivery
-                                    ? "text-primary"
-                                    : "text-gray-600 dark:text-gray-400 hover:text-primary"
+                                className={`flex flex-col items-center gap-1 px-3 py-1 transition-all relative group ${isDelivery
+                                    ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                                    : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 font-bold"
                                     }`}
                             >
-                                <span className="text-sm font-bold tracking-wide uppercase">Delivery</span>
+                                <span className="text-xs tracking-wider uppercase">Delivery</span>
                                 {isDelivery && (
                                     <motion.div
                                         layoutId="navIndicator"
-                                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
+                                        className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ duration: 0.3 }}
@@ -356,16 +343,16 @@ export default function DesktopNavbar({ showLogo = true }) {
                             {/* Under 250 Tab */}
                             <Link
                                 to="/food/user/under-250"
-                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isUnder250
-                                    ? "text-primary"
-                                    : "text-gray-600 dark:text-gray-400 hover:text-primary"
+                                className={`flex flex-col items-center gap-1 px-3 py-1 transition-all relative group ${isUnder250
+                                    ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                                    : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 font-bold"
                                     }`}
                             >
-                                <span className="text-sm font-bold tracking-wide uppercase">Under ₹{under250PriceLimit}</span>
+                                <span className="text-xs tracking-wider uppercase">Under ₹{under250PriceLimit}</span>
                                 {isUnder250 && (
                                     <motion.div
                                         layoutId="navIndicator"
-                                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
+                                        className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ duration: 0.3 }}
@@ -377,16 +364,16 @@ export default function DesktopNavbar({ showLogo = true }) {
                             {showDining && (
                                 <Link
                                     to="/food/user/dining"
-                                    className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isDining
-                                        ? "text-primary"
-                                        : "text-gray-600 dark:text-gray-400 hover:text-primary"
+                                    className={`flex flex-col items-center gap-1 px-3 py-1 transition-all relative group ${isDining
+                                        ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                                        : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 font-bold"
                                         }`}
                                 >
-                                    <span className="text-sm font-bold tracking-wide uppercase">Dining</span>
+                                    <span className="text-xs tracking-wider uppercase">Dining</span>
                                     {isDining && (
                                         <motion.div
                                             layoutId="navIndicator"
-                                            className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
+                                            className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ duration: 0.3 }}
@@ -398,16 +385,16 @@ export default function DesktopNavbar({ showLogo = true }) {
                             {/* Profile Tab */}
                             <Link
                                 to="/food/user/profile"
-                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isProfile
-                                    ? "text-primary"
-                                    : "text-gray-600 dark:text-gray-400 hover:text-primary"
+                                className={`flex flex-col items-center gap-1 px-3 py-1 transition-all relative group ${isProfile
+                                    ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                                    : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 font-bold"
                                     }`}
                             >
-                                <span className="text-sm font-bold tracking-wide uppercase">Profile</span>
+                                <span className="text-xs tracking-wider uppercase">Profile</span>
                                 {isProfile && (
                                     <motion.div
                                         layoutId="navIndicator"
-                                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
+                                        className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ duration: 0.3 }}

@@ -344,12 +344,14 @@ export default function Home() {
         }
       }
 
-      const absolutePath = normalizedInput.startsWith("/")
-        ? `${BACKEND_ORIGIN}${normalizedInput}`
-        : `${BACKEND_ORIGIN}/${normalizedInput.replace(/^\.?\/*/, "")}`;
+      const cleanRelative = normalizedInput.replace(/^\.?\/*/, "");
+      const pathWithUploads = cleanRelative.startsWith("uploads/") || cleanRelative.startsWith("api/")
+        ? `/${cleanRelative}`
+        : `/uploads/${cleanRelative}`;
+      const absolutePath = `${BACKEND_ORIGIN}${pathWithUploads}`;
 
       try {
-        const parsed = new URL(absolutePath, window.location.origin);
+        const parsed = new URL(absolutePath, BACKEND_ORIGIN || window.location.origin);
         if (appProtocol === "https:" && parsed.protocol === "http:") {
           parsed.protocol = "https:";
         }
@@ -2121,9 +2123,9 @@ export default function Home() {
                 />
 
                 {/* 2. Dynamic Categories Row from API in Clean Rounded Card */}
-                <div className="px-4 py-2">
-                  <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-gray-800 rounded-2xl p-2.5 shadow-2xs">
-                    <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide">
+                <div className="px-4 py-2 md:px-6 md:py-4">
+                  <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-gray-800 rounded-2xl p-2.5 md:p-5 shadow-2xs">
+                    <div className="flex items-center justify-between gap-1 md:gap-4 overflow-x-auto scrollbar-hide">
                       {(displayCategories && displayCategories.length > 0 ? displayCategories : [
                         { name: "High Protein", icon: "🏋️", slug: "high-protein" },
                         { name: "Weight Loss", icon: "⏳", slug: "weight-loss" },
@@ -2139,9 +2141,9 @@ export default function Home() {
                             key={category.id || category.name || index}
                             to={categorySlug === 'all' ? '/food/user/under-250' : `/food/user/category/${categorySlug}`}
                             onClick={() => setSelectedCategory(category.name)}
-                            className="flex flex-col items-center gap-1 flex-1 min-w-[54px] max-w-[62px] flex-shrink-0 group cursor-pointer"
+                            className="flex flex-col items-center gap-1.5 flex-1 min-w-[54px] max-w-[62px] md:min-w-[85px] md:max-w-[100px] flex-shrink-0 group cursor-pointer"
                           >
-                            <div className={`w-11 h-11 rounded-full bg-[#FFFBEB] dark:bg-amber-950/40 border ${isSelected ? 'border-[#FFC700] ring-2 ring-[#FFC700]/30' : 'border-[#FFE699]/60 dark:border-amber-800/40'} flex items-center justify-center overflow-hidden shadow-2xs group-hover:scale-105 group-active:scale-95 transition-all relative`}>
+                            <div className={`w-11 h-11 md:w-16 md:h-16 rounded-full bg-[#FFFBEB] dark:bg-amber-950/40 border ${isSelected ? 'border-[#FFC700] ring-2 ring-[#FFC700]/30' : 'border-[#FFE699]/60 dark:border-amber-800/40'} flex items-center justify-center overflow-hidden shadow-2xs group-hover:scale-105 group-active:scale-95 transition-all relative`}>
                               {category.image ? (
                                 <img 
                                   src={normalizeImageUrl(category.image)} 
@@ -2155,7 +2157,7 @@ export default function Home() {
                                 />
                               ) : null}
                               <span 
-                                className="cat-icon-fallback text-base sm:text-lg items-center justify-center"
+                                className="cat-icon-fallback text-base sm:text-lg md:text-2xl items-center justify-center"
                                 style={{ display: category.image ? 'none' : 'flex' }}
                               >
                                 {category.icon || (() => {
@@ -2179,7 +2181,7 @@ export default function Home() {
                                 })()}
                               </span>
                             </div>
-                            <span className={`text-[9.5px] font-bold text-center tracking-tight leading-[1.15] line-clamp-2 max-w-[60px] min-h-[22px] flex items-center justify-center ${isSelected ? 'text-[#D97706]' : 'text-gray-800 dark:text-gray-200'}`}>
+                            <span className="text-[9.5px] md:text-xs font-bold text-center tracking-tight leading-[1.15] line-clamp-2 max-w-[60px] min-h-[22px] flex items-center justify-center ${isSelected ? 'text-[#D97706]' : 'text-gray-800 dark:text-gray-200'}">
                               {category.name}
                             </span>
                           </Link>
