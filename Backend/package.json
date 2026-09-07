@@ -1,8 +1,8 @@
 {
-  "name": "tuggo-backend",
+  "name": "diet-wala-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Tuggo Master Product Backend",
+  "description": "Diet Wala Master Product Backend",
   "main": "server.js",
   "scripts": {
     "build": "echo 'No build step required for Node backend'",

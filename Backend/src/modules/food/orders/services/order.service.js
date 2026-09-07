@@ -31,6 +31,7 @@ import { getDrivingDistances } from '../../../../services/googleMaps.service.js'
 import { getFirebaseDB } from '../../../../config/firebase.js';
 import * as foodTransactionService from './foodTransaction.service.js';
 import * as userWalletService from '../../user/services/userWallet.service.js';
+import * as loyaltyService from '../../loyalty/services/loyalty.service.js';
 import { calculateOrderPricing } from './order-pricing.service.js';
 import * as dispatchService from './order-dispatch.service.js';
 import { clearDeliveryOffersForOrder } from './order-dispatch.firebase.js';
@@ -192,6 +193,7 @@ export async function createOrder(userId, dto) {
     deliveryFee: Number(dto.pricing?.deliveryFee ?? 0),
     platformFee: Number(dto.pricing?.platformFee ?? 0),
     discount: Number(dto.pricing?.discount ?? 0),
+    pointsDiscount: Number(dto.pricing?.pointsDiscount ?? 0),
     total: Number(dto.pricing?.total ?? 0),
     currency: String(dto.pricing?.currency || "INR"),
   };
@@ -212,18 +214,27 @@ export async function createOrder(userId, dto) {
         : 0) -
       (Number.isFinite(normalizedPricing.discount)
         ? normalizedPricing.discount
+        : 0) -
+      (Number.isFinite(normalizedPricing.pointsDiscount)
+        ? normalizedPricing.pointsDiscount
         : 0),
   );
+  // Only fall back to the computed total when the client didn't send a usable
+  // one (missing/garbage/negative). A total of exactly 0 is legitimate when a
+  // coupon or loyalty points fully cover the order — it must NOT be silently
+  // replaced with the pre-discount amount, or the customer gets charged in
+  // full despite the discount being "applied".
   if (
     !Number.isFinite(normalizedPricing.total) ||
-    normalizedPricing.total <= 0
+    normalizedPricing.total < 0
   ) {
     normalizedPricing.total = computedTotal;
   }
+  const isFullyCoveredByDiscount = normalizedPricing.total <= 0;
 
   const payment = {
     method: paymentMethod,
-    status: isCash ? "cod_pending" : isWallet ? "paid" : "created",
+    status: isFullyCoveredByDiscount ? "paid" : (isCash ? "cod_pending" : isWallet ? "paid" : "created"),
     amountDue: normalizedPricing.total ?? 0,
     razorpay: {},
     qr: {},
@@ -279,15 +290,20 @@ export async function createOrder(userId, dto) {
   normalizedPricing.paymentGatewayFee = commissionSnapshot.paymentGatewayFee || 0;
   normalizedPricing.tcs = commissionSnapshot.tcs || 0;
 
+  // Discounts (coupon + loyalty points) are absorbed by the platform's margin —
+  // the restaurant and rider are still paid in full — so they must come out of
+  // platformProfit, not just off the customer-facing total.
   const platformProfit = Math.max(
     0,
     (Number.isFinite(normalizedPricing.deliveryFee) ? normalizedPricing.deliveryFee : 0) +
       (Number.isFinite(normalizedPricing.platformFee) ? normalizedPricing.platformFee : 0) +
-      normalizedPricing.restaurantCommission + 
+      normalizedPricing.restaurantCommission +
       normalizedPricing.gstOnItem +
-      normalizedPricing.paymentGatewayFee + 
+      normalizedPricing.paymentGatewayFee +
       normalizedPricing.tcs -
-      riderEarning,
+      riderEarning -
+      (Number.isFinite(normalizedPricing.discount) ? normalizedPricing.discount : 0) -
+      (Number.isFinite(normalizedPricing.pointsDiscount) ? normalizedPricing.pointsDiscount : 0),
   );
 
   const order = new FoodOrder({
@@ -325,7 +341,7 @@ export async function createOrder(userId, dto) {
 
   let razorpayPayload = null;
 
-  if (paymentMethod === "razorpay" && isRazorpayConfigured()) {
+  if (paymentMethod === "razorpay" && isRazorpayConfigured() && !isFullyCoveredByDiscount) {
     const amountPaise = Math.round((normalizedPricing.total ?? 0) * 100);
     if (amountPaise < 100)
       throw new ValidationError("Amount too low for online payment");
@@ -347,13 +363,45 @@ export async function createOrder(userId, dto) {
 
   await order.save();
 
-  if (isWallet) {
+  if (isWallet && !isFullyCoveredByDiscount) {
     try {
       await userWalletService.deductWalletBalance(userId, order.pricing.total, `Payment for order #${order.order_id || order._id}`, { orderId: order._id });
     } catch (err) {
       // If wallet deduction fails (e.g. insufficient balance), we should not have saved the order or we should delete/cancel it.
       // But since we already saved it, let's at least throw the error so the user knows.
       // Ideally this should be in a transaction.
+      await FoodOrder.deleteOne({ _id: order._id });
+      throw err;
+    }
+  }
+
+  // Loyalty points redemption: recomputed server-side from the current balance/settings
+  // (not trusted from dto.pricing.pointsDiscount) and debited from the user's ledger.
+  if (Number(dto.redeemPoints) > 0) {
+    try {
+      const redemption = await loyaltyService.redeemPointsForOrder({
+        userId,
+        orderId: order._id,
+        orderRefId: order.order_id || order._id,
+        orderSubtotal: normalizedPricing.subtotal,
+        requestedPoints: dto.redeemPoints,
+      });
+      order.loyalty.pointsRedeemed = redemption.pointsRedeemed;
+      // Correct platformProfit with the authoritative (server-recomputed) discount —
+      // it was provisionally built from the client-submitted pointsDiscount above.
+      // Also reflected back onto normalizedPricing, which createInitialTransaction uses below.
+      const authoritativeDelta = redemption.discountAmount - (normalizedPricing.pointsDiscount || 0);
+      if (authoritativeDelta) {
+        normalizedPricing.pointsDiscount = redemption.discountAmount;
+        order.pricing.pointsDiscount = redemption.discountAmount;
+        order.platformProfit = Math.max(0, (order.platformProfit || 0) - authoritativeDelta);
+      }
+      await order.save();
+    } catch (err) {
+      // Don't strand a wallet deduction against an order we're about to delete.
+      if (isWallet) {
+        await userWalletService.refundWalletBalance(userId, order.pricing.total, `Refund: order #${order.order_id || order._id} could not be completed`, { orderId: order._id });
+      }
       await FoodOrder.deleteOne({ _id: order._id });
       throw err;
     }
@@ -956,6 +1004,21 @@ export async function cancelOrder(orderId, userId, reason, refundDestination = "
 
   await order.save();
 
+  if (order.loyalty?.pointsRedeemed > 0 && !order.loyalty?.pointsRefunded) {
+    try {
+      const { pointsRefunded } = await loyaltyService.refundRedeemedPointsForOrder(
+        order._id,
+        `Points refunded for cancelled order #${order.order_id || order._id}`,
+      );
+      if (pointsRefunded > 0) {
+        order.loyalty.pointsRefunded = true;
+        await order.save();
+      }
+    } catch (err) {
+      logger.error(`Loyalty points refund failed for order ${order._id}:`, err);
+    }
+  }
+
   enqueueOrderEvent("order_cancelled_by_user", {
     orderMongoId: order._id?.toString?.(),
     orderId: order._id.toString(),
@@ -1480,6 +1543,21 @@ export async function updateOrderStatusRestaurant(
       }
       // Re-save order with updated payment status
       await order.save();
+    }
+
+    if (String(orderStatus).includes("cancel") && order.loyalty?.pointsRedeemed > 0 && !order.loyalty?.pointsRefunded) {
+      try {
+        const { pointsRefunded } = await loyaltyService.refundRedeemedPointsForOrder(
+          order._id,
+          `Points refunded for order #${order.order_id || order._id} cancelled by restaurant`,
+        );
+        if (pointsRefunded > 0) {
+          order.loyalty.pointsRefunded = true;
+          await order.save();
+        }
+      } catch (err) {
+        logger.error(`Loyalty points refund failed for order ${order._id}:`, err);
+      }
     }
 
     return normalizeOrderForClient(order);

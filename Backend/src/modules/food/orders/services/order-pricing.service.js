@@ -9,6 +9,7 @@ import { FoodZone } from '../../admin/models/zone.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { haversineKm } from './order.helpers.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
+import { computePointsRedemption } from '../../loyalty/services/loyalty.service.js';
 
 function isOfferEndDateValid(endDate, now = new Date()) {
   if (!endDate) return true;
@@ -326,7 +327,11 @@ export async function calculateOrderPricing(userId, dto) {
   const couponDiscount = discount;
   const totalDiscount = couponDiscount;
   const totalBeforeDiscount = subtotal + deliveryFee + tax + platformFee + packagingFee;
-  const total = Math.max(0, totalBeforeDiscount - totalDiscount);
+  const totalBeforePoints = Math.max(0, totalBeforeDiscount - totalDiscount);
+
+  // Loyalty points redemption is applied last, on top of the coupon discount.
+  const pointsRedemption = await computePointsRedemption(userId, subtotal, dto.redeemPoints);
+  const total = Math.max(0, totalBeforePoints - pointsRedemption.discountAmount);
 
   return {
     pricing: {
@@ -346,11 +351,20 @@ export async function calculateOrderPricing(userId, dto) {
       discount: totalDiscount,
       itemDiscount: itemDiscountTotal > 0 ? itemDiscountTotal : undefined,
       couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      pointsDiscount: pointsRedemption.discountAmount,
       total,
       currency: "INR",
       couponCode: appliedCoupon?.code || codeRaw || null,
       appliedCoupon,
       couponError,
+    },
+    loyalty: {
+      pointsRedeemed: pointsRedemption.pointsToRedeem,
+      pointsDiscount: pointsRedemption.discountAmount,
+      pointsBalance: pointsRedemption.balance,
+      maxRedeemablePoints: pointsRedemption.maxRedeemablePoints,
+      ratePerPoint: pointsRedemption.ratePerPoint,
+      note: pointsRedemption.reason,
     },
   };
 }

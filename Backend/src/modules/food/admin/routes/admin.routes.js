@@ -11,6 +11,7 @@ import * as orderController from '../../orders/controllers/order.controller.js';
 import { getAdminPageController, upsertAdminPageController } from '../controllers/pageContent.controller.js';
 import * as liveMonitorController from '../controllers/liveMonitor.controller.js';
 import * as appIntroAdController from '../controllers/appIntroAd.controller.js';
+import * as loyaltyController from '../../loyalty/controllers/loyalty.controller.js';
 import { upload } from '../../../../middleware/upload.js';
 import menuBulkRoutes from './menuBulk.routes.js';
 
@@ -139,6 +140,12 @@ router.put('/fee-settings', adminController.createOrUpdateFeeSettings);
 // ----- Referral Settings -----
 router.get('/referral-settings', adminController.getReferralSettings);
 router.put('/referral-settings', adminController.createOrUpdateReferralSettings);
+
+// ----- Loyalty Points -----
+router.get('/loyalty-settings', loyaltyController.getLoyaltySettingsController);
+router.put('/loyalty-settings', loyaltyController.upsertLoyaltySettingsController);
+router.get('/loyalty/report', loyaltyController.getAdminLoyaltyLedgerController);
+router.post('/loyalty/adjust', requireSuperAdmin, loyaltyController.adminAdjustUserPointsController);
 
 // ----- Business Settings -----
 router.get('/business-settings/public', businessSettingsController.getBusinessSettings); // Public endpoint

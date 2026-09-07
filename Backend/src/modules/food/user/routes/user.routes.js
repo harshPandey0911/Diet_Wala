@@ -22,6 +22,11 @@ import {
     getUserReferralStatsController
 } from '../controllers/userReferral.controller.js';
 import {
+    getUserLoyaltySummaryController,
+    getUserLoyaltyHistoryController,
+    previewRedeemPointsController
+} from '../../loyalty/controllers/loyalty.controller.js';
+import {
     createSafetyEmergencyReportController,
     listMySafetyEmergencyReportsController
 } from '../controllers/userSafetyEmergency.controller.js';
@@ -49,6 +54,11 @@ router.post('/wallet/topup/verify', verifyWalletTopupPaymentController);
 // Referral stats (Bearer USER)
 router.get('/referrals/stats', getUserReferralStatsController);
 router.get('/referrals/details', getUserReferralDetailsController);
+
+// Loyalty points (Bearer USER)
+router.get('/loyalty', getUserLoyaltySummaryController);
+router.get('/loyalty/history', getUserLoyaltyHistoryController);
+router.post('/loyalty/preview-redeem', previewRedeemPointsController);
 
 // Safety / Emergency reports (Bearer USER)
 router.post('/safety-emergency-reports', createSafetyEmergencyReportController);

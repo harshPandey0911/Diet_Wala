@@ -233,7 +233,13 @@ const getZoneRadiusKm = (zoneDoc) => {
 
 const buildZoneRestaurantMatch = (_zoneDoc, zoneIdRaw) => {
     if (!zoneIdRaw || !mongoose.Types.ObjectId.isValid(zoneIdRaw)) return null;
-    return { zoneId: new mongoose.Types.ObjectId(zoneIdRaw) };
+    return {
+        $or: [
+            { zoneId: new mongoose.Types.ObjectId(zoneIdRaw) },
+            { zoneId: null },
+            { zoneId: { $exists: false } }
+        ]
+    };
 };
 
 const notifyAdminsAboutRestaurantProfileReview = async (restaurantId, restaurantName) => {

@@ -20,6 +20,7 @@ import {
 } from '../helpers/razorpay.helper.js';
 import { fetchPolyline } from '../utils/googleMaps.js';
 import * as foodTransactionService from './foodTransaction.service.js';
+import * as loyaltyService from '../../loyalty/services/loyalty.service.js';
 import * as dispatchService from './order-dispatch.service.js';
 import { clearDeliveryOffersForOrder } from './order-dispatch.firebase.js';
 import {
@@ -1195,6 +1196,23 @@ export async function completeDelivery(orderId, deliveryPartnerId, body = {}) {
   });
 
   await order.save();
+
+  // 4b. Credit loyalty points for this order (idempotent — guarded per-order below).
+  if (!order.loyalty?.pointsCredited) {
+    try {
+      const { pointsEarned } = await loyaltyService.creditPointsForOrder({
+        userId: order.userId,
+        orderId: order._id,
+        orderRefId: order.order_id || order._id,
+        orderSubtotal: order.pricing?.subtotal,
+      });
+      order.loyalty.pointsEarned = pointsEarned;
+      order.loyalty.pointsCredited = true;
+      await order.save();
+    } catch (err) {
+      logger.error(`Loyalty points credit failed for order ${order._id}:`, err);
+    }
+  }
 
   // 5. Update Financial Ledger (FoodTransaction)
   // This triggers the sync back to FoodOrder.payment.method which updates the Rider's Cash Limit (if cash) or Pocket (always).

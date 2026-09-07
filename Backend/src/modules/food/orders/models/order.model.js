@@ -48,8 +48,19 @@ const pricingSchema = new mongoose.Schema(
         paymentGatewayFee: { type: Number, default: 0, min: 0 },
         tcs: { type: Number, default: 0, min: 0 },
         discount: { type: Number, default: 0, min: 0 },
+        pointsDiscount: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
         currency: { type: String, default: 'INR' }
+    },
+    { _id: false }
+);
+
+const orderLoyaltySchema = new mongoose.Schema(
+    {
+        pointsRedeemed: { type: Number, default: 0, min: 0 },
+        pointsEarned: { type: Number, default: 0, min: 0 },
+        pointsCredited: { type: Boolean, default: false },
+        pointsRefunded: { type: Boolean, default: false }
     },
     { _id: false }
 );
@@ -301,6 +312,10 @@ const orderSchema = new mongoose.Schema(
         riderEarning: { type: Number, default: 0, min: 0 },
         deliveryBonusAmount: { type: Number, default: 0, min: 0 },
         platformProfit: { type: Number, default: 0, min: 0 },
+        loyalty: {
+            type: orderLoyaltySchema,
+            default: () => ({})
+        },
         /** Plain 4-digit OTP for pickup at restaurant. */
         pickupOtp: { type: String, default: '', select: false },
         /** Plain 4-digit OTP for handover; cleared after successful verify (never expose to partner in API responses). */
