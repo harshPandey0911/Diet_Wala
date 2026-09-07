@@ -26,6 +26,7 @@ import {
   Utensils,
   Trash2,
   Bell,
+  Award,
 } from "lucide-react";
 
 import AnimatedPage from "@food/components/user/AnimatedPage";
@@ -61,7 +62,8 @@ import { useTheme } from "@food/context/ThemeContext";
 
 const profilePageCache = {
   referralReward: null,
-  walletBalance: null
+  walletBalance: null,
+  loyaltyPoints: null
 };
 
 export default function Profile() {
@@ -90,6 +92,7 @@ export default function Profile() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [referralReward, setReferralReward] = useState(() => profilePageCache.referralReward || 0);
   const [walletBalance, setWalletBalance] = useState(() => profilePageCache.walletBalance || 0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(() => profilePageCache.loyaltyPoints || 0);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState(1);
   const [deleteCaptcha, setDeleteCaptcha] = useState("");
@@ -270,6 +273,25 @@ export default function Profile() {
         const finalBal = Number.isFinite(bal) ? bal : 0;
         if (mounted) setWalletBalance(finalBal);
         profilePageCache.walletBalance = finalBal;
+      })
+      .catch(() => { });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (profilePageCache.loyaltyPoints !== null) {
+      return;
+    }
+    let mounted = true;
+    userAPI
+      .getLoyaltyPoints()
+      .then((res) => {
+        const bal = Number(res?.data?.data?.balance);
+        const finalBal = Number.isFinite(bal) ? bal : 0;
+        if (mounted) setLoyaltyPoints(finalBal);
+        profilePageCache.loyaltyPoints = finalBal;
       })
       .catch(() => { });
     return () => {
@@ -611,6 +633,38 @@ export default function Profile() {
                   <div className="flex items-center gap-2">
                     <span className="text-base font-semibold text-green-600 dark:text-green-400">
                       {"\u20B9"}{Number(walletBalance || 0).toFixed(0)}
+                    </span>
+                    <motion.div
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.2 }}>
+                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    </motion.div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </Link>
+
+          <Link to="/user/loyalty-points" className="block">
+            <motion.div
+              whileHover={{ x: 4, scale: 1.01 }}
+              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}>
+              <Card className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
+                      whileHover={{ rotate: 15, scale: 1.1 }}
+                      transition={{ duration: 0.3 }}>
+                      <Award className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                    </motion.div>
+                    <span className="text-base font-medium text-gray-900 dark:text-white">
+                      Loyalty Points
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-semibold text-orange-600 dark:text-orange-400">
+                      {Number(loyaltyPoints || 0).toLocaleString("en-IN")}
                     </span>
                     <motion.div
                       whileHover={{ x: 4 }}

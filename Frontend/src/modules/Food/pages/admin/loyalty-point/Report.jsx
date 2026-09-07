@@ -1,13 +1,17 @@
-import { useState, useMemo } from "react"
-import { Search, Download, ChevronDown, Filter, Calendar, Settings, TrendingUp, Wallet, Utensils, FileText, FileSpreadsheet, Code, Check, Columns } from "lucide-react"
-import { emptyLoyaltyPointTransactions } from "@food/utils/adminFallbackData"
+import { useState, useMemo, useEffect } from "react"
+import { Search, Download, ChevronDown, Filter, Calendar, Settings, TrendingUp, Wallet, Utensils, FileText, FileSpreadsheet, Code, Check, Columns, Loader2 } from "lucide-react"
+import { adminAPI } from "@food/api"
+import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@food/components/ui/dialog"
 import { exportLoyaltyPointsToCSV, exportLoyaltyPointsToExcel, exportLoyaltyPointsToPDF, exportLoyaltyPointsToJSON } from "@food/components/admin/loyalty-point/loyaltyPointExportUtils"
 
+const debugError = (...args) => {}
+
 export default function Report() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [transactions, setTransactions] = useState(emptyLoyaltyPointTransactions)
+  const [transactions, setTransactions] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
   const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
@@ -25,6 +29,30 @@ export default function Report() {
     reference: true,
     createdAt: true,
   })
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setIsLoading(true)
+        const res = await adminAPI.getLoyaltyReport({ limit: 1000 })
+        if (res?.data?.success) {
+          const rows = res.data.data?.data || []
+          setTransactions(rows.map((t, idx) => ({ ...t, sl: idx + 1 })))
+        }
+      } catch (e) {
+        debugError("Error fetching loyalty point report:", e)
+        toast.error("Failed to load loyalty point transactions")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchReport()
+  }, [])
+
+  const customerOptions = useMemo(
+    () => [...new Set(transactions.map((t) => t.customer).filter(Boolean))],
+    [transactions],
+  )
 
   const filteredTransactions = useMemo(() => {
     let result = [...transactions]
@@ -194,8 +222,9 @@ export default function Report() {
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="All">All</option>
-                <option value="jane-doe">Jane Doe</option>
-                <option value="john-doe">John Doe</option>
+                {customerOptions.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
               </select>
             </div>
 
@@ -348,7 +377,14 @@ export default function Report() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
-                {filteredTransactions.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-10 text-center text-slate-500">
+                      <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
+                      Loading transactions...
+                    </td>
+                  </tr>
+                ) : filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-8 text-center text-slate-500">
                       No transactions found

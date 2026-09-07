@@ -37,6 +37,8 @@ import {
   Plus,
   Check,
   Share2,
+  Bike,
+  Sparkles,
 } from "lucide-react";
 import outOfZoneBg from "@food/assets/out-of-zone-bg.png";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,6 +87,7 @@ import {
   DropdownMenuTrigger,
 } from "@food/components/ui/dropdown-menu";
 import { useAppLocation } from "@food/hooks/useAppLocation";
+import { useCompanyName } from "@food/hooks/useCompanyName";
 import offerImage from "@food/assets/offerimage.png";
 import api, { publicGetOnce, restaurantAPI, getPublicLandingSettings, getPublicExploreIcons, getPublicCategories } from "@food/api";
 import { API_BASE_URL } from "@food/api/config";
@@ -649,6 +652,7 @@ export default function Home() {
   } = profileContext;
   const { addToCart, cart } = useCart();
   const { location, loading: effectiveZoneLoading, requestLocation, zoneId: effectiveZoneId, zoneStatus: effectiveZoneStatus, isOutOfService: isEffectiveLocationOutOfService, isOutOfZone: isEffectiveLocationOutOfZone, isOutOfRadius: isEffectiveLocationOutOfRadius, serviceUnavailableMessage: effectiveServiceUnavailableMessage } = useAppLocation();
+  const companyName = useCompanyName();
   const [showToast, setShowToast] = useState(false);
   const [showManageCollections, setShowManageCollections] = useState(false);
   const [selectedRestaurantSlug, setSelectedRestaurantSlug] = useState(null);
@@ -2081,52 +2085,7 @@ export default function Home() {
         </div>
 
         <div className="relative overflow-x-clip bg-white dark:bg-[#0a0a0a]">
-          {/* Brand Top Section (Dark) */}
-          {/* Decoupled Dark Background - Dynamic height based on actual components to prevent clipping sticky elements while covering properly */}
-          <div 
-             className="absolute top-0 left-0 right-0 overflow-hidden bg-gradient-to-b from-[#3a142c] to-[#1a0a14] shadow-lg pointer-events-none z-0 transition-all duration-300 [transform:translateZ(0)] [mask-image:-webkit-radial-gradient(white,black)]"
-             style={{ height: festVideoActive ? '360px' : (headerBgHeight > 0 ? `${headerBgHeight}px` : (activeTab === 'food' ? '300px' : '140px')) }}
-          >
-            {festVideoActive && (
-              <div className="absolute inset-0 z-0 overflow-hidden bg-slate-900 pointer-events-auto">
-                {festBannerImages.map((image, index) => {
-                  const mediaUrl = image?.startsWith('/') ? `${BACKEND_ORIGIN}${image}` : image;
-                  const isVideo = typeof mediaUrl === 'string' && (mediaUrl.toLowerCase().endsWith('.mp4') || mediaUrl.toLowerCase().endsWith('.webm') || mediaUrl.toLowerCase().endsWith('.ogg'));
-                  return isVideo ? (
-                    <video
-                      key={`hero-bg-${index}-${mediaUrl}`}
-                      src={mediaUrl}
-                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out"
-                      style={{
-                        opacity: bgIndex === index ? 1 : 0,
-                        zIndex: bgIndex === index ? 2 : 1,
-                      }}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                    />
-                  ) : (
-                    <img
-                      key={`hero-bg-${index}-${mediaUrl}`}
-                      src={mediaUrl}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out"
-                      style={{
-                        opacity: bgIndex === index ? 1 : 0,
-                        zIndex: bgIndex === index ? 2 : 1,
-                      }}
-                      loading={index === 0 ? "eager" : "lazy"}
-                      draggable={false}
-                    />
-                  );
-                })}
-                <div className="absolute inset-0 bg-black/20 z-[3]" />
-              </div>
-            )}
-          </div>
-
-          {/* Unified Scroll Container so Sticky Search Bar works for the whole page */}
+          {/* Unified Scroll Container */}
           <div className="relative z-10 w-full mb-2">
             <HomeHeader
               activeTab={activeTab}
@@ -2142,24 +2101,6 @@ export default function Home() {
               handleVoiceSearchClick={handleVoiceSearchClick}
             />
 
-            {activeTab === "food" && (
-              <div id="fest-banner-wrapper" className="w-full">
-                {festVideoActive ? (
-                  <div className="w-full h-[235px] sm:h-[245px]" />
-                ) : (
-                  <div className="pb-4 sm:pb-6">
-                    <FestBanner
-                      isVegMode={vegMode}
-                      images={[]}
-                      hideFoodImages={false}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div className="h-8 w-full" />
-
           <AnimatePresence mode="wait">
             {activeTab === "food" ? (
               <motion.div
@@ -2171,73 +2112,7 @@ export default function Home() {
                 className="bg-transparent dark:bg-transparent"
               >
 
-                {/* "What's on your mind today?" Section - Now with Sticky Logic */}
-                <div ref={categoryAnchorRef} className="h-0 w-full" />
-                <div
-                  id="categories-section"
-                  className={`sticky top-[60px] z-[50] w-full transition-all duration-300 ${isCategoryStuck ? "bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] pb-2 pt-2 border-b border-white/50 dark:border-white/10 px-4" : "bg-transparent px-4 py-2.5"} space-y-3`}
-                >
-                  <div className={`flex items-center gap-2 min-w-0 ${isCategoryStuck ? 'hidden' : ''}`}>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white min-w-0 flex-shrink leading-tight">What's on your mind today?</h2>
-                    <div className="h-[1px] bg-gray-100 dark:bg-gray-800 flex-1"></div>
-                    <Link to="/food/user/under-250" className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-0.5 whitespace-nowrap shrink-0 hover:text-gray-900 dark:hover:text-white transition-colors">
-                      View All <ArrowDownUp className="h-3 w-3 rotate-90" />
-                    </Link>
-                  </div>
-
-                  {/* Categories Horizontal Slider */}
-                  <div className="flex overflow-x-auto gap-1.5 pt-2 pb-2 scrollbar-hide -mx-4 px-4 mask-edge-fade">
-                    {[
-                      {
-                        id: "all",
-                        name: "All",
-                        slug: "all",
-                        image: foodImages[0]
-                      },
-                      ...displayCategories
-                    ].map((category, index) => {
-                      const isActive = selectedCategory === category.name;
-                      return (
-                      <Link
-                        key={category.id || index}
-                        to={category.slug === 'all' ? '/food/user/under-250' : `/food/user/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, "-")}`}
-                        onClick={() => setSelectedCategory(category.name)}
-                        className={`flex-shrink-0 flex flex-col items-center gap-1.5 group w-[76px] transition-transform ${isActive ? 'scale-105' : ''}`}
-                      >
-                        <div className={`relative w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-full overflow-hidden shadow-md border-2 ${isActive ? 'border-primary ring-2 ring-primary/30' : 'border-gray-100 dark:border-gray-800'} bg-white dark:bg-[#1a1a1a] group-active:scale-95 transition-all duration-300`}>
-                          {/* Shining Glint Effect */}
-                          <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-                            <motion.div
-                              animate={{
-                                x: ['-200%', '200%'],
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                repeatDelay: 3 + index * 0.5,
-                                ease: "easeInOut"
-                              }}
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] w-[150%] h-full"
-                            />
-                          </div>
-
-                          <OptimizedImage
-                            src={category.image}
-                            alt={category.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                          />
-                        </div>
-                        <span className={`text-[11px] font-extrabold text-center leading-tight line-clamp-1 w-full px-0.5 ${isActive ? 'text-primary' : 'text-gray-900 dark:text-gray-100'}`}>
-                          {category.name}
-                        </span>
-                      </Link>
-                    )})}
-                  </div>
-                </div>
-
-                {/* Removed Dynamic Sticky Header (Search + Slider + Filters) */}
-
-                {/* Admin Hero Banners Section - Now below categories */}
+                {/* 1. Admin / DietVala Hero Banner */}
                 <HeroBanner
                   images={heroBannerImages}
                   bannersData={heroBannersData}
@@ -2245,6 +2120,210 @@ export default function Home() {
                   shellRef={heroShellRef}
                 />
 
+                {/* 2. Dynamic Categories Row from API in Clean Rounded Card */}
+                <div className="px-4 py-2">
+                  <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-gray-800 rounded-2xl p-2.5 shadow-2xs">
+                    <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide">
+                      {(displayCategories && displayCategories.length > 0 ? displayCategories : [
+                        { name: "High Protein", icon: "🏋️", slug: "high-protein" },
+                        { name: "Weight Loss", icon: "⏳", slug: "weight-loss" },
+                        { name: "Muscle Gain", icon: "💪", slug: "muscle-gain" },
+                        { name: "Low Carb", icon: "🌾", slug: "low-carb" },
+                        { name: "Vegan", icon: "🌱", slug: "vegan" },
+                        { name: "More", icon: "🪟", slug: "all" },
+                      ]).map((category, index) => {
+                        const categorySlug = category.slug || slugifyCategory(category.name || "");
+                        const isSelected = selectedCategory === category.name;
+                        return (
+                          <Link
+                            key={category.id || category.name || index}
+                            to={categorySlug === 'all' ? '/food/user/under-250' : `/food/user/category/${categorySlug}`}
+                            onClick={() => setSelectedCategory(category.name)}
+                            className="flex flex-col items-center gap-1 flex-1 min-w-[54px] max-w-[62px] flex-shrink-0 group cursor-pointer"
+                          >
+                            <div className={`w-11 h-11 rounded-full bg-[#FFFBEB] dark:bg-amber-950/40 border ${isSelected ? 'border-[#FFC700] ring-2 ring-[#FFC700]/30' : 'border-[#FFE699]/60 dark:border-amber-800/40'} flex items-center justify-center overflow-hidden shadow-2xs group-hover:scale-105 group-active:scale-95 transition-all relative`}>
+                              {category.image ? (
+                                <img 
+                                  src={normalizeImageUrl(category.image)} 
+                                  alt={category.name} 
+                                  className="w-full h-full object-cover rounded-full"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    const fallbackEl = e.target.parentElement.querySelector('.cat-icon-fallback');
+                                    if (fallbackEl) fallbackEl.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <span 
+                                className="cat-icon-fallback text-base sm:text-lg items-center justify-center"
+                                style={{ display: category.image ? 'none' : 'flex' }}
+                              >
+                                {category.icon || (() => {
+                                  const n = (category.name || '').toLowerCase();
+                                  if (n.includes('pizza')) return '🍕';
+                                  if (n.includes('burger')) return '🍔';
+                                  if (n.includes('cake') || n.includes('sweet') || n.includes('dessert')) return '🍰';
+                                  if (n.includes('waffle')) return '🧇';
+                                  if (n.includes('soup')) return '🍲';
+                                  if (n.includes('chinese') || n.includes('noodle')) return '🥢';
+                                  if (n.includes('tea') || n.includes('chai') || n.includes('beverage')) return '☕';
+                                  if (n.includes('thali') || n.includes('meal')) return '🍱';
+                                  if (n.includes('biryani') || n.includes('rice')) return '🍚';
+                                  if (n.includes('roll') || n.includes('wrap')) return '🌯';
+                                  if (n.includes('protein')) return '🏋️';
+                                  if (n.includes('weight')) return '⏳';
+                                  if (n.includes('muscle')) return '💪';
+                                  if (n.includes('carb')) return '🌾';
+                                  if (n.includes('vegan')) return '🌱';
+                                  return '🥗';
+                                })()}
+                              </span>
+                            </div>
+                            <span className={`text-[9.5px] font-bold text-center tracking-tight leading-[1.15] line-clamp-2 max-w-[60px] min-h-[22px] flex items-center justify-center ${isSelected ? 'text-[#D97706]' : 'text-gray-800 dark:text-gray-200'}`}>
+                              {category.name}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Popular Meals 🔥 Section - Dynamic from API / Database */}
+                <div className="px-4 py-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white flex items-center gap-1.5">
+                      Popular Meals <span className="text-rose-500">🔥</span>
+                    </h2>
+                    <Link to="/food/user/under-250" className="text-xs font-bold text-[#D97706] hover:underline flex items-center gap-0.5">
+                      View All &gt;
+                    </Link>
+                  </div>
+
+                  {/* Dynamic Popular Items / Restaurants Carousel */}
+                  <div className="flex overflow-x-auto gap-3 pb-1.5 scrollbar-hide -mx-4 px-4">
+                    {(filteredRestaurants && filteredRestaurants.length > 0
+                      ? filteredRestaurants
+                      : restaurantsData && restaurantsData.length > 0
+                      ? restaurantsData
+                      : [
+                          { id: "m1", name: "Chicken & Rice", cuisines: ["High Protein"], minOrderAmount: 150, image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80" },
+                          { id: "m2", name: "Paneer Rice Bowl", cuisines: ["High Protein"], minOrderAmount: 160, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=500&q=80" },
+                          { id: "m3", name: "Soya Chunks Bowl", cuisines: ["High Protein"], minOrderAmount: 120, image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80" }
+                        ]
+                    ).slice(0, 8).map((restaurant, idx) => {
+                      const restaurantSlug = restaurant.slug || (restaurant.name ? restaurant.name.toLowerCase().replace(/\s+/g, "-") : `res-${idx}`);
+                      const bgBadge = idx % 2 === 0 ? "Bestseller" : (idx % 3 === 0 ? "Popular" : null);
+
+                      return (
+                        <div key={restaurant.mongoId || restaurant.id || idx} className="min-w-[145px] max-w-[145px] sm:min-w-[165px] sm:max-w-[165px] bg-white dark:bg-[#161616] rounded-2xl border border-gray-100 dark:border-gray-800/80 shadow-xs overflow-hidden flex flex-col justify-between group">
+                          <Link to={`/user/restaurants/${restaurantSlug}`} className="block">
+                            {/* Image Container with Badge */}
+                            <div className="relative h-24 sm:h-28 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                              {restaurant.image ? (
+                                <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                              ) : (
+                                <RestaurantImageCarousel
+                                  restaurant={restaurant}
+                                  backendOrigin={BACKEND_ORIGIN}
+                                  className="h-24 sm:h-28"
+                                  roundedClass="rounded-t-2xl"
+                                />
+                              )}
+                              {bgBadge && (
+                                <span className="absolute top-1.5 left-1.5 bg-[#FFC700] text-black font-black text-[9px] px-2 py-0.5 rounded-md shadow-xs z-10">
+                                  {bgBadge}
+                                </span>
+                              )}
+                            </div>
+                            {/* Meal / Restaurant info */}
+                            <div className="p-2 space-y-0.5">
+                              <h3 className="font-extrabold text-xs text-gray-900 dark:text-white leading-snug truncate">{restaurant.name}</h3>
+                              <p className="text-[10px] font-semibold text-gray-400 truncate">
+                                {Array.isArray(restaurant.cuisines) ? restaurant.cuisines.join(", ") : "Healthy & Fresh"}
+                              </p>
+                            </div>
+                          </Link>
+
+                          <div className="p-2 pt-0 flex items-center justify-between">
+                            <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                              ₹{restaurant.minOrderAmount || restaurant.price || 150}
+                            </span>
+                            <Link 
+                              to={`/user/restaurants/${restaurantSlug}`}
+                              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#FFC700] hover:bg-[#E6B800] text-black flex items-center justify-center shadow-xs active:scale-90 transition-transform font-bold text-xs"
+                            >
+                              +
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. Slim & Compact Delivery Guarantee & Order Track Banner Card */}
+                <div className="px-4 py-1.5">
+                  <div className="bg-[#FFFBEB] dark:bg-[#18150c] border border-[#FFE799]/80 dark:border-amber-900/40 rounded-2xl px-2.5 py-1.5 flex items-center justify-between gap-1.5 shadow-2xs relative">
+                    {/* Left: Bag & Text Block */}
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 relative flex items-center justify-center flex-shrink-0">
+                        <svg className="w-8 h-8 sm:w-9 sm:h-9" viewBox="0 0 100 100" fill="none">
+                          <rect x="18" y="32" width="64" height="52" rx="10" fill="#FFC700" stroke="#E6B200" strokeWidth="2" />
+                          <path d="M35 32 V22 C35 15, 42 12, 50 12 C58 12, 65 15, 65 22 V32" stroke="#222" strokeWidth="5" strokeLinecap="round" fill="none" />
+                          <circle cx="50" cy="58" r="16" fill="#FFFFFF" opacity="0.95" />
+                          <path d="M50 48 C43 48, 41 55, 50 64 C59 55, 57 48, 50 48 Z" fill="#16A34A" />
+                        </svg>
+                      </div>
+
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] sm:text-xs font-black text-gray-900 dark:text-white leading-none tracking-tight truncate">
+                          Freshly prepared,
+                        </span>
+                        <span className="text-[10px] sm:text-xs font-black text-[#16A34A] leading-tight tracking-tight mt-0.5 truncate">
+                          On-time delivered!
+                        </span>
+                        <span className="text-[8px] sm:text-[9px] font-semibold text-amber-950/70 dark:text-amber-300/70 leading-none mt-0.5 truncate">
+                          Right food. Right time. Right you.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right: Track Order Button */}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/food/user/orders')}
+                      className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-extrabold text-[9px] sm:text-[10px] px-2 py-1 rounded-full shadow-xs flex items-center gap-0.5 flex-shrink-0 active:scale-95 transition-transform"
+                    >
+                      Track Order
+                      <MapPin className="w-2.5 h-2.5 text-[#16A34A]" strokeWidth={2.5} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. Why Choose DietVala? 🌿 */}
+                <div className="px-4 py-3">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white mb-2.5 flex items-center gap-1.5">
+                    Why Choose {companyName || "DietVala"}? <Leaf className="h-3.5 w-3.5 text-[#16A34A]" />
+                  </h3>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { icon: Leaf, label: "100% Healthy" },
+                      { icon: ShieldCheck, label: "Clean Ingredients" },
+                      { icon: Bike, label: "On-time Delivery" },
+                      { icon: Sparkles, label: "Hygienic Meals" },
+                    ].map(({ icon: Icon, label }) => (
+                      <div key={label} className="flex flex-col items-center text-center gap-1">
+                        <div className="w-10 h-10 rounded-full bg-[#FFF8E1] dark:bg-amber-900/30 border border-[#FFE082] dark:border-amber-800/40 flex items-center justify-center">
+                          <Icon className="h-4.5 w-4.5 text-[#D97706]" strokeWidth={2.25} />
+                        </div>
+                        <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 dark:text-gray-300 leading-tight">
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Filters Sticky Sidebar Header */}
                 <section className="bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md sticky top-0 z-[40] -mx-4 w-[calc(100%+2rem)] border-b border-gray-100 dark:border-white/5 shadow-sm transition-colors duration-300">

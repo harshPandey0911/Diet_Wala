@@ -125,7 +125,7 @@ export default function Categories() {
                     <div className="relative w-full aspect-square rounded-full overflow-hidden shadow-sm border border-neutral-100 dark:border-gray-800 bg-white dark:bg-gray-900 group-active:scale-90 transition-all duration-300">
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
                       <OptimizedImage
-                        src={category.image}
+                        src={formatCategoryImageUrl(category.image)}
                         alt={category.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         sizes="(max-width: 640px) 25vw, 15vw"

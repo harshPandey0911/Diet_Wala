@@ -15,9 +15,9 @@ export default function StickyCartCard() {
     // Set initial position based on screen size
     const setInitialPosition = () => {
       if (window.innerWidth >= 768) {
-        setBottomPosition("bottom-6") // Desktop: fixed position
+        setBottomPosition("bottom-6")
       } else {
-        setBottomPosition("bottom-[70px]") // Mobile: above bottom nav (fixed, doesn't move with scroll)
+        setBottomPosition("bottom-[54px]")
       }
     }
 
@@ -25,9 +25,9 @@ export default function StickyCartCard() {
 
     const handleResize = () => {
       if (window.innerWidth >= 768) {
-        setBottomPosition("bottom-6") // Desktop: always fixed
+        setBottomPosition("bottom-6")
       } else {
-        setBottomPosition("bottom-[70px]") // Mobile: above bottom nav (fixed)
+        setBottomPosition("bottom-[54px]")
       }
     }
 
@@ -87,7 +87,7 @@ export default function StickyCartCard() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className={`fixed ${bottomPosition} md:bottom-8 right-4 md:right-6 z-50 flex justify-end pointer-events-none`}
+          className={`fixed ${bottomPosition} md:bottom-8 right-3 md:right-6 z-50 flex justify-end pointer-events-none`}
           initial="initial"
           animate="animate"
           exit="exit"
@@ -95,10 +95,10 @@ export default function StickyCartCard() {
         >
           <Link
             to="/user/cart"
-            className="pointer-events-auto bg-primary hover:bg-primary/90 shadow-md shadow-primary/40 border border-white/20 text-primary-foreground rounded-full flex items-center justify-center p-3 transition-all transform hover:scale-105 active:scale-95 group relative"
+            className="pointer-events-auto bg-[#FFC700] hover:bg-[#E6B800] shadow-md border border-black/10 text-black rounded-full flex items-center justify-center p-2.5 transition-all transform hover:scale-105 active:scale-95 group relative"
           >
-            <ShoppingCart className="h-6 w-6 text-primary-foreground" />
-            <span className="absolute -top-1.5 -right-1.5 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white dark:border-[#0a0a0a]">
+            <ShoppingCart className="h-5 w-5 text-black" strokeWidth={2.5} />
+            <span className="absolute -top-1 -right-1 bg-[#16A34A] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-[16px] text-center border border-white">
               {cartCount}
             </span>
           </Link>

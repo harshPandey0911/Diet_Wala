@@ -165,15 +165,15 @@ export const getCachedSettings = () => cachedSettings;
 
 export const getCompanyName = () => {
   const settings = getCachedSettings();
-  return settings?.companyName || 'Fudron Food Delivery';
+  return settings?.companyName || 'DietVala';
 };
 
 export const getCompanyNameAsync = async () => {
   try {
     const settings = await loadBusinessSettings();
-    return settings?.companyName || 'Fudron Food Delivery';
+    return settings?.companyName || 'DietVala';
   } catch (_) {
-    return 'Fudron Food Delivery';
+    return 'DietVala';
   }
 };
 

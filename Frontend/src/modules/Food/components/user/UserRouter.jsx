@@ -88,6 +88,7 @@ const Notifications = lazy(() => import("@food/pages/user/Notifications"))
 
 // Wallet
 const Wallet = lazy(() => import("@food/pages/user/Wallet"))
+const LoyaltyPoints = lazy(() => import("@food/pages/user/LoyaltyPoints"))
 
 // Complaints
 const SubmitComplaint = lazy(() => import("@food/pages/user/complaints/SubmitComplaint"))
@@ -330,6 +331,16 @@ export default function UserRouter() {
             element={
               <ProtectedRoute requiredRole="user" loginPath="/user/auth/login">
                 <Wallet />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Loyalty Points - Protected (user auth) */}
+          <Route
+            path="loyalty-points"
+            element={
+              <ProtectedRoute requiredRole="user" loginPath="/user/auth/login">
+                <LoyaltyPoints />
               </ProtectedRoute>
             }
           />

@@ -1,5 +1,5 @@
 {
-  "name": "fudron-monorepo",
+  "name": "diet-wala-monorepo",
   "private": true,
   "scripts": {
     "build": "cd Frontend && npm install && vite build",

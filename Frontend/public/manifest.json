@@ -1,7 +1,7 @@
 {
-  "name": "Tuggo Food Delivery",
-  "short_name": "Tuggo",
-  "description": "Tuggo Food Delivery Super App",
+  "name": "Diet Wala Food Delivery",
+  "short_name": "Diet Wala",
+  "description": "Diet Wala Food Delivery Super App",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

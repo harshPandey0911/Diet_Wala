@@ -129,6 +129,8 @@ export default function Cart() {
   const [isLoadingWallet, setIsLoadingWallet] = useState(false)
   const [onlinePaymentOnly, setOnlinePaymentOnly] = useState(false)
   const [maxCodAmount, setMaxCodAmount] = useState(0)
+  const [loyaltySummary, setLoyaltySummary] = useState(null)
+  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -918,12 +920,16 @@ export default function Cart() {
           items,
           restaurantId: resolvedRestaurantId,
           deliveryAddress: defaultAddress,
-          couponCode: resolvedCouponCode
+          couponCode: resolvedCouponCode,
+          redeemPoints: useLoyaltyPoints ? (loyaltySummary?.balance || 0) : 0
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
           const newPricing = response.data.data.pricing
           setPricing(newPricing)
+          if (response.data.data.loyalty) {
+            setLoyaltySummary((prev) => (prev ? { ...prev, redemption: response.data.data.loyalty } : prev))
+          }
 
           if (newPricing.couponError && appliedCoupon) {
             toast.error(newPricing.couponError)
@@ -954,7 +960,7 @@ export default function Cart() {
     }
 
     calculatePricing()
-  }, [cart, defaultAddress, appliedCoupon, couponCode, restaurantId])
+  }, [cart, defaultAddress, appliedCoupon, couponCode, restaurantId, useLoyaltyPoints, loyaltySummary?.balance])
 
   // Fetch wallet balance
   useEffect(() => {
@@ -973,6 +979,21 @@ export default function Cart() {
       }
     }
     fetchWalletBalance()
+  }, [])
+
+  // Fetch loyalty points balance
+  useEffect(() => {
+    const fetchLoyaltySummary = async () => {
+      try {
+        const response = await userAPI.getLoyaltyPoints()
+        if (response?.data?.success && response?.data?.data) {
+          setLoyaltySummary(response.data.data)
+        }
+      } catch (error) {
+        debugError("Error fetching loyalty points:", error)
+      }
+    }
+    fetchLoyaltySummary()
   }, [])
 
   // Fetch user order count (used for first-time coupon eligibility)
@@ -1095,6 +1116,8 @@ export default function Cart() {
   const itemDiscount = pricing?.itemDiscount || 0;
   const couponDiscount = pricing?.couponDiscount || (appliedCoupon ? Math.min(appliedCoupon.discount, subtotal * 0.5) : 0);
   const discount = pricing?.discount || couponDiscount;
+  const pointsDiscount = pricing?.pointsDiscount || 0;
+  const loyaltyRedemption = loyaltySummary?.redemption || null;
   const totalBeforeDiscount = subtotal + deliveryFee + platformFee + packagingFee + gstCharges;
   const total = pricing?.total || Math.max(0, totalBeforeDiscount - discount);
   const savings = pricing?.savings ?? Math.max(0, totalBeforeDiscount - total)
@@ -1395,7 +1418,8 @@ export default function Cart() {
           items,
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
-          couponCode: coupon.code
+          couponCode: coupon.code,
+          redeemPoints: useLoyaltyPoints ? (loyaltySummary?.balance || 0) : 0
         })
 
         const pricingData = response?.data?.data?.pricing
@@ -1463,7 +1487,8 @@ export default function Cart() {
         items,
         restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
         deliveryAddress: defaultAddress,
-        couponCode: inputCode
+        couponCode: inputCode,
+        redeemPoints: useLoyaltyPoints ? (loyaltySummary?.balance || 0) : 0
       })
 
       const pricingData = response?.data?.data?.pricing
@@ -1528,7 +1553,8 @@ export default function Cart() {
           items,
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
-          couponCode: null
+          couponCode: null,
+          redeemPoints: useLoyaltyPoints ? (loyaltySummary?.balance || 0) : 0
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
@@ -1585,6 +1611,7 @@ export default function Cart() {
         tax: gstCharges,
         platformFee,
         discount,
+        pointsDiscount,
         total,
         couponCode: appliedCoupon?.code || null
       };
@@ -1796,6 +1823,7 @@ export default function Cart() {
         // `useZone()` can return `null`. Zod expects string/undefined, not null.
         zoneId: zoneId || undefined,
         scheduledAt: isScheduled ? new Date(`${scheduledDate}T${scheduledTime}:00`).toISOString() : undefined,
+        redeemPoints: useLoyaltyPoints ? (loyaltySummary?.balance || 0) : 0,
       };
       // Log final order details (including paymentMethod for COD debugging)
       debugLog('?? FINAL: Sending order to backend with:', {
@@ -2548,6 +2576,48 @@ export default function Cart() {
                 )}
               </div>
 
+              {/* Loyalty Points */}
+              {loyaltySummary && loyaltySummary.balance > 0 && (
+                <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-4 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                          You have {loyaltySummary.balance} points
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Worth {RUPEE_SYMBOL}{loyaltySummary.redemptionValue} in free food
+                        </p>
+                      </div>
+                    </div>
+                    {loyaltySummary.balance < (loyaltySummary.settings?.minPointsToRedeem || 0) ? (
+                      <span className="text-[11px] text-gray-400 text-right max-w-[120px]">
+                        Need {loyaltySummary.settings.minPointsToRedeem}+ points to redeem
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setUseLoyaltyPoints((v) => !v)}
+                        className={`rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shadow-sm ${
+                          useLoyaltyPoints
+                            ? "bg-primary text-white"
+                            : "border border-primary text-primary"
+                        }`}
+                      >
+                        {useLoyaltyPoints ? "Applied" : "Use"}
+                      </button>
+                    )}
+                  </div>
+                  {useLoyaltyPoints && (
+                    <p className="text-xs text-primary font-medium mt-2 pl-8">
+                      {pointsDiscount > 0
+                        ? `${loyaltyRedemption?.pointsRedeemed ?? ""} points applied · You saved ${RUPEE_SYMBOL}${pointsDiscount.toFixed(2)}`
+                        : (loyaltyRedemption?.note || "Calculating...")}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Delivery Time */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-5 rounded-2xl shadow-sm border border-slate-100 dark:border-gray-800">
                 <div className="flex items-start gap-3 md:gap-4">
@@ -2877,6 +2947,12 @@ export default function Cart() {
                        <div className="flex justify-between text-sm text-primary font-medium">
                          <span>Coupon Discount</span>
                          <span>-{RUPEE_SYMBOL}{couponDiscount.toFixed(2)}</span>
+                       </div>
+                    )}
+                    {pointsDiscount > 0 && (
+                       <div className="flex justify-between text-sm text-primary font-medium">
+                         <span>Loyalty Points Redeemed</span>
+                         <span>-{RUPEE_SYMBOL}{pointsDiscount.toFixed(2)}</span>
                        </div>
                     )}
 

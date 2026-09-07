@@ -665,6 +665,18 @@ export const adminAPI = {
   createOrUpdateReferralSettings: (body) =>
     adminClient.put("/food/admin/referral-settings", body ?? {}),
 
+  /** Loyalty Points Settings (admin) */
+  getLoyaltySettings: () =>
+    adminClient.get("/food/admin/loyalty-settings"),
+  createOrUpdateLoyaltySettings: (body) =>
+    adminClient.put("/food/admin/loyalty-settings", body ?? {}),
+  /** Loyalty Points ledger report (admin). params: { page, limit, search, startDate, endDate, type } */
+  getLoyaltyReport: (params) =>
+    adminClient.get("/food/admin/loyalty/report", { params: params ?? {} }),
+  /** Manually credit/debit a user's points balance (admin). Body: { userId, points, description } */
+  adjustUserLoyaltyPoints: (body) =>
+    adminClient.post("/food/admin/loyalty/adjust", body ?? {}),
+
   /** Safety / Emergency Reports (admin) */
   getSafetyEmergencyReports: (params) =>
     adminClient.get("/food/admin/safety-emergency-reports", { params: params ?? {} }),
@@ -1825,6 +1837,15 @@ export const userAPI = {
   /** GET /food/user/referrals/details (Bearer USER) */
   getReferralDetails: () =>
     userClient.get("/food/user/referrals/details"),
+  /** GET /food/user/loyalty (Bearer USER) — points balance + settings */
+  getLoyaltyPoints: () =>
+    userClient.get("/food/user/loyalty"),
+  /** GET /food/user/loyalty/history (Bearer USER). params: { page, limit } */
+  getLoyaltyHistory: (params) =>
+    userClient.get("/food/user/loyalty/history", { params: params ?? {} }),
+  /** POST /food/user/loyalty/preview-redeem (Bearer USER). Body: { orderSubtotal, points } */
+  previewRedeemLoyaltyPoints: (body) =>
+    userClient.post("/food/user/loyalty/preview-redeem", body ?? {}),
   /** POST /food/user/wallet/topup/order (Bearer USER). Body: { amount } */
   createWalletTopupOrder: (amount) =>
     userClient.post(

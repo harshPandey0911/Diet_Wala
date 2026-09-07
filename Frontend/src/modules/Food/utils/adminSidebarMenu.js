@@ -143,6 +143,8 @@ export const adminSidebarMenu = [
     label: "REFERRAL & REWARDS",
     items: [
       { type: "link", label: "Referral Settings", path: "/admin/food/referral-settings", icon: "Gift" },
+      { type: "link", label: "Loyalty Points Settings", path: "/admin/food/loyalty-settings", icon: "Award" },
+      { type: "link", label: "Loyalty Points Report", path: "/admin/food/loyalty-point/report", icon: "FileText" },
     ],
   },
   {

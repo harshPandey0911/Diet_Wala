@@ -42,6 +42,8 @@ import {
 } from "@food/components/ui/popover";
 import { adminAPI } from "@food/api";
 import { clearModuleAuth } from "@food/utils/auth";
+import { cn } from "@food/utils/utils"
+import DietValaLogo from "@/shared/components/DietValaLogo";
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings";
 import useAdminNotifications from "@food/hooks/useAdminNotifications";
 const debugLog = (...args) => { }
@@ -278,27 +280,8 @@ export default function AdminNavbar({ onMenuClick }) {
               <Menu className="w-5 h-5" />
             </button>
             {/* Logo and Company Name */}
-            <div className="flex items-center cursor-pointer" onClick={() => navigate('/admin')}>
-              <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden">
-                {businessSettings?.logo?.url ? (
-                  <img
-                    src={businessSettings.logo.url}
-                    alt={businessSettings.companyName || "Company"}
-                    className="w-10 h-10 object-contain"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <span className="text-sm font-bold text-neutral-900">
-                    {(businessSettings?.companyName || 'T').charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <span className="text-slate-900 font-extrabold text-xl ml-1 tracking-tight">
-                {businessSettings?.companyName || "Fudron"}
-              </span>
+            <div className="flex items-center cursor-pointer py-1" onClick={() => navigate('/admin')}>
+              <DietValaLogo size="md" showTagline={false} stacked={false} />
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'
+import DietValaLogo from './DietValaLogo';
 import { Zap, Clock, Star, ShoppingBasket, ShoppingBag } from 'lucide-react';
 
 export default function SplashScreen({ onFinish }) {
@@ -97,36 +98,9 @@ export default function SplashScreen({ onFinish }) {
                 style={{ transform: 'translateZ(0)', willChange: "transform, opacity" }}
                 className="text-7xl md:text-9xl font-black tracking-tighter text-white relative font-['Outfit'] select-none text-center"
               >
-                FUDRON
-
-                {/* Optimized Shine Effect Layer */}
-                <motion.div
-                  initial={{ x: '-150%' }}
-                  animate={{ x: '150%' }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] pointer-events-none"
-                  style={{
-                    mixBlendMode: 'overlay',
-                    willChange: "transform",
-                    transform: 'translateZ(0)'
-                  }}
-                />
-              </motion.h1>
-
-              {/* Tagline */}
-              <motion.p
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 0.8 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
-                className="text-center text-white/90 font-black tracking-[0.5em] text-[10px] md:text-[12px] uppercase mt-5"
-              >
-                Premium Food Delivery
-              </motion.p>
+              <div className="flex flex-col items-center">
+                <DietValaLogo size="xl" showTagline={true} stacked={true} />
+              </div>
             </div>
 
             {/* Bottom Signature */}
@@ -136,7 +110,7 @@ export default function SplashScreen({ onFinish }) {
               transition={{ delay: 0.8 }}
               className="absolute bottom-12 text-white text-[9px] uppercase tracking-[0.2em] font-medium"
             >
-              Powered by Fudron Food Delivery Inc.
+              Powered by DietVala Foods Inc.
             </motion.div>
           </motion.div>
         )}
