@@ -2116,7 +2116,7 @@ export default function Home() {
                 <HeroBanner
                   images={heroBannerImages}
                   bannersData={heroBannersData}
-                  loading={showBannerSkeleton}
+                  loading={loadingBanners}
                   shellRef={heroShellRef}
                 />
 

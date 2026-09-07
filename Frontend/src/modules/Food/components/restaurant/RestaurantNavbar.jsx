@@ -5,6 +5,7 @@ import { restaurantAPI } from "@food/api"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
 import useNotificationInbox from "@food/hooks/useNotificationInbox"
 import { useRestaurantNotifications } from "@food/hooks/useRestaurantNotifications"
+import DietValaLogo from "@/shared/components/DietValaLogo"
 import { Utensils } from "lucide-react"
 
 const debugLog = (...args) => {}
@@ -390,13 +391,9 @@ export default function RestaurantNavbar({
             <Menu className="h-5 w-5" />
           </button>
         )}
-        {logoUrl && (
-          <img
-            src={logoUrl}
-            alt="Logo"
-            className="h-9 w-9 shrink-0 rounded-lg object-contain sm:h-10 sm:w-10"
-          />
-        )}
+        <div className="shrink-0">
+          <DietValaLogo size="sm" showTagline={false} stacked={true} />
+        </div>
         <div className="min-w-0 flex-1">
           {/* Restaurant Name */}
           <div className="flex items-baseline min-w-0">

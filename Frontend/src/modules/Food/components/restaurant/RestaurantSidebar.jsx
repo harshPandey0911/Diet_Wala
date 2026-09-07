@@ -11,6 +11,7 @@ import {
 import { cn } from "@food/utils/utils"
 import { RESTAURANT_SIDEBAR_SECTIONS } from "@food/utils/restaurantLayoutConfig"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
+import DietValaLogo from "@/shared/components/DietValaLogo"
 import { useState, useEffect } from "react"
 
 const ICON_MAP = {
@@ -64,22 +65,10 @@ export default function RestaurantSidebar({
       >
         <div className="flex items-center justify-between gap-2 border-b border-[var(--rt-border)] px-4 py-4">
           <div className="flex min-w-0 items-center gap-3">
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt=""
-                className="h-9 w-9 shrink-0 rounded-lg object-contain"
-              />
-            )}
-            {!collapsed && (
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black text-[var(--rt-text)]">
-                  {companyName}
-                </p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--rt-muted)]">
-                  Partner panel
-                </p>
-              </div>
+            {!collapsed ? (
+              <DietValaLogo size="md" showTagline={false} stacked={false} />
+            ) : (
+              <DietValaLogo size="sm" showTagline={false} stacked={true} />
             )}
           </div>
           <button
