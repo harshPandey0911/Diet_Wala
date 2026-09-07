@@ -96,7 +96,7 @@ export default function SplashScreen({ onFinish }) {
                   damping: 15
                 }}
                 style={{ transform: 'translateZ(0)', willChange: "transform, opacity" }}
-                className="flex flex-col items-center justify-center text-white relative font-['Outfit'] select-none text-center"
+                className="text-7xl md:text-9xl font-black tracking-tighter text-white relative font-['Outfit'] select-none text-center"
               >
                 <DietValaLogo size="xl" showTagline={true} stacked={true} />
               </motion.div>

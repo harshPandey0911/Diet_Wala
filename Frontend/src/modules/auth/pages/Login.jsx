@@ -5,7 +5,7 @@ import { Phone, ArrowRight, ShieldCheck, Loader2, Utensils, Star, Heart, ShieldQ
 import { toast } from "sonner"
 import { authAPI, userAPI } from "@food/api"
 import { setAuthData } from "@food/utils/auth"
-import logoNew from "@/assets/logo.png"
+import DietValaLogo from "@/shared/components/DietValaLogo"
 import {
   Dialog,
   DialogContent,
@@ -321,17 +321,9 @@ export default function UnifiedOTPFastLogin() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-md shadow-primary/20 border-4 border-white dark:border-[#141414] mb-8 overflow-hidden bg-white p-2"
+            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-md shadow-primary/20 border-4 border-white dark:border-[#141414] mb-8 flex items-center justify-center bg-white p-2"
           >
-            <img
-              src={logoNew}
-              alt="Fudron Food Fudron Logo"
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/logo192.png'; // Fallback local logo
-              }}
-            />
+            <DietValaLogo size="md" showTagline={false} stacked={true} />
           </motion.div>
 
           <motion.div
