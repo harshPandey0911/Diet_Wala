@@ -139,51 +139,51 @@ export default function HeroBanner({
         }}
       >
         {hasCustomImages ? (
-          <div className="relative z-0 w-full h-[115px] sm:h-[145px] flex items-center justify-center overflow-hidden rounded-2xl">
+          <div className="relative z-0 w-full h-[170px] sm:h-[210px] md:h-[240px] flex items-center justify-center overflow-hidden rounded-3xl">
             {/* Render ONLY the single active slide to prevent multiple banner stacking */}
             <div className="w-full h-full flex items-center justify-center">
               <img
                 src={images[currentIndex % images.length]}
                 alt={`Hero Banner ${currentIndex + 1}`}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-cover rounded-3xl"
                 loading="eager"
                 draggable={false}
               />
             </div>
           </div>
         ) : (
-          /* DietVala Ultra-Compact Signature Banner Design */
-          <div className="relative z-10 px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2 h-[115px] sm:h-[145px]">
+          /* DietVala Signature Banner Design */
+          <div className="relative z-10 px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between gap-3 h-[170px] sm:h-[210px] md:h-[240px]">
             {/* Left Content */}
-            <div className="flex-1 space-y-0.5 z-10 min-w-0">
-              <h2 className="text-xs xs:text-sm sm:text-lg font-black text-gray-900 leading-tight tracking-tight">
+            <div className="flex-1 space-y-1 sm:space-y-1.5 z-10 min-w-0">
+              <h2 className="text-base xs:text-lg sm:text-2xl font-black text-gray-900 leading-tight tracking-tight">
                 Healthy khana,<br />
                 <span className="text-emerald-900">Better life!</span>
               </h2>
-              <div className="text-[9px] sm:text-[10px] font-bold text-amber-950/85 leading-tight">
+              <div className="text-[10px] sm:text-xs font-bold text-amber-950/85 leading-tight space-y-0.5">
                 <p>• Clean meals. • Real results.</p>
                 <p>• Delivered to your door.</p>
               </div>
-              <div className="pt-0.5">
+              <div className="pt-1 sm:pt-2">
                 <button
                   type="button"
-                  className="bg-[#1E1E1E] hover:bg-black text-white font-extrabold text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs active:scale-95 transition-all"
+                  className="bg-[#1E1E1E] hover:bg-black text-white font-extrabold text-[10px] sm:text-xs px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                 >
                   Order Now
-                  <div className="w-3.5 h-3.5 rounded-full bg-[#FFC700] text-black flex items-center justify-center">
-                    <ArrowRight className="w-2 h-2" strokeWidth={3} />
+                  <div className="w-4 h-4 rounded-full bg-[#FFC700] text-black flex items-center justify-center">
+                    <ArrowRight className="w-2.5 h-2.5" strokeWidth={3} />
                   </div>
                 </button>
               </div>
             </div>
 
             {/* Right Food Dish Image */}
-            <div className="relative w-16 h-16 sm:w-24 sm:h-24 flex-shrink-0">
+            <div className="relative w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 flex-shrink-0">
               <div className="absolute inset-0 bg-black/10 rounded-full blur-xs transform translate-y-0.5 scale-90" />
               <img
                 src={DIETVALA_BOWL_IMG}
                 alt="DietVala Healthy Meal"
-                className="w-full h-full object-cover rounded-full border-2 border-white/70 shadow-md relative z-10 transform rotate-2 hover:rotate-0 transition-transform duration-500"
+                className="w-full h-full object-cover rounded-full border-2 sm:border-3 border-white/80 shadow-md relative z-10 transform rotate-2 hover:rotate-0 transition-transform duration-500"
               />
             </div>
           </div>
