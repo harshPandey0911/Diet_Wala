@@ -271,8 +271,8 @@ const OptimizedImage = React.memo(({
 
       {/* Error State */}
       {hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <span className="text-xs text-gray-400 dark:text-gray-600">Image unavailable</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10">
+          {placeholderType === 'shop' ? <ShopPlaceholder /> : <FoodPlaceholder />}
         </div>
       )}
     </div>
