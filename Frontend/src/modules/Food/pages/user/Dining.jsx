@@ -215,12 +215,33 @@ export default function Dining() {
               .filter(Boolean)
           : []
 
-        setDiningHeroBanners(heroBanners)
+        const DEFAULT_FALLBACK_DINING_BANNERS = [
+          {
+            id: 'default-dining-1',
+            imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80',
+            tagline: 'Luxury & Casual Dining Experience',
+            promoCode: 'BOOK NOW',
+          },
+          {
+            id: 'default-dining-2',
+            imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&q=80',
+            tagline: 'Discover Fine Dining Near You',
+            promoCode: 'EXPLORE',
+          },
+          {
+            id: 'default-dining-3',
+            imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=80',
+            tagline: 'Exclusive Table Reservation Deals',
+            promoCode: 'RESERVE TABLE',
+          },
+        ]
+
+        setDiningHeroBanners(heroBanners.length > 0 ? heroBanners : DEFAULT_FALLBACK_DINING_BANNERS)
         setCategories(cats?.data?.success ? (cats.data.data || []) : [])
         setRestaurantList(rests?.data?.success ? (rests.data.data || []) : [])
       } catch (error) {
         debugError("Failed to fetch dining data", error)
-        setDiningHeroBanners([])
+        setDiningHeroBanners(DEFAULT_FALLBACK_DINING_BANNERS)
         setCategories([])
         setRestaurantList([])
       } finally {
