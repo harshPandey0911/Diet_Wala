@@ -6,6 +6,7 @@ import { setAuthData } from "@food/utils/auth"
 import { ShieldCheck, UserCog, Star, Heart, ArrowRight, Loader2, Mail, Lock, Eye, EyeOff, ShieldQuestion } from "lucide-react"
 import { Button } from "@food/components/ui/button"
 import logoNew from "@/assets/logo.png"
+import DietValaLogo from "@/shared/components/DietValaLogo"
 import { useAppLogo } from "@food/hooks/useAppLogo"
 import { useCompanyName } from "@food/hooks/useCompanyName"
 import { toast } from "sonner"
@@ -85,18 +86,9 @@ export default function AdminLogin() {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="relative w-32 h-32 md:w-36 md:h-36 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden border-4 border-white mx-auto mb-4 bg-white"
-              style={{ borderRadius: '50%', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
+              className="flex items-center justify-center mx-auto mb-4 p-4 rounded-full bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-amber-100/50 w-36 h-36"
             >
-              <img
-                src={logoToDisplay}
-                alt={`${companyName} Admin Logo`}
-                className="w-full h-full object-contain p-5"
-                style={{ borderRadius: '50%' }}
-                onError={(e) => {
-                  e.currentTarget.src = logoNew
-                }}
-              />
+              <DietValaLogo appType="admin_app" size="lg" showTagline={true} stacked={true} />
             </motion.div>
 
             <motion.p
@@ -136,7 +128,7 @@ export default function AdminLogin() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="block w-full pl-12 pr-6 py-4 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white border-2 border-transparent focus:border-primary/50 rounded-2xl outline-none transition-all placeholder:text-gray-300 font-bold"
-                      placeholder="admin@fudron.com"
+                      placeholder="admin@dietvala.com"
                     />
                   </div>
                 </div>

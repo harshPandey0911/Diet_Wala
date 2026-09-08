@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, Menu, ChevronRight, MapPin, X, Bell, HelpCircle } from "lucide-react"
+import { Search, Menu, ChevronRight, MapPin, X, Bell, HelpCircle, LogOut, Utensils } from "lucide-react"
 import { restaurantAPI } from "@food/api"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
+import { clearModuleAuth } from "@food/utils/auth"
 import useNotificationInbox from "@food/hooks/useNotificationInbox"
 import { useRestaurantNotifications } from "@food/hooks/useRestaurantNotifications"
 import DietValaLogo from "@/shared/components/DietValaLogo"
-import { Utensils } from "lucide-react"
 
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -353,8 +353,23 @@ export default function RestaurantNavbar({
     navigate("/food/restaurant/notifications")
   }
 
+  const handleLogout = () => {
+    try {
+      clearModuleAuth("restaurant")
+      window.dispatchEvent(new Event("restaurantAuthChanged"))
+      navigate("/food/restaurant/login", { replace: true })
+    } catch (err) {
+      console.error("Logout error:", err)
+    }
+  }
+
   return (
-    <div className="w-full bg-gradient-to-r from-[#DD4AA0] to-[#d99ec0] rounded-b-[24px] shadow-lg px-3 pt-4 pb-4 sm:px-4 sm:pt-5 sm:pb-5 flex items-center justify-between gap-2 relative">
+    <div
+      className="w-full rounded-b-[24px] shadow-lg px-3 pt-4 pb-4 sm:px-4 sm:pt-5 sm:pb-5 flex items-center justify-between gap-2 relative transition-all"
+      style={{
+        background: "linear-gradient(to right, var(--rt-primary, #f59e0b), var(--rt-primary-strong, #16a34a))"
+      }}
+    >
       {/* Search Overlay */}
       {isSearchActive && (
         <div className="absolute inset-0 bg-white z-50 flex items-center px-4 gap-3">
@@ -459,6 +474,16 @@ export default function RestaurantNavbar({
               )}
             </button>
           )}
+
+        {/* Logout Icon */}
+        <button
+          onClick={handleLogout}
+          className="p-2 ml-1 hover:bg-white/10 rounded-full transition-colors"
+          aria-label="Logout"
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5 text-white" />
+        </button>
       </div>
       
       {/* Real-time Dining Booking Popup */}

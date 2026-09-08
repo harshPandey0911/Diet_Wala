@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, ChevronDown, Search, Mic, Bell, CheckCircle2, Tag, Gift, AlertCircle, BellOff, Menu, Pencil } from 'lucide-react';
+import { MapPin, ChevronDown, Search, Mic, Bell, CheckCircle2, Tag, Gift, AlertCircle, BellOff, Pencil } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -116,24 +116,19 @@ export default function HomeHeader({
       <div id="home-header-loc-row" className="relative pt-0.5 pb-2 px-3.5 transition-all duration-500 bg-[#FFFBEB] dark:bg-[#18150c] md:hidden">
         <div className="relative z-10 space-y-2">
           
-          {/* Row 1: Top Navigation - Menu Icon, DietVala Logo & Tagline, Bell Notification Icon */}
-          <div className="flex items-center justify-between gap-2 pb-0.5 pt-0.5">
-            {/* Left: White Circle Hamburger Menu Icon */}
-            <button 
-              type="button" 
-              className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-2xs border border-gray-100 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-800 dark:text-gray-200 active:scale-95 flex-shrink-0 -mt-1"
-              aria-label="Open menu"
-            >
-              <Menu className="h-4 w-4" strokeWidth={2.5} />
-            </button>
+          {/* Row 1: Top Navigation - DietVala Logo & Tagline, Bell Notification Icon */}
+          <div className="grid grid-cols-3 items-center pb-0.5 pt-0.5">
+            {/* Left Spacer to perfectly balance the right Bell Icon */}
+            <div className="w-8 h-8" />
 
             {/* Center: DietVala Branding Logo */}
-            <Link to="/food/user/" className="flex flex-col items-center justify-center group flex-1">
+            <Link to="/food/user/" className="flex flex-col items-center justify-center group justify-self-center">
               <DietValaLogo size="lg" showTagline={true} stacked={true} />
             </Link>
 
             {/* Right: White Circle Notification Bell */}
-            <Popover>
+            <div className="justify-self-end">
+              <Popover>
               <PopoverTrigger asChild>
                 <div className="w-8 h-8 relative flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-2xs border border-gray-100 dark:border-gray-700 cursor-pointer active:scale-95 transition-all text-gray-800 dark:text-gray-200 flex-shrink-0 -mt-1">
                   <Bell className="h-4 w-4" />
@@ -183,6 +178,7 @@ export default function HomeHeader({
                 </div>
               </PopoverContent>
             </Popover>
+          </div>
           </div>
 
           {/* Row 2: Delivering To Address Row with Green Pin & Yellow Change Button */}

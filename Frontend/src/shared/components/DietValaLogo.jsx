@@ -7,6 +7,7 @@ import { useAppLogo } from "@food/hooks/useAppLogo";
  * otherwise renders the default SVG vector DietVala logo.
  */
 export default function DietValaLogo({ 
+  appType = null,
   size = 'md', // 'sm', 'md', 'lg', 'xl'
   showTagline = false,
   showText = true,
@@ -14,7 +15,17 @@ export default function DietValaLogo({
   stacked = true,
   lightText = false
 }) {
-  const dynamicLogoUrl = useAppLogo('user_app');
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  const defaultAppType = path.includes('/admin')
+    ? 'admin_app'
+    : path.includes('/restaurant')
+    ? 'restaurant_app'
+    : path.includes('/delivery')
+    ? 'delivery_app'
+    : 'user_app';
+
+  const effectiveAppType = appType || defaultAppType;
+  const dynamicLogoUrl = useAppLogo(effectiveAppType);
 
   const sizeMap = {
     sm: { mark: 'h-9 w-auto', text: 'text-xl', tagline: 'text-[8.5px]', img: 'h-9' },
@@ -31,7 +42,7 @@ export default function DietValaLogo({
         <img 
           src={dynamicLogoUrl} 
           alt="App Logo" 
-          className={`${currentSize.img} w-auto object-contain mix-blend-multiply`} 
+          className={`${currentSize.img} w-auto object-contain ${lightText ? 'bg-white/95 p-1.5 rounded-xl shadow-xs' : ''}`} 
           onError={(e) => {
             e.currentTarget.style.display = 'none';
           }}

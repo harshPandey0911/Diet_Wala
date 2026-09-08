@@ -343,6 +343,9 @@ export function isStatusAdvance(current, next) {
   // If current status is missing, it's effectively 'created' or start of flow
   if (!current) return true;
   
+  // If current status is identical to next status, allow idempotent update
+  if (current === next) return true;
+  
   const currentPrio = STATUS_PRIORITY[current] || 0;
   const nextPrio = STATUS_PRIORITY[next] || 0;
 

@@ -51,7 +51,7 @@ function formatCurrency(value) {
 
 function KpiCard({ title, value, subtitle, icon: Icon, trend, accent = "primary" }) {
   const accentClasses = {
-    primary: "from-[#DD4AA0]/10 to-[#d99ec0]/5 text-[#DD4AA0]",
+    primary: "from-[var(--rt-primary,#f59e0b)]/10 to-[var(--rt-primary-strong,#16a34a)]/5 text-[var(--rt-primary,#f59e0b)]",
     green: "from-emerald-50 to-emerald-100/50 text-emerald-700",
     amber: "from-amber-50 to-amber-100/50 text-amber-700",
     blue: "from-blue-50 to-blue-100/50 text-blue-700",

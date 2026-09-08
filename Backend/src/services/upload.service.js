@@ -3,6 +3,7 @@ import path from 'path';
 import multer from 'multer';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import { v2 as cloudinary } from 'cloudinary';
 import { config } from '../config/env.js';
 
 // Ensure the single upload directory exists.
@@ -85,11 +86,46 @@ export const upload = multer({
     fileFilter
 });
 
+const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', filename) => {
+    const cloudName = config.cloudinaryCloudName || process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = config.cloudinaryApiKey || process.env.CLOUDINARY_API_KEY;
+    const apiSecret = config.cloudinaryApiSecret || process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+        return null;
+    }
+
+    cloudinary.config({
+        cloud_name: cloudName,
+        api_key: apiKey,
+        api_secret: apiSecret,
+        secure: true
+    });
+
+    return new Promise((resolve) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder,
+                public_id: filename ? filename.replace(/\.[^/.]+$/, '') : undefined,
+                resource_type: 'auto'
+            },
+            (error, result) => {
+                if (error) {
+                    console.error('Cloudinary upload warning:', error.message);
+                    return resolve(null);
+                }
+                resolve(result.secure_url);
+            }
+        );
+        stream.end(buffer);
+    });
+};
+
 /**
- * Processes and saves an image buffer to the single upload directory.
- * Returns the relative public path (e.g., '/uploads/food_123.webp')
+ * Processes and saves an image buffer to Cloudinary (or fallback to single upload directory).
+ * Returns the Cloudinary URL or relative public path (e.g., '/uploads/food_123.webp')
  */
-const processAndSaveImage = async ({ buffer, prefix, width, height, quality = 80 }) => {
+const processAndSaveImage = async ({ buffer, prefix, folder = 'banners', width, height, quality = 80 }) => {
     const dir = ensureUploadDirExists();
     const filename = buildFlatUploadFilename({ prefix, extension: 'webp' });
     const filepath = path.join(dir, filename);
@@ -105,10 +141,19 @@ const processAndSaveImage = async ({ buffer, prefix, width, height, quality = 80
         });
     }
 
-    await sharpInstance
+    const processedBuffer = await sharpInstance
         .webp({ quality })
-        .toFile(filepath);
+        .toBuffer();
 
+    // Try Cloudinary first
+    const cloudinaryFolder = `diet_wala/${folder}`;
+    const cloudinaryUrl = await uploadToCloudinaryBuffer(processedBuffer, cloudinaryFolder, filename);
+    if (cloudinaryUrl) {
+        return cloudinaryUrl;
+    }
+
+    // Local fallback
+    fs.writeFileSync(filepath, processedBuffer);
     return `/uploads/${filename}`;
 };
 

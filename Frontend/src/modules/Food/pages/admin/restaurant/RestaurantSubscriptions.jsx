@@ -24,66 +24,30 @@ import { Badge } from "@food/components/ui/badge";
 import { adminAPI } from "@food/api";
 import { toast } from "sonner";
 
-// Default Professional Subscription Packages
-const INITIAL_PACKAGES = [
-  {
-    id: "pkg_basic",
-    name: "Basic Plan",
-    price: 999,
-    durationDays: 30,
-    maxFoods: 50,
-    maxOrders: 300,
-    commissionRate: 10,
-    features: ["50 Menu Items", "300 Monthly Orders", "10% Platform Commission", "Basic Support"],
-    popular: false,
-    badgeColor: "bg-slate-100 text-slate-800"
-  },
-  {
-    id: "pkg_pro",
-    name: "Pro Growth Plan",
-    price: 2499,
-    durationDays: 30,
-    maxFoods: 200,
-    maxOrders: 1500,
-    commissionRate: 5,
-    features: ["200 Menu Items", "1500 Monthly Orders", "5% Platform Commission", "Priority Support", "Featured Listing"],
-    popular: true,
-    badgeColor: "bg-amber-100 text-amber-900 border-amber-300"
-  },
-  {
-    id: "pkg_enterprise",
-    name: "Enterprise Unlimited",
-    price: 4999,
-    durationDays: 90,
-    maxFoods: 9999,
-    maxOrders: 99999,
-    commissionRate: 0,
-    features: ["Unlimited Menu Items", "Unlimited Orders", "0% Commission", "24/7 VIP Support", "Top Zone Banner Ad"],
-    popular: false,
-    badgeColor: "bg-emerald-100 text-emerald-900"
-  }
-];
+// Initial fallback subscription packages if none exist
+const INITIAL_PACKAGES = [];
 
 export default function RestaurantSubscriptions() {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'inactive', 'expired'
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'inactive', 'none'
   const [subscriptionsMap, setSubscriptionsMap] = useState({});
+  
+  // Dynamic Packages State
+  const [packages, setPackages] = useState(() => {
+    const savedPkgs = localStorage.getItem("dietvala_subscription_packages");
+    return savedPkgs ? JSON.parse(savedPkgs) : [];
+  });
   
   // Assign/Edit Subscription Modal state
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [selectedPackageId, setSelectedPackageId] = useState("pkg_pro");
+  const [selectedPackageId, setSelectedPackageId] = useState("");
   const [customDurationDays, setCustomDurationDays] = useState(30);
-  const [customPrice, setCustomPrice] = useState(2499);
+  const [customPrice, setCustomPrice] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  // Dynamic Packages State
-  const [packages, setPackages] = useState(() => {
-    const savedPkgs = localStorage.getItem("dietvala_subscription_packages");
-    return savedPkgs ? JSON.parse(savedPkgs) : INITIAL_PACKAGES;
-  });
   const [isAddPackageModalOpen, setIsAddPackageModalOpen] = useState(false);
   const [newPkgData, setNewPkgData] = useState({
     name: "",
@@ -186,14 +150,20 @@ export default function RestaurantSubscriptions() {
   const handleOpenAssignModal = (restaurant) => {
     setSelectedRestaurant(restaurant);
     const existing = subscriptionsMap[restaurant._id || restaurant.id];
+    const defaultPkg = packages[0];
+
     if (existing) {
-      setSelectedPackageId(existing.packageId || "pkg_pro");
-      setCustomDurationDays(existing.durationDays || 30);
-      setCustomPrice(existing.price || 2499);
+      setSelectedPackageId(existing.packageId || (defaultPkg ? defaultPkg.id : ""));
+      setCustomDurationDays(existing.durationDays || (defaultPkg ? defaultPkg.durationDays : 30));
+      setCustomPrice(existing.price || (defaultPkg ? defaultPkg.price : 0));
+    } else if (defaultPkg) {
+      setSelectedPackageId(defaultPkg.id);
+      setCustomDurationDays(defaultPkg.durationDays);
+      setCustomPrice(defaultPkg.price);
     } else {
-      setSelectedPackageId("pkg_pro");
+      setSelectedPackageId("");
       setCustomDurationDays(30);
-      setCustomPrice(2499);
+      setCustomPrice(0);
     }
     setIsAssignModalOpen(true);
   };
@@ -205,10 +175,18 @@ export default function RestaurantSubscriptions() {
 
     setSubmitting(true);
 
-    const targetPkg = INITIAL_PACKAGES.find(p => p.id === selectedPackageId) || INITIAL_PACKAGES[1];
+    const targetPkg = packages.find(p => p.id === selectedPackageId) || {
+      id: "custom",
+      name: "Custom Plan",
+      durationDays: Number(customDurationDays || 30),
+      price: Number(customPrice || 0),
+      maxFoods: 100,
+      maxOrders: 500,
+      commissionRate: 5
+    };
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setDate(startDate.getDate() + Number(customDurationDays || targetPkg.durationDays));
+    endDate.setDate(startDate.getDate() + Number(customDurationDays || targetPkg.durationDays || 30));
 
     const restId = selectedRestaurant._id || selectedRestaurant.id;
     const subscriptionData = {
@@ -216,14 +194,14 @@ export default function RestaurantSubscriptions() {
       restaurantName: selectedRestaurant.name || selectedRestaurant.restaurantName,
       packageId: targetPkg.id,
       packageName: targetPkg.name,
-      price: Number(customPrice || targetPkg.price),
+      price: Number(customPrice !== undefined ? customPrice : targetPkg.price),
       durationDays: Number(customDurationDays || targetPkg.durationDays),
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       status: "active",
-      maxFoods: targetPkg.maxFoods,
-      maxOrders: targetPkg.maxOrders,
-      commissionRate: targetPkg.commissionRate,
+      maxFoods: targetPkg.maxFoods || 100,
+      maxOrders: targetPkg.maxOrders || 500,
+      commissionRate: targetPkg.commissionRate || 5,
       updatedAt: new Date().toISOString()
     };
 
@@ -329,40 +307,47 @@ export default function RestaurantSubscriptions() {
             Active Subscription Tiers & Plans
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
-          {packages.map((pkg) => (
-            <div 
-              key={pkg.id} 
-              className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border relative flex flex-col justify-between ${
-                pkg.popular ? "border-amber-400 ring-2 ring-amber-400/20 shadow-md" : "border-gray-100 dark:border-gray-800 shadow-2xs"
-              }`}
-            >
-              {pkg.popular && (
-                <span className="absolute -top-3 right-4 bg-amber-500 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
-                  Most Popular
-                </span>
-              )}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-gray-900 dark:text-white text-base">{pkg.name}</h3>
-                  <Badge className={pkg.badgeColor}>{pkg.durationDays} Days</Badge>
+        {packages.length === 0 ? (
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-center space-y-2">
+            <p className="text-sm font-bold text-gray-700 dark:text-gray-300">No subscription packages created yet</p>
+            <p className="text-xs text-gray-400">Click "+ Create New Package" above to define your custom tier pricing and limits.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+            {packages.map((pkg) => (
+              <div 
+                key={pkg.id} 
+                className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border relative flex flex-col justify-between ${
+                  pkg.popular ? "border-amber-400 ring-2 ring-amber-400/20 shadow-md" : "border-gray-100 dark:border-gray-800 shadow-2xs"
+                }`}
+              >
+                {pkg.popular && (
+                  <span className="absolute -top-3 right-4 bg-amber-500 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+                    Most Popular
+                  </span>
+                )}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-extrabold text-gray-900 dark:text-white text-base">{pkg.name}</h3>
+                    <Badge className={pkg.badgeColor || "bg-amber-100 text-amber-900"}>{pkg.durationDays} Days</Badge>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-black text-gray-900 dark:text-white">₹{pkg.price}</span>
+                    <span className="text-xs text-gray-500">/ {pkg.durationDays} days</span>
+                  </div>
+                  <ul className="space-y-1.5 pt-2">
+                    {(pkg.features || []).map((feat, idx) => (
+                      <li key={idx} className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                        {feat}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-gray-900 dark:text-white">₹{pkg.price}</span>
-                  <span className="text-xs text-gray-500">/ {pkg.durationDays} days</span>
-                </div>
-                <ul className="space-y-1.5 pt-2">
-                  {pkg.features.map((feat, idx) => (
-                    <li key={idx} className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Main Table Card */}
@@ -552,7 +537,7 @@ export default function RestaurantSubscriptions() {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Select Plan Package</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {INITIAL_PACKAGES.map((pkg) => (
+                  {packages.map((pkg) => (
                     <button
                       key={pkg.id}
                       type="button"

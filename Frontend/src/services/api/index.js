@@ -1057,11 +1057,26 @@ export const restaurantAPI = {
       });
     } catch (error) {
       const statusCode = Number(error?.response?.status || 0);
-      if (statusCode === 400) {
-        // Compatibility fallback: some backends treat "confirmed" as accept action.
-        return restaurantAPI.updateOrderStatus(orderId, {
-          orderStatus: "confirmed",
-        });
+      const errorMessage = String(error?.response?.data?.message || "");
+
+      // If the order is already preparing or further ahead, consider accept successful
+      if (errorMessage.includes("further ahead")) {
+        return { success: true, message: "Order is already accepted and in progress." };
+      }
+
+      if (statusCode === 400 && !errorMessage.includes("further ahead")) {
+        // Compatibility fallback: try "confirmed" only if order is in created state
+        try {
+          return await restaurantAPI.updateOrderStatus(orderId, {
+            orderStatus: "confirmed",
+          });
+        } catch (fallbackError) {
+          const fallbackMsg = String(fallbackError?.response?.data?.message || "");
+          if (fallbackMsg.includes("further ahead")) {
+            return { success: true, message: "Order is already accepted." };
+          }
+          throw fallbackError;
+        }
       }
       throw error;
     }

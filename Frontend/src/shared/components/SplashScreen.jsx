@@ -7,14 +7,14 @@ export default function SplashScreen({ onFinish }) {
   const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
-    // Show splash for 1.8 seconds then start finish animation
+    // Show splash for 600ms then start finish animation
     const timer = setTimeout(() => {
       setIsFinishing(true);
       // Wait for the finish animation (zoom) to complete then unmount
       setTimeout(() => {
         if (onFinish) onFinish();
-      }, 600); // Duration of the zoom out
-    }, 1800);
+      }, 300); // Duration of the zoom out
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [onFinish]);

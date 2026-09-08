@@ -29,6 +29,7 @@ export default function PageLoader() {
   }, [location.pathname])
 
   if (!isNavigating) return null
+  return null
 
   return (
     <div

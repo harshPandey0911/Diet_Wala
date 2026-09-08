@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import {
   FileText,
   Package,
@@ -7,10 +7,12 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from "lucide-react"
 import { cn } from "@food/utils/utils"
 import { RESTAURANT_SIDEBAR_SECTIONS } from "@food/utils/restaurantLayoutConfig"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
+import { clearModuleAuth } from "@food/utils/auth"
 import DietValaLogo from "@/shared/components/DietValaLogo"
 import { useState, useEffect } from "react"
 
@@ -27,9 +29,21 @@ export default function RestaurantSidebar({
   collapsed,
   onToggleCollapse,
 }) {
+  const navigate = useNavigate()
   const { pathname } = useLocation()
   const [companyName, setCompanyName] = useState("Restaurant Panel")
   const [logoUrl, setLogoUrl] = useState(null)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+
+  const handleLogout = () => {
+    try {
+      clearModuleAuth("restaurant")
+      window.dispatchEvent(new Event("restaurantAuthChanged"))
+      navigate("/food/restaurant/login", { replace: true })
+    } catch (err) {
+      console.error("Logout error:", err)
+    }
+  }
 
   useEffect(() => {
     const apply = (settings) => {
@@ -46,6 +60,26 @@ export default function RestaurantSidebar({
     }
     window.addEventListener("businessSettingsUpdated", onUpdate)
     return () => window.removeEventListener("businessSettingsUpdated", onUpdate)
+  }, [])
+
+  useEffect(() => {
+    const checkActiveSub = () => {
+      try {
+        const storedSubs = localStorage.getItem("dietvala_restaurant_subscriptions")
+        if (storedSubs) {
+          const map = JSON.parse(storedSubs)
+          const active = Object.values(map).some((sub) => sub?.status === "active")
+          if (active) {
+            setHasActiveSubscription(true)
+            return
+          }
+        }
+      } catch {}
+      setHasActiveSubscription(false)
+    }
+    checkActiveSub()
+    window.addEventListener("storage", checkActiveSub)
+    return () => window.removeEventListener("storage", checkActiveSub)
   }, [])
 
   const isActive = (route) => {
@@ -94,15 +128,25 @@ export default function RestaurantSidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {RESTAURANT_SIDEBAR_SECTIONS.map((section) => (
-            <div key={section.title} className="mb-5">
-              {!collapsed && (
-                <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-[var(--rt-muted)]">
-                  {section.title}
-                </p>
-              )}
-              <ul className="space-y-0.5">
-                {section.items.map((item) => {
+          {RESTAURANT_SIDEBAR_SECTIONS.map((section) => {
+            const filteredItems = section.items.filter((item) => {
+              if (item.route.endsWith("/subscription") && !hasActiveSubscription) {
+                return false
+              }
+              return true
+            })
+
+            if (filteredItems.length === 0) return null
+
+            return (
+              <div key={section.title} className="mb-5">
+                {!collapsed && (
+                  <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-[var(--rt-muted)]">
+                    {section.title}
+                  </p>
+                )}
+                <ul className="space-y-0.5">
+                  {filteredItems.map((item) => {
                   const Icon = item.icon ? ICON_MAP[item.icon] : null
                   const active = isActive(item.route)
                   return (
@@ -126,11 +170,28 @@ export default function RestaurantSidebar({
                       </Link>
                     </li>
                   )
-                })}
-              </ul>
-            </div>
-          ))}
+                  })}
+                </ul>
+              </div>
+            )
+          })}
         </nav>
+
+        {/* Footer Logout Button */}
+        <div className="border-t border-gray-100 p-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            title={collapsed ? "Logout" : undefined}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors",
+              collapsed && "justify-center px-2"
+            )}
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
     </>
   )

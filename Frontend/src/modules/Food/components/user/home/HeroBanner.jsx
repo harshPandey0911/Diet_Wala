@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { HeroBannerSkeleton } from "@food/components/ui/loading-skeletons";
+import { getMediaUrl } from "@/shared/utils/media.js";
 
 const AUTO_SLIDE_MS = 3500;
 const FADE_MS = 1000;
@@ -142,7 +143,7 @@ export default function HeroBanner({
           <div className="relative z-0 w-full h-[125px] sm:h-[160px] md:h-[280px] lg:h-[340px] flex items-center justify-center overflow-hidden rounded-3xl">
             <div className="w-full h-full flex items-center justify-center">
               <img
-                src={images[currentIndex % images.length]}
+                src={getMediaUrl(images[currentIndex % images.length])}
                 alt={`Hero Banner ${currentIndex + 1}`}
                 className="w-full h-full object-cover rounded-3xl"
                 loading="eager"

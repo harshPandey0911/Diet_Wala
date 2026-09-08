@@ -6,6 +6,7 @@ import BottomNavOrders from "./BottomNavOrders"
 import { RestaurantLayoutProvider, useRestaurantLayout } from "./RestaurantLayoutContext"
 import { RestaurantNotificationProvider } from "@food/context/RestaurantNotificationContext"
 import { getRestaurantLayoutOptions, getRestaurantHeaderOptions } from "@food/utils/restaurantLayoutConfig"
+import { applyDynamicTheme } from "@food/utils/themeSettings"
 import { cn } from "@food/utils/utils"
 
 export default function RestaurantLayout() {
@@ -17,6 +18,10 @@ export default function RestaurantLayout() {
     () => getRestaurantLayoutOptions(pathname),
     [pathname]
   )
+
+  useEffect(() => {
+    applyDynamicTheme().catch(() => {});
+  }, [])
 
   useEffect(() => {
     setSidebarOpen(false)

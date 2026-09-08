@@ -49,6 +49,9 @@ export const config = {
 
     // Uploads
     uploadPath: process.env.UPLOAD_DIR || process.env.UPLOAD_PATH || 'uploads/',
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
 
     // Redis
     redisEnabled: process.env.REDIS_ENABLED === 'true',
@@ -127,6 +130,9 @@ export const updateConfig = () => {
     config.authRateLimitMax = Number(process.env.AUTH_RATE_LIMIT_MAX || config.authRateLimitMax);
     config.bcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS || config.bcryptSaltRounds);
     config.uploadPath = process.env.UPLOAD_DIR || process.env.UPLOAD_PATH || config.uploadPath;
+    config.cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME || config.cloudinaryCloudName;
+    config.cloudinaryApiKey = process.env.CLOUDINARY_API_KEY || config.cloudinaryApiKey;
+    config.cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET || config.cloudinaryApiSecret;
     config.redisEnabled = process.env.REDIS_ENABLED === 'true';
     config.redisUrl = process.env.REDIS_URL || config.redisUrl;
     config.bullmqEnabled = process.env.BULLMQ_ENABLED === 'true';
