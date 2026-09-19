@@ -22,14 +22,24 @@ let firebaseRealtimeDb = null;
 /**
  * Ensures Firebase app is initialized but stays silent.
  */
+// Google API keys always match this shape; catches blank/placeholder/typo'd
+// keys (e.g. a bad Vercel env var) before they reach the Firebase SDK, where
+// the resulting auth/invalid-api-key error is thrown deep in async internals
+// that React's error boundary and our try/catch blocks cannot reach.
+function isPlausibleApiKey(key) {
+  return /^AIza[0-9A-Za-z_-]{35}$/.test(String(key || ''));
+}
+
 function initializeBaseApp() {
   if (app) return app;
   try {
     const existingApps = getApps();
     if (existingApps.length > 0) {
       app = existingApps[0];
-    } else if (firebaseConfig.apiKey) {
+    } else if (isPlausibleApiKey(firebaseConfig.apiKey)) {
       app = initializeApp(firebaseConfig);
+    } else if (firebaseConfig.apiKey) {
+      console.warn("Firebase initializeBaseApp skipped: VITE_FIREBASE_API_KEY looks invalid.");
     }
   } catch (err) {
     console.warn("Firebase initializeBaseApp failed:", err?.message || err);
@@ -43,8 +53,8 @@ function initializeBaseApp() {
 export function getFirebaseAuth() {
   if (!firebaseAuth) {
     try {
-      if (!firebaseConfig.apiKey) {
-        console.warn("Firebase Auth skipped: VITE_FIREBASE_API_KEY is not configured.");
+      if (!isPlausibleApiKey(firebaseConfig.apiKey)) {
+        console.warn("Firebase Auth skipped: VITE_FIREBASE_API_KEY is missing or invalid.");
         return null;
       }
       const firebaseApp = initializeBaseApp();

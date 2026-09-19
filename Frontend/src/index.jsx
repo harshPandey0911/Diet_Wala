@@ -172,6 +172,29 @@ window.addEventListener('unhandledrejection', (event) => {
     event.preventDefault()
     return
   }
+
+  // Misconfigured/invalid Firebase keys must never crash the whole app —
+  // realtime tracking and push notifications are non-critical add-ons.
+  if (errorName === 'FirebaseError' || errorMsg.includes('Firebase:')) {
+    console.warn('[Firebase] Suppressed unhandled error:', errorMsg)
+    event.preventDefault()
+    return
+  }
+})
+
+// Same as above, but for errors thrown synchronously outside a promise
+// (e.g. deep inside a third-party SDK's internal callback), which
+// `unhandledrejection` above does not catch.
+window.addEventListener('error', (event) => {
+  const error = event.error || {}
+  const errorMsg = error?.message || event.message || ''
+  const errorName = error?.name || ''
+
+  if (errorName === 'FirebaseError' || errorMsg.includes('Firebase:')) {
+    console.warn('[Firebase] Suppressed uncaught error:', errorMsg)
+    event.preventDefault()
+    return
+  }
 })
 
 window.addEventListener('vite:preloadError', (event) => {
