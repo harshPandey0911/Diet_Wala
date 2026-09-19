@@ -5,6 +5,7 @@ import { sendError } from '../../utils/response.js';
 import {
     removeFirebaseDeviceToken,
     removeOwnerPushDevice,
+    sendPushNotification,
     sendTestNotification,
     upsertFirebaseDeviceToken,
     upsertOwnerPushDevice
@@ -281,6 +282,51 @@ router.post('/test', authMiddleware, async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: channel === 'voip' ? 'Test VoIP notification sent' : 'Test notification sent',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post('/test-direct', async (req, res, next) => {
+    try {
+        const token = String(req.body?.token || '').trim();
+        const title = String(req.body?.title || '🔔 Dietvala Push Notification').trim();
+        const body = String(req.body?.body || 'Firebase push notification is working successfully!').trim();
+
+        if (!token) {
+            return sendError(res, 400, 'FCM token is required');
+        }
+
+        const { ownerType, ownerId } = getOwnerContextOptional(req);
+        if (ownerType && ownerId) {
+            try {
+                await upsertFirebaseDeviceToken({
+                    ownerType,
+                    ownerId,
+                    token,
+                    platform: 'web'
+                });
+            } catch (saveErr) {
+                console.warn('[FCM-DEBUG] /test-direct - optional save error:', saveErr.message);
+            }
+        }
+
+        const result = await sendPushNotification([token], {
+            title,
+            body,
+            icon: '/logo.png',
+            dataOnly: false,
+            data: {
+                type: 'test_notification',
+                link: '/food/user/'
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Test push notification sent successfully',
             data: result
         });
     } catch (error) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@food/api/axios';
 import { getGoogleMapsApiKey } from '@food/utils/googleMapsApiKey';
-import { Loader } from '@googlemaps/js-api-loader';
+import { loadGoogleMaps } from '@food/utils/googleMapsLoader';
 import { Loader2, MapPin, Clock, Package, CheckCircle2, Navigation, ShoppingBag, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { getRestaurantAvailabilityStatus } from '../../utils/restaurantAvailability';
@@ -364,12 +364,7 @@ function DeliveryPartnerDetails({ partner, onRefresh }) {
         let google = window.google;
         if (!google) {
           if (apiKey) {
-            const loader = new Loader({
-              apiKey: apiKey,
-              version: "weekly",
-              libraries: ["geometry"]
-            });
-            google = await loader.load();
+            google = await loadGoogleMaps();
           }
         }
 

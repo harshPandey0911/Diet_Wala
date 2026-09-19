@@ -24,11 +24,15 @@ let firebaseRealtimeDb = null;
  */
 function initializeBaseApp() {
   if (app) return app;
-  const existingApps = getApps();
-  if (existingApps.length > 0) {
-    app = existingApps[0];
-  } else {
-    app = initializeApp(firebaseConfig);
+  try {
+    const existingApps = getApps();
+    if (existingApps.length > 0) {
+      app = existingApps[0];
+    } else if (firebaseConfig.apiKey) {
+      app = initializeApp(firebaseConfig);
+    }
+  } catch (err) {
+    console.warn("Firebase initializeBaseApp failed:", err?.message || err);
   }
   return app;
 }
@@ -38,8 +42,18 @@ function initializeBaseApp() {
  */
 export function getFirebaseAuth() {
   if (!firebaseAuth) {
-    const firebaseApp = initializeBaseApp();
-    firebaseAuth = getAuth(firebaseApp);
+    try {
+      if (!firebaseConfig.apiKey) {
+        console.warn("Firebase Auth skipped: VITE_FIREBASE_API_KEY is not configured.");
+        return null;
+      }
+      const firebaseApp = initializeBaseApp();
+      if (!firebaseApp) return null;
+      firebaseAuth = getAuth(firebaseApp);
+    } catch (err) {
+      console.warn("Firebase Auth initialization failed:", err?.message || err);
+      return null;
+    }
   }
   return firebaseAuth;
 }
@@ -49,7 +63,12 @@ export function getFirebaseAuth() {
  */
 export function getGoogleAuthProvider() {
   if (!googleProvider) {
-    googleProvider = new GoogleAuthProvider();
+    try {
+      googleProvider = new GoogleAuthProvider();
+    } catch (err) {
+      console.warn("GoogleAuthProvider initialization failed:", err?.message || err);
+      return null;
+    }
   }
   return googleProvider;
 }
@@ -61,17 +80,29 @@ export function getGoogleAuthProvider() {
  */
 export function ensureFirebaseInitialized(options = {}) {
   const { enableAuth = false, enableRealtimeDb = true } = options;
-  const firebaseApp = initializeBaseApp();
+  try {
+    const firebaseApp = initializeBaseApp();
+    if (!firebaseApp) return null;
 
-  if (enableAuth) {
-    getFirebaseAuth();
-  }
+    if (enableAuth) {
+      getFirebaseAuth();
+    }
 
-  if (enableRealtimeDb && !firebaseRealtimeDb) {
-    firebaseRealtimeDb = getDatabase(firebaseApp);
+    if (enableRealtimeDb && !firebaseRealtimeDb) {
+      try {
+        if (firebaseConfig.databaseURL) {
+          firebaseRealtimeDb = getDatabase(firebaseApp);
+        }
+      } catch (dbErr) {
+        console.warn("Firebase Realtime DB init failed:", dbErr?.message || dbErr);
+      }
+    }
+    
+    return firebaseApp;
+  } catch (err) {
+    console.warn("ensureFirebaseInitialized failed:", err?.message || err);
+    return null;
   }
-  
-  return firebaseApp;
 }
 
 // Proxies for export

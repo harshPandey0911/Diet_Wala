@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { MapPin, ArrowLeft } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { getGoogleMapsApiKey } from "@food/utils/googleMapsApiKey"
-import { Loader } from "@googlemaps/js-api-loader"
+import { loadGoogleMaps } from "@food/utils/googleMapsLoader"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -112,13 +112,7 @@ export default function ViewZone() {
       }
 
       if (apiKey) {
-        const loader = new Loader({
-          apiKey,
-          version: "weekly",
-          libraries: ["geometry"],
-        })
-
-        const google = await loader.load()
+        const google = await loadGoogleMaps()
         setTimeout(() => {
           initializeMap(google)
         }, 100)

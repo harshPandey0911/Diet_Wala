@@ -56,10 +56,17 @@ const getServiceAccountFromEnv = () => {
 
     const pathValue = sanitizeString(config.firebaseServiceAccountPath || process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
     if (pathValue) {
-        const filePath = resolve(process.cwd(), pathValue);
-        if (existsSync(filePath)) {
-            cachedServiceAccount = JSON.parse(readFileSync(filePath, 'utf8'));
-            return cachedServiceAccount;
+        const candidatePaths = [
+            resolve(process.cwd(), pathValue),
+            resolve(process.cwd(), 'src/config', pathValue),
+            resolve(process.cwd(), 'Backend', pathValue),
+            resolve(process.cwd(), 'Backend/src/config', pathValue)
+        ];
+        for (const filePath of candidatePaths) {
+            if (existsSync(filePath)) {
+                cachedServiceAccount = JSON.parse(readFileSync(filePath, 'utf8'));
+                return cachedServiceAccount;
+            }
         }
     }
 

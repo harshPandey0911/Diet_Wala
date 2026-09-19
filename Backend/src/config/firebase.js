@@ -28,13 +28,20 @@ const getServiceAccountFromEnv = () => {
 
     const pathValue = sanitizeString(config.firebaseServiceAccountPath);
     if (pathValue) {
-        const filePath = resolve(process.cwd(), pathValue);
-        if (existsSync(filePath)) {
-            try {
-                cachedServiceAccount = JSON.parse(readFileSync(filePath, 'utf8'));
-                return cachedServiceAccount;
-            } catch (err) {
-                logger.error(`Error reading or parsing firebase service account file at ${filePath}:`, err.message);
+        const candidatePaths = [
+            resolve(process.cwd(), pathValue),
+            resolve(process.cwd(), 'src/config', pathValue),
+            resolve(process.cwd(), 'Backend', pathValue),
+            resolve(process.cwd(), 'Backend/src/config', pathValue)
+        ];
+        for (const filePath of candidatePaths) {
+            if (existsSync(filePath)) {
+                try {
+                    cachedServiceAccount = JSON.parse(readFileSync(filePath, 'utf8'));
+                    return cachedServiceAccount;
+                } catch (err) {
+                    logger.error(`Error reading or parsing firebase service account file at ${filePath}:`, err.message);
+                }
             }
         }
     }

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { MapPin, ArrowLeft, Search } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { getGoogleMapsApiKey } from "@food/utils/googleMapsApiKey"
-import { Loader } from "@googlemaps/js-api-loader"
+import { loadGoogleMaps } from "@food/utils/googleMapsLoader"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -138,13 +138,7 @@ export default function AllZonesMap() {
       }
 
       if (apiKey) {
-        const loader = new Loader({
-          apiKey,
-          version: "weekly",
-          libraries: ["places", "drawing", "geometry"],
-        })
-
-        const google = await loader.load()
+        const google = await loadGoogleMaps()
         initializeMap(google)
       } else {
         setMapLoading(false)

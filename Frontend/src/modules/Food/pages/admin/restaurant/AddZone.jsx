@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { MapPin, ArrowLeft, Save, X, Shapes, Search, LocateFixed } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { getGoogleMapsApiKey } from "@food/utils/googleMapsApiKey"
-import { Loader } from "@googlemaps/js-api-loader"
+import { loadGoogleMaps } from "@food/utils/googleMapsLoader"
 
 const MIN_POINTS = 3
 const MAX_POINTS = 10
@@ -262,12 +262,7 @@ export default function AddZone() {
       }
 
       if (apiKey) {
-        const loader = new Loader({
-          apiKey,
-          version: "weekly",
-          libraries: ["places", "geometry"],
-        })
-        const google = await loader.load()
+        const google = await loadGoogleMaps()
         initializeMap(google)
       } else {
         setMapLoading(false)

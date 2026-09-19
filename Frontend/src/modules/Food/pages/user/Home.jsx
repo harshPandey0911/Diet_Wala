@@ -39,7 +39,10 @@ import {
   Share2,
   Bike,
   Sparkles,
+  Bell,
 } from "lucide-react";
+import { toast } from "sonner";
+import { sendTestPushNotification } from "@food/utils/firebaseMessaging";
 import outOfZoneBg from "@food/assets/out-of-zone-bg.png";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "@food/components/user/Footer";
@@ -221,6 +224,22 @@ export default function Home() {
       }
     };
   }, []);
+
+  const [testingPush, setTestingPush] = useState(false);
+
+  const handleTestNotification = async () => {
+    if (testingPush) return;
+    setTestingPush(true);
+    try {
+      toast.info("Sending test push notification...");
+      await sendTestPushNotification();
+      toast.success("✅ Push notification sent! Check your notification bar.");
+    } catch (err) {
+      toast.error(err?.message || "Failed to send test push notification.");
+    } finally {
+      setTestingPush(false);
+    }
+  };
 
   const [heroBannerImages, setHeroBannerImages] = useState(() => homePageCache.heroBannerImages ?? []);
   const [heroBannersData, setHeroBannersData] = useState(() => homePageCache.heroBannersData ?? []);
@@ -2113,6 +2132,49 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
                 className="bg-transparent dark:bg-transparent"
               >
+
+                {/* Firebase Push Notification Live Test Widget */}
+                <div className="px-4 pt-1.5 pb-2 md:px-6 md:pt-2">
+                  <div className="bg-gradient-to-r from-amber-50 via-yellow-50/80 to-amber-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-amber-950/30 border border-amber-300/80 dark:border-amber-700/60 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs transition-all">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-[#FFC700] text-black flex items-center justify-center flex-shrink-0 shadow-2xs relative">
+                        <Bell className="w-4.5 h-4.5" />
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900 animate-pulse" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs md:text-sm font-bold text-gray-900 dark:text-white truncate">
+                            Firebase Push Notification Test
+                          </p>
+                          <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            FCM v1
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-600 dark:text-gray-400 truncate">
+                          Click to test instant real-time notification with sound
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTestNotification}
+                      disabled={testingPush}
+                      className="flex-shrink-0 px-3.5 py-1.5 md:px-4 md:py-2 rounded-xl bg-[#FFC700] hover:bg-[#e6b400] active:scale-95 text-black text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {testingPush ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-3.5 h-3.5" />
+                          <span>Test Push</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
 
                 {/* 1. Admin / DietVala Hero Banner */}
                 <HeroBanner

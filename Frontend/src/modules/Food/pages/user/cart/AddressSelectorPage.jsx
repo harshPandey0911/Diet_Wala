@@ -10,7 +10,7 @@ import { useProfile } from "@food/context/ProfileContext"
 import { useAppLocation } from "@food/hooks/useAppLocation"
 import { toast } from "sonner"
 import { locationAPI, userAPI } from "@food/api"
-import { Loader } from '@googlemaps/js-api-loader'
+import { loadGoogleMaps } from "@food/utils/googleMapsLoader"
 import AnimatedPage from "@food/components/user/AnimatedPage"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import { clearStoredUserLocation, notifyLocationUpdated, persistDeliveryAddressMode, persistUserLocation } from "@food/utils/locationPersistence"
@@ -203,8 +203,7 @@ export default function AddressSelectorPage() {
 
     const initializeGoogleMap = async () => {
       try {
-        const loader = new Loader({ apiKey: GOOGLE_MAPS_API_KEY, version: "weekly" })
-        const google = await loader.load()
+        const google = await loadGoogleMaps()
         if (!isMounted || !mapContainerRef.current) return
 
         const initialPos = { lat: mapPosition[0], lng: mapPosition[1] }

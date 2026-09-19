@@ -497,6 +497,44 @@ function getMessagingFirebaseApp(config) {
   }
 }
 
+// A leftover browser install of the old firebase-messaging-sw.js (pre-version-bump)
+// can leave the 'firebase-messaging-database' IndexedDB stuck on a schema version
+// higher than what the current SDK ever requests (it always asks for version 1).
+// IndexedDB can only be upgraded, never downgraded, so once that happens the
+// current SDK can never open it again — every getToken() call throws forever
+// with "The requested version (X) is less than the existing version (Y)".
+// Self-heal by wiping the poisoned database once and retrying.
+function isStaleIndexedDbVersionError(error) {
+  const message = String(error?.message || error || "");
+  return error?.name === "VersionError" || /requested version .* is less than the existing version/i.test(message);
+}
+
+function deleteIndexedDbDatabase(name) {
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.deleteDatabase(name);
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+async function withStaleIndexedDbRecovery(operation) {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isStaleIndexedDbVersionError(error)) throw error;
+    pushDebugWarn(PUSH_DEBUG_PREFIX, "Stale Firebase Messaging IndexedDB detected, resetting and retrying", {
+      error: error?.message || error,
+    });
+    await deleteIndexedDbDatabase("firebase-messaging-database");
+    return operation();
+  }
+}
+
 function getSavedToken(moduleName) {
   return localStorage.getItem(`${tokenCachePrefix}${moduleName}`) || "";
 }
@@ -914,10 +952,12 @@ export async function registerWebPushForCurrentModule(pathname = window.location
       });
       const messaging = getMessaging(app);
 
-      const token = await getToken(messaging, {
-        vapidKey: firebasePublicEnv.vapidKey,
-        serviceWorkerRegistration: registration,
-      });
+      const token = await withStaleIndexedDbRecovery(() =>
+        getToken(messaging, {
+          vapidKey: firebasePublicEnv.vapidKey,
+          serviceWorkerRegistration: registration,
+        })
+      );
 
       if (!token) return;
       pushDebugLog(PUSH_DEBUG_PREFIX, "FCM token resolved", {
@@ -952,4 +992,87 @@ export async function registerWebPushForCurrentModule(pathname = window.location
   await registerNativeWebViewFcmToken(moduleName);
   return null;
 }
+
+/**
+ * Trigger a live Firebase push notification test from the user client.
+ */
+export async function sendTestPushNotification() {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    throw new Error("Push notifications are not supported in this browser.");
+  }
+
+  let permission = Notification.permission;
+  if (permission === "default") {
+    permission = await Notification.requestPermission();
+  }
+
+  if (permission !== "granted") {
+    throw new Error("Notification permission denied. Please allow notifications in your browser settings.");
+  }
+
+  // Ensure sound is active
+  await enablePushNotificationSound().catch(() => {});
+
+  const firebasePublicEnv = await getFirebasePublicEnv();
+  if (!firebasePublicEnv?.vapidKey) {
+    throw new Error("VAPID key is missing in Firebase configuration.");
+  }
+
+  const app = getMessagingFirebaseApp(firebasePublicEnv);
+  if (!app) {
+    throw new Error("Firebase app initialization failed. Check your Firebase credentials.");
+  }
+
+  const { getMessaging, getToken, isSupported } = await import("firebase/messaging");
+  const supported = await isSupported().catch(() => false);
+  if (!supported) {
+    throw new Error("Firebase Cloud Messaging is not supported on this browser.");
+  }
+
+  let registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+  registration = await navigator.serviceWorker.ready;
+  const messaging = getMessaging(app);
+
+  const token = await withStaleIndexedDbRecovery(() =>
+    getToken(messaging, {
+      vapidKey: firebasePublicEnv.vapidKey,
+      serviceWorkerRegistration: registration,
+    })
+  );
+
+  if (!token) {
+    throw new Error("Failed to generate FCM device token. Please refresh and try again.");
+  }
+
+  await attachForegroundListener(app);
+
+  // Sync token to user backend if logged in
+  const moduleName = normalizeModuleFromPath();
+  await saveTokenByModule(moduleName, token).catch(() => {});
+
+  // Call backend to send the FCM push to this token
+  const headers = { "Content-Type": "application/json" };
+  const accessToken = localStorage.getItem(`${moduleName}_accessToken`);
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  }
+
+  const response = await fetch("/api/v1/fcm-tokens/test-direct", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      token,
+      title: "🔔 Dietvala Push Notification",
+      body: "Test Successful! Firebase push notifications are working perfectly on your device.",
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Server failed to send test notification.");
+  }
+
+  return { success: true, token, data };
+}
+
 

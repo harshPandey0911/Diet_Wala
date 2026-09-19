@@ -189,12 +189,15 @@ window.addEventListener('vite:preloadError', (event) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { AppProviders } from './app/providers.jsx'
+import ErrorBoundary from './shared/components/ErrorBoundary.jsx'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element not found')
 
 createRoot(rootElement).render(
-  <AppProviders>
-    <App />
-  </AppProviders>
+  <ErrorBoundary>
+    <AppProviders>
+      <App />
+    </AppProviders>
+  </ErrorBoundary>
 )

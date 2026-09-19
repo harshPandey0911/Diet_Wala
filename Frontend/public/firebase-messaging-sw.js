@@ -1,6 +1,16 @@
 /* eslint-disable no-undef */
-importScripts("https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js");
+
+// Force this (updated) service worker to activate immediately instead of waiting
+// for every open tab to close first — otherwise a stale SW on an older Firebase
+// SDK version keeps running and re-triggers the IndexedDB version mismatch.
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
 const sanitize = (value) => String(value || "").trim().replace(/^['"]|['"]$/g, "");
 const PUSH_DEBUG_PREFIX = "[push-sw]";

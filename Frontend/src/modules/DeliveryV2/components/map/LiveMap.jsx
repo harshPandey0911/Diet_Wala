@@ -95,11 +95,15 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
   }, []);
 
   const toLatLng = useCallback((p) => {
-    if (!p) return null;
-    if (p instanceof window.google.maps.LatLng) return p;
-    const lat = typeof p.lat === 'function' ? p.lat() : (p.lat ?? p.latitude);
-    const lng = typeof p.lng === 'function' ? p.lng() : (p.lng ?? p.longitude);
-    return new window.google.maps.LatLng(lat, lng);
+    if (!p || !window.google?.maps?.LatLng) return null;
+    try {
+      if (p instanceof window.google.maps.LatLng) return p;
+      const lat = typeof p.lat === 'function' ? p.lat() : (p.lat ?? p.latitude);
+      const lng = typeof p.lng === 'function' ? p.lng() : (p.lng ?? p.longitude);
+      return new window.google.maps.LatLng(lat, lng);
+    } catch {
+      return null;
+    }
   }, []);
 
   const restaurantPoint = useMemo(() => parsePoint(activeOrder?.restaurantLocation), [activeOrder?.restaurantLocation, parsePoint]);
@@ -380,8 +384,8 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
             position={restaurantPoint}
             icon={{
               url: restaurantMarkerUrl,
-              scaledSize: new window.google.maps.Size(44, 44),
-              anchor: new window.google.maps.Point(22, 22)
+              scaledSize: (typeof window !== 'undefined' && window.google?.maps?.Size) ? new window.google.maps.Size(44, 44) : undefined,
+              anchor: (typeof window !== 'undefined' && window.google?.maps?.Point) ? new window.google.maps.Point(22, 22) : undefined
             }}
           />
         )}
@@ -391,8 +395,8 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
             position={customerPoint}
             icon={{
               url: customerMarkerUrl,
-              scaledSize: new window.google.maps.Size(44, 44),
-              anchor: new window.google.maps.Point(22, 22)
+              scaledSize: (typeof window !== 'undefined' && window.google?.maps?.Size) ? new window.google.maps.Size(44, 44) : undefined,
+              anchor: (typeof window !== 'undefined' && window.google?.maps?.Point) ? new window.google.maps.Point(22, 22) : undefined
             }}
           />
         )}

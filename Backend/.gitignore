@@ -5,6 +5,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+*-firebase-adminsdk-*.json
+*.p8
+*.p12
+
 
 # logs
 npm-debug.log*
