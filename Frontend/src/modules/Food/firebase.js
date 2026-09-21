@@ -33,13 +33,13 @@ function isPlausibleApiKey(key) {
 function initializeBaseApp() {
   if (app) return app;
   try {
-    const existingApps = getApps();
-    if (existingApps.length > 0) {
-      app = existingApps[0];
+    const usable = getApps().find((a) => isPlausibleApiKey(a?.options?.apiKey));
+    if (usable) {
+      app = usable;
     } else if (isPlausibleApiKey(firebaseConfig.apiKey)) {
-      app = initializeApp(firebaseConfig);
-    } else if (firebaseConfig.apiKey) {
-      console.warn("Firebase initializeBaseApp skipped: VITE_FIREBASE_API_KEY looks invalid.");
+      app = initializeApp(firebaseConfig, "food-realtime");
+    } else {
+      console.warn("Firebase skipped: no valid Firebase API key configured (check VITE_FIREBASE_API_KEY in the deploy environment).");
     }
   } catch (err) {
     console.warn("Firebase initializeBaseApp failed:", err?.message || err);
@@ -100,8 +100,9 @@ export function ensureFirebaseInitialized(options = {}) {
 
     if (enableRealtimeDb && !firebaseRealtimeDb) {
       try {
-        if (firebaseConfig.databaseURL) {
-          firebaseRealtimeDb = getDatabase(firebaseApp);
+        const dbUrl = firebaseApp.options?.databaseURL || firebaseConfig.databaseURL;
+        if (dbUrl && isPlausibleApiKey(firebaseApp.options?.apiKey)) {
+          firebaseRealtimeDb = getDatabase(firebaseApp, dbUrl);
         }
       } catch (dbErr) {
         console.warn("Firebase Realtime DB init failed:", dbErr?.message || dbErr);
