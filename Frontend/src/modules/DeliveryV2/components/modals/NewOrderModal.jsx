@@ -113,9 +113,8 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
     };
   }, [order, riderLocation]);
 
-  if (!order) return null;
-
   useEffect(() => {
+    if (!order) return;
     console.log('[DeliveryPopupTrace] NewOrderModal mounted', {
       popupOrderId: orderKey,
       displayId: getOrderDisplayId(order),
@@ -129,6 +128,8 @@ export const NewOrderModal = ({ order, queuedOrders = [], onSelectOrder, onAccep
       });
     };
   }, [orderKey, order, queuedOrders.length]);
+
+  if (!order) return null;
 
   const bonus = order.deliveryBonusAmount || 0;
   const earnings = order.earnings || order.riderEarning || (order.orderAmount ? order.orderAmount * 0.1 : 0);

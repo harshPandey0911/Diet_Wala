@@ -36,6 +36,15 @@ export const applyDynamicTheme = async () => {
         }
         if (activeConfig.logoUrl) {
           localStorage.setItem('user_app_logo', activeConfig.logoUrl);
+        } else {
+          localStorage.removeItem('user_app_logo');
+        }
+        if (activeConfig.subLogoUrl !== undefined) {
+          if (activeConfig.subLogoUrl) {
+            localStorage.setItem('user_app_sub_logo', activeConfig.subLogoUrl);
+          } else {
+            localStorage.removeItem('user_app_sub_logo');
+          }
         }
       } 
       else if (appType === 'restaurant_app') {

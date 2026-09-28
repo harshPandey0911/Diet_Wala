@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, useContext } from 'react';
 import { toast } from 'sonner';
 import { userAPI } from '@food/api';
 import { dispatchNotificationInboxRefresh } from '@food/hooks/useNotificationInbox';
-import { UserNotificationContext } from '../context/UserNotificationContext';
+import {
+  UserNotificationContext,
+  DEFAULT_USER_NOTIFICATIONS,
+  useUserNotifications,
+  useUserNotificationContext
+} from '../context/UserNotificationContextBase';
 import {
   acquireUserSocket,
   releaseUserSocket,
@@ -19,10 +24,18 @@ const debugLog = (...args) => {
  * Hook for user to receive real-time order notifications.
  * Dispatches 'orderStatusNotification' custom event for OrderTrackingCard.
  */
-export const useUserNotifications = () => {
-  const context = useContext(UserNotificationContext);
-  if (context) return context;
+export {
+  UserNotificationContext,
+  DEFAULT_USER_NOTIFICATIONS,
+  useUserNotifications,
+  useUserNotificationContext
+};
 
+/**
+ * Internal hook that creates and manages the actual notification state & socket.
+ * Called ONLY once inside UserNotificationProvider.
+ */
+export const useUserNotificationsState = () => {
   const socketRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [userId, setUserId] = useState(null);

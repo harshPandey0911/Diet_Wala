@@ -4,8 +4,12 @@ import { API_BASE_URL } from '@food/api/config';
 import { isValidSocketOrigin, resolveSocketOrigin } from '@food/utils/socketOrigin';
 import { restaurantAPI } from '@food/api';
 import alertSound from '@food/assets/audio/alert.mp3';
-import { dispatchNotificationInboxRefresh } from '@food/hooks/useNotificationInbox';
-import { RestaurantNotificationContext } from '../context/RestaurantNotificationContext';
+import {
+  RestaurantNotificationContext,
+  DEFAULT_RESTAURANT_NOTIFICATIONS,
+  useRestaurantNotifications,
+  useRestaurantNotificationContext
+} from '../context/RestaurantNotificationContextBase';
 import { isModuleAuthenticated } from '@food/utils/auth';
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -81,14 +85,18 @@ const triggerWebViewNativeNotification = async (orderData = {}) => {
 }
 
 
+export {
+  DEFAULT_RESTAURANT_NOTIFICATIONS,
+  useRestaurantNotifications,
+  useRestaurantNotificationContext,
+  RestaurantNotificationContext
+};
+
 /**
- * Hook for restaurant to receive real-time order notifications with sound
- * @returns {object} - { newOrder, playSound, isConnected }
+ * Internal hook that creates and manages the actual notification state & socket.
+ * Called ONLY once inside RestaurantNotificationProvider.
  */
-export const useRestaurantNotifications = () => {
-  const context = useContext(RestaurantNotificationContext);
-  if (context) return context;
-  
+export const useRestaurantNotificationsState = () => {
   const socketRef = useRef(null);
   const [orderQueue, setOrderQueue] = useState([]); // Queue of pending orders
   const [newReservation, setNewReservation] = useState(null);

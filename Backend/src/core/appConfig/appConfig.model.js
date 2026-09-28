@@ -19,6 +19,10 @@ const appConfigSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    subLogoUrl: {
+        type: String,
+        default: ''
+    },
     fontFamily: {
         type: String,
         default: "'Poppins', sans-serif"

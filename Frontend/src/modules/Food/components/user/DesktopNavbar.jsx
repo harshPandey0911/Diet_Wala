@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
 import { getPublicLandingSettings } from "@food/api"
 import { useAppLocation } from "@food/hooks/useAppLocation"
-import { useAppLogo } from "@food/hooks/useAppLogo"
+import { useAppLogo, useAppSubLogo } from "@food/hooks/useAppLogo"
 import DietValaLogo from "@/shared/components/DietValaLogo"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -31,6 +31,7 @@ export default function DesktopNavbar({ showLogo = true }) {
     const { zoneId } = useAppLocation()
     const [heroSearch, setHeroSearch] = useState("")
     const logoUrl = useAppLogo('user_app')
+    const subLogoUrl = useAppSubLogo('user_app')
     const [companyName, setCompanyName] = useState(null)
     const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false)
     const [under250PriceLimit, setUnder250PriceLimit] = useState(250)
@@ -185,10 +186,17 @@ export default function DesktopNavbar({ showLogo = true }) {
             {/* Top Row: Location - Search - Icons */}
             <div className="w-full border-b border-gray-100 dark:border-gray-800/60 py-2">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-14 gap-6">
+                    <div className="flex items-center justify-between min-h-14 h-auto py-0.5 gap-6">
                         {/* Left: Logo & Location */}
-                        <div className="flex items-center gap-6 flex-shrink-0">
-                            {/* Logo */}
+                        <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
+                            {/* Left Corner Sub-Logo */}
+                            {subLogoUrl && (
+                                <Link to="/food/user" className="flex items-center justify-center flex-shrink-0 hover:opacity-95 transition-opacity">
+                                    <img src={subLogoUrl} alt="Sub Logo" className="h-8 max-h-8 max-w-[85px] sm:max-w-[100px] object-contain" />
+                                </Link>
+                            )}
+
+                            {/* Main Logo */}
                             {showLogo && (
                                 <Link to="/food/user" className="flex items-center justify-center flex-shrink-0 hover:opacity-95 transition-opacity">
                                     <DietValaLogo size="md" showTagline={false} stacked={false} />
@@ -249,7 +257,7 @@ export default function DesktopNavbar({ showLogo = true }) {
                                                 }
                                             }}
                                             className="h-6 p-0 border-0 bg-transparent text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-800 dark:text-gray-100"
-                                            placeholder="Search for restaurants, healthy meals..."
+                                            placeholder="Search your healthy meal, dishes..."
                                         />
                                         {heroSearch && (
                                             <Button

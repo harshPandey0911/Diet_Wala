@@ -146,22 +146,6 @@ const DeliveryTrackingMapInner = ({
     [googleMapsApiKey]
   );
 
-  if (!googleMapsApiKey) {
-    return (
-      <div className="w-full h-full bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center px-4 text-center">
-        <p className="text-sm text-gray-600">Loading map configuration...</p>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="w-full h-full bg-red-50 border border-red-200 rounded-2xl flex items-center justify-center px-4 text-center">
-        <p className="text-sm text-red-700">Google Map load failed. Please verify Maps API key and allowed localhost referrers.</p>
-      </div>
-    );
-  }
-
   const trackingIds = useMemo(() => {
     const ids = [orderId, ...(Array.isArray(orderTrackingIds) ? orderTrackingIds : [])]
       .map(id => String(id || '').trim())
@@ -458,6 +442,22 @@ const DeliveryTrackingMapInner = ({
     if (isOrderPickedUp) return customerCoords || { lat: 0, lng: 0 };
     return restaurantCoords || { lat: 0, lng: 0 };
   }, [isOrderPickedUp, restaurantCoords, customerCoords]);
+
+  if (!googleMapsApiKey) {
+    return (
+      <div className="w-full h-full bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center px-4 text-center">
+        <p className="text-sm text-gray-600">Loading map configuration...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="w-full h-full bg-red-50 border border-red-200 rounded-2xl flex items-center justify-center px-4 text-center">
+        <p className="text-sm text-red-700">Google Map load failed. Please verify Maps API key and allowed localhost referrers.</p>
+      </div>
+    );
+  }
 
   if (!isLoaded) return <div className="w-full h-full bg-gray-100 animate-pulse" />;
 
