@@ -1,18 +1,21 @@
-import React, { createContext, useContext } from 'react';
-import { useRestaurantNotifications } from '../hooks/useRestaurantNotifications';
+import React from 'react';
+import { useRestaurantNotificationsState } from '../hooks/useRestaurantNotifications';
+import {
+  RestaurantNotificationContext,
+  DEFAULT_RESTAURANT_NOTIFICATIONS,
+  useRestaurantNotifications,
+  useRestaurantNotificationContext
+} from './RestaurantNotificationContextBase';
 
-export const RestaurantNotificationContext = createContext(null);
-
-export const useRestaurantNotificationContext = () => {
-  const context = useContext(RestaurantNotificationContext);
-  if (!context) {
-    return null;
-  }
-  return context;
+export {
+  RestaurantNotificationContext,
+  DEFAULT_RESTAURANT_NOTIFICATIONS,
+  useRestaurantNotifications,
+  useRestaurantNotificationContext
 };
 
 export const RestaurantNotificationProvider = ({ children }) => {
-  const notifications = useRestaurantNotifications();
+  const notifications = useRestaurantNotificationsState();
 
   return (
     <RestaurantNotificationContext.Provider value={notifications}>

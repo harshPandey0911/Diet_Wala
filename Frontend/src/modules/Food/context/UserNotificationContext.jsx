@@ -1,18 +1,21 @@
-import React, { createContext, useContext } from 'react';
-import { useUserNotifications } from '../hooks/useUserNotifications';
+import React from 'react';
+import { useUserNotificationsState } from '../hooks/useUserNotifications';
+import {
+  UserNotificationContext,
+  DEFAULT_USER_NOTIFICATIONS,
+  useUserNotifications,
+  useUserNotificationContext
+} from './UserNotificationContextBase';
 
-export const UserNotificationContext = createContext(null);
-
-export const useUserNotificationContext = () => {
-  const context = useContext(UserNotificationContext);
-  if (!context) {
-    return null;
-  }
-  return context;
+export {
+  UserNotificationContext,
+  DEFAULT_USER_NOTIFICATIONS,
+  useUserNotifications,
+  useUserNotificationContext
 };
 
 export const UserNotificationProvider = ({ children }) => {
-  const notifications = useUserNotifications();
+  const notifications = useUserNotificationsState();
 
   return (
     <UserNotificationContext.Provider value={notifications}>

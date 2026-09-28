@@ -5,6 +5,7 @@ import Loader from "@food/components/Loader"
 import GlobalPickupOtpModal from "./GlobalPickupOtpModal"
 import RestaurantBlockGuard from "./RestaurantBlockGuard"
 import RestaurantLayout from "./RestaurantLayout"
+import { RestaurantNotificationProvider } from "@food/context/RestaurantNotificationContext"
 import "./restaurantTheme.css"
 
 // Lazy Loading Components
@@ -59,74 +60,76 @@ const VerificationPending = lazy(() => import("@food/pages/restaurant/auth/Verif
 
 export default function RestaurantRouter() {
   return (
-    <div className="restaurant-theme">
-      <Suspense fallback={<Loader />}>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="welcome" element={<Welcome />} />
-          <Route path="login" element={<Login />} />
-          <Route path="otp" element={<OTP />} />
-          <Route path="signup" element={<Signup />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="pending-verification" element={<VerificationPending />} />
+    <RestaurantNotificationProvider>
+      <div className="restaurant-theme">
+        <Suspense fallback={<Loader />}>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="welcome" element={<Welcome />} />
+            <Route path="login" element={<Login />} />
+            <Route path="otp" element={<OTP />} />
+            <Route path="signup" element={<Signup />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="pending-verification" element={<VerificationPending />} />
 
-          {/* Unprotected Static/Onboarding Routes */}
-          <Route path="onboarding" element={<RestaurantOnboarding />} />
-          <Route path="privacy" element={<PrivacyPolicyPage />} />
-          <Route path="terms" element={<TermsAndConditionsPage />} />
-          <Route path="profile/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="profile/terms" element={<TermsAndConditionsPage />} />
+            {/* Unprotected Static/Onboarding Routes */}
+            <Route path="onboarding" element={<RestaurantOnboarding />} />
+            <Route path="privacy" element={<PrivacyPolicyPage />} />
+            <Route path="terms" element={<TermsAndConditionsPage />} />
+            <Route path="profile/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="profile/terms" element={<TermsAndConditionsPage />} />
 
-          {/* Protected Routes Wrapped in RestaurantBlockGuard */}
-          <Route element={
-            <ProtectedRoute requiredRole="restaurant" loginPath="/food/restaurant/login">
-              <RestaurantBlockGuard />
-            </ProtectedRoute>
-          }>
-            <Route element={<RestaurantLayout />}>
-            <Route path="dashboard" element={<RestaurantDashboard />} />
-            <Route path="" element={<OrdersMain />} />
-            <Route path="orders/all" element={<AllOrdersPage />} />
-            <Route path="orders/:id" element={<OrderDetails />} />
-            <Route path="notifications" element={<RestaurantNotifications />} />
-            <Route path="delivery-settings" element={<DeliverySettings />} />
-            <Route path="rush-hour" element={<RushHour />} />
-            <Route path="menu-categories" element={<MenuCategoriesPage />} />
+            {/* Protected Routes Wrapped in RestaurantBlockGuard */}
+            <Route element={
+              <ProtectedRoute requiredRole="restaurant" loginPath="/food/restaurant/login">
+                <RestaurantBlockGuard />
+              </ProtectedRoute>
+            }>
+              <Route element={<RestaurantLayout />}>
+              <Route path="dashboard" element={<RestaurantDashboard />} />
+              <Route path="" element={<OrdersMain />} />
+              <Route path="orders/all" element={<AllOrdersPage />} />
+              <Route path="orders/:id" element={<OrderDetails />} />
+              <Route path="notifications" element={<RestaurantNotifications />} />
+              <Route path="delivery-settings" element={<DeliverySettings />} />
+              <Route path="rush-hour" element={<RushHour />} />
+              <Route path="menu-categories" element={<MenuCategoriesPage />} />
 
-            <Route path="explore" element={<ExploreMore />} />
-            <Route path="outlet-timings" element={<OutletTimings />} />
-            <Route path="outlet-timings/:day" element={<DaySlots />} />
-            <Route path="outlet-info" element={<OutletInfo />} />
-            <Route path="ratings-reviews" element={<RatingsReviews />} />
-            <Route path="edit-owner" element={<EditOwner />} />
-            <Route path="edit-cuisines" element={<EditCuisines />} />
-            <Route path="edit-address" element={<EditRestaurantAddress />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="feedback" element={<Feedback />} />
-            <Route path="share-feedback" element={<ShareFeedback />} />
-            <Route path="dish-ratings" element={<DishRatings />} />
-            <Route path="help-centre/support" element={<RestaurantSupport />} />
-            <Route path="fssai" element={<FssaiDetails />} />
-            <Route path="fssai/update" element={<FssaiUpdate />} />
-            <Route path="hyperpure" element={<Hyperpure />} />
-            <Route path="hub-menu/item/:id" element={<ItemDetailsPage />} />
-            <Route path="hub-finance" element={<HubFinance />} />
-            <Route path="withdrawal-history" element={<WithdrawalHistoryPage />} />
-            <Route path="finance-details" element={<FinanceDetailsPage />} />
-            <Route path="phone" element={<PhoneNumbersPage />} />
-            <Route path="download-report" element={<DownloadReport />} />
-            <Route path="promocodes" element={<Promocodes />} />
-            <Route path="subscription" element={<RestaurantMySubscription />} />
-            <Route path="manage-outlets" element={<ManageOutlets />} />
-            <Route path="update-bank-details" element={<UpdateBankDetails />} />
-            <Route path="reservations" element={<DiningReservations />} />
-            <Route path="dining-settings" element={<DiningSettings />} />
-            <Route path="zone-setup" element={<ZoneSetup />} />
+              <Route path="explore" element={<ExploreMore />} />
+              <Route path="outlet-timings" element={<OutletTimings />} />
+              <Route path="outlet-timings/:day" element={<DaySlots />} />
+              <Route path="outlet-info" element={<OutletInfo />} />
+              <Route path="ratings-reviews" element={<RatingsReviews />} />
+              <Route path="edit-owner" element={<EditOwner />} />
+              <Route path="edit-cuisines" element={<EditCuisines />} />
+              <Route path="edit-address" element={<EditRestaurantAddress />} />
+              <Route path="inventory" element={<Inventory />} />
+              <Route path="feedback" element={<Feedback />} />
+              <Route path="share-feedback" element={<ShareFeedback />} />
+              <Route path="dish-ratings" element={<DishRatings />} />
+              <Route path="help-centre/support" element={<RestaurantSupport />} />
+              <Route path="fssai" element={<FssaiDetails />} />
+              <Route path="fssai/update" element={<FssaiUpdate />} />
+              <Route path="hyperpure" element={<Hyperpure />} />
+              <Route path="hub-menu/item/:id" element={<ItemDetailsPage />} />
+              <Route path="hub-finance" element={<HubFinance />} />
+              <Route path="withdrawal-history" element={<WithdrawalHistoryPage />} />
+              <Route path="finance-details" element={<FinanceDetailsPage />} />
+              <Route path="phone" element={<PhoneNumbersPage />} />
+              <Route path="download-report" element={<DownloadReport />} />
+              <Route path="promocodes" element={<Promocodes />} />
+              <Route path="subscription" element={<RestaurantMySubscription />} />
+              <Route path="manage-outlets" element={<ManageOutlets />} />
+              <Route path="update-bank-details" element={<UpdateBankDetails />} />
+              <Route path="reservations" element={<DiningReservations />} />
+              <Route path="dining-settings" element={<DiningSettings />} />
+              <Route path="zone-setup" element={<ZoneSetup />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </Suspense>
-      <GlobalPickupOtpModal />
-    </div>
+          </Routes>
+        </Suspense>
+        <GlobalPickupOtpModal />
+      </div>
+    </RestaurantNotificationProvider>
   )
 }

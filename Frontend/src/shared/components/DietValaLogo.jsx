@@ -28,10 +28,10 @@ export default function DietValaLogo({
   const dynamicLogoUrl = useAppLogo(effectiveAppType);
 
   const sizeMap = {
-    sm: { mark: 'h-9 w-auto', text: 'text-xl', tagline: 'text-[8.5px]', img: 'h-9' },
-    md: { mark: 'h-13 sm:h-14 w-auto', text: 'text-3xl sm:text-4xl', tagline: 'text-[10px] sm:text-[11px]', img: 'h-14' },
-    lg: { mark: 'h-18 w-auto', text: 'text-4xl sm:text-5xl', tagline: 'text-[13px]', img: 'h-18' },
-    xl: { mark: 'h-28 w-auto', text: 'text-6xl sm:text-7xl', tagline: 'text-[17px]', img: 'h-28' },
+    sm: { mark: 'h-8 sm:h-9 w-auto', text: 'text-lg', tagline: 'text-[8.5px]', img: 'h-8 sm:h-9' },
+    md: { mark: 'h-10 sm:h-11 w-auto', text: 'text-2xl sm:text-3xl', tagline: 'text-[10px] sm:text-[11px]', img: 'h-10 sm:h-11' },
+    lg: { mark: 'h-14 sm:h-16 w-auto', text: 'text-4xl sm:text-5xl', tagline: 'text-[12px] sm:text-[13px]', img: 'h-14 sm:h-16' },
+    xl: { mark: 'h-22 sm:h-26 w-auto', text: 'text-6xl sm:text-7xl', tagline: 'text-[16px] sm:text-[17px]', img: 'h-22 sm:h-26' },
   };
 
   const currentSize = sizeMap[size] || sizeMap.md;

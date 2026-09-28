@@ -42,7 +42,6 @@ import {
   Bell,
 } from "lucide-react";
 import { toast } from "sonner";
-import { sendTestPushNotification } from "@food/utils/firebaseMessaging";
 import outOfZoneBg from "@food/assets/out-of-zone-bg.png";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "@food/components/user/Footer";
@@ -117,14 +116,8 @@ import exploreCollection from "@food/assets/explore more icons/collection.png";
 
 // Animated placeholder for search - moved outside component to prevent recreation
 const placeholders = [
-  'Search "burger"',
-  'Search "biryani"',
-  'Search "pizza"',
-  'Search "desserts"',
-  'Search "chinese"',
-  'Search "thali"',
-  'Search "momos"',
-  'Search "dosa"',
+  'Search your healthy meal',
+  'Search your meal',
 ];
 
 const homePageCache = {
@@ -224,22 +217,6 @@ export default function Home() {
       }
     };
   }, []);
-
-  const [testingPush, setTestingPush] = useState(false);
-
-  const handleTestNotification = async () => {
-    if (testingPush) return;
-    setTestingPush(true);
-    try {
-      toast.info("Sending test push notification...");
-      await sendTestPushNotification();
-      toast.success("✅ Push notification sent! Check your notification bar.");
-    } catch (err) {
-      toast.error(err?.message || "Failed to send test push notification.");
-    } finally {
-      setTestingPush(false);
-    }
-  };
 
   const [heroBannerImages, setHeroBannerImages] = useState(() => homePageCache.heroBannerImages ?? []);
   const [heroBannersData, setHeroBannersData] = useState(() => homePageCache.heroBannersData ?? []);
@@ -1921,7 +1898,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
-    }, 2000); // Change placeholder every 2 seconds (same as RestaurantDetails)
+    }, 2500); // Change placeholder every 2.5 seconds
 
     return () => clearInterval(interval);
   }, []); // placeholders is a constant, no need for dependency
@@ -2133,49 +2110,6 @@ export default function Home() {
                 className="bg-transparent dark:bg-transparent"
               >
 
-                {/* Firebase Push Notification Live Test Widget */}
-                <div className="px-4 pt-1.5 pb-2 md:px-6 md:pt-2">
-                  <div className="bg-gradient-to-r from-amber-50 via-yellow-50/80 to-amber-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-amber-950/30 border border-amber-300/80 dark:border-amber-700/60 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs transition-all">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-[#FFC700] text-black flex items-center justify-center flex-shrink-0 shadow-2xs relative">
-                        <Bell className="w-4.5 h-4.5" />
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900 animate-pulse" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs md:text-sm font-bold text-gray-900 dark:text-white truncate">
-                            Firebase Push Notification Test
-                          </p>
-                          <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                            FCM v1
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-gray-600 dark:text-gray-400 truncate">
-                          Click to test instant real-time notification with sound
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleTestNotification}
-                      disabled={testingPush}
-                      className="flex-shrink-0 px-3.5 py-1.5 md:px-4 md:py-2 rounded-xl bg-[#FFC700] hover:bg-[#e6b400] active:scale-95 text-black text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {testingPush ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-                          <span>Sending...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Bell className="w-3.5 h-3.5" />
-                          <span>Test Push</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
                 {/* 1. Admin / DietVala Hero Banner */}
                 <HeroBanner
                   images={heroBannerImages}
@@ -2186,8 +2120,8 @@ export default function Home() {
 
                 {/* 2. Dynamic Categories Row from API in Clean Rounded Card */}
                 <div className="px-4 py-2 md:px-6 md:py-4">
-                  <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-gray-800 rounded-2xl p-2.5 md:p-5 shadow-2xs">
-                    <div className="flex items-center justify-between gap-1 md:gap-4 overflow-x-auto scrollbar-hide">
+                  <div className="bg-white dark:bg-[#141414] border border-gray-100 dark:border-gray-800 rounded-2xl p-3 sm:p-3.5 md:p-5 shadow-2xs">
+                    <div className="flex items-center justify-between gap-1.5 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide py-0.5">
                       {(displayCategories && displayCategories.length > 0 ? displayCategories : [
                         { name: "High Protein", icon: "🏋️", slug: "high-protein" },
                         { name: "Weight Loss", icon: "⏳", slug: "weight-loss" },
@@ -2203,9 +2137,9 @@ export default function Home() {
                             key={category.id || category.name || index}
                             to={categorySlug === 'all' ? '/food/user/under-250' : `/food/user/category/${categorySlug}`}
                             onClick={() => setSelectedCategory(category.name)}
-                            className="flex flex-col items-center gap-1.5 flex-1 min-w-[54px] max-w-[62px] md:min-w-[85px] md:max-w-[100px] flex-shrink-0 group cursor-pointer"
+                            className="flex flex-col items-center gap-1.5 flex-1 min-w-[62px] max-w-[72px] sm:min-w-[68px] sm:max-w-[80px] md:min-w-[90px] md:max-w-[110px] flex-shrink-0 group cursor-pointer"
                           >
-                            <div className={`w-11 h-11 md:w-16 md:h-16 rounded-full bg-[#FFFBEB] dark:bg-amber-950/40 border ${isSelected ? 'border-[#FFC700] ring-2 ring-[#FFC700]/30' : 'border-[#FFE699]/60 dark:border-amber-800/40'} flex items-center justify-center overflow-hidden shadow-2xs group-hover:scale-105 group-active:scale-95 transition-all relative`}>
+                            <div className={`w-[54px] h-[54px] sm:w-[60px] sm:h-[60px] md:w-[72px] md:h-[72px] rounded-full bg-[#FFFBEB] dark:bg-amber-950/40 border ${isSelected ? 'border-[#FFC700] ring-2 ring-[#FFC700]/30' : 'border-[#FFE699]/60 dark:border-amber-800/40'} flex items-center justify-center overflow-hidden shadow-2xs group-hover:scale-105 group-active:scale-95 transition-all relative`}>
                               {category.image ? (
                                 <img 
                                   src={normalizeImageUrl(category.image)} 
@@ -2219,7 +2153,7 @@ export default function Home() {
                                 />
                               ) : null}
                               <span 
-                                className="cat-icon-fallback text-base sm:text-lg md:text-2xl items-center justify-center"
+                                className="cat-icon-fallback text-xl sm:text-2xl md:text-3xl items-center justify-center"
                                 style={{ display: category.image ? 'none' : 'flex' }}
                               >
                                 {category.icon || (() => {
@@ -2243,7 +2177,7 @@ export default function Home() {
                                 })()}
                               </span>
                             </div>
-                            <span className="text-[9.5px] md:text-xs font-bold text-center tracking-tight leading-[1.15] line-clamp-2 max-w-[60px] min-h-[22px] flex items-center justify-center ${isSelected ? 'text-[#D97706]' : 'text-gray-800 dark:text-gray-200'}">
+                            <span className={`text-[11px] sm:text-xs md:text-sm font-bold text-center tracking-tight leading-[1.2] line-clamp-2 max-w-[66px] sm:max-w-[74px] md:max-w-[90px] min-h-[26px] sm:min-h-[28px] flex items-center justify-center ${isSelected ? 'text-[#D97706]' : 'text-gray-800 dark:text-gray-200'}`}>
                               {category.name}
                             </span>
                           </Link>
@@ -2315,9 +2249,10 @@ export default function Home() {
                             </span>
                             <Link 
                               to={`/user/restaurants/${restaurantSlug}`}
-                              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#FFC700] hover:bg-[#E6B800] text-black flex items-center justify-center shadow-xs active:scale-90 transition-transform font-bold text-xs"
+                              className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#FFC700] hover:bg-[#E6B800] text-black flex items-center justify-center shadow-xs active:scale-90 transition-transform"
+                              aria-label="View meal details"
                             >
-                              +
+                              <Plus className="w-5 h-5 text-black" strokeWidth={3} />
                             </Link>
                           </div>
                         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Info, Upload, Save, Loader2, MonitorSmartphone, Truck, Store } from "lucide-react";
+import { Info, Upload, Save, Loader2, MonitorSmartphone, Truck, Store, Trash2, Image as ImageIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { adminClient } from "@food/api/axios";
 
@@ -16,7 +16,7 @@ export default function ThemeSettings() {
   const [saving, setSaving] = useState(false);
   
   const [configs, setConfigs] = useState({
-    user_app: { primaryColor: '#e11d48', secondaryColor: '#be123c', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
+    user_app: { primaryColor: '#e11d48', secondaryColor: '#be123c', logoUrl: '', subLogoUrl: '', fontFamily: "'Poppins', sans-serif" },
     delivery_app: { primaryColor: '#0ea5e9', secondaryColor: '#0284c7', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
     restaurant_app: { primaryColor: '#f59e0b', secondaryColor: '#16a34a', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
     admin_app: { primaryColor: '#111827', secondaryColor: '#0f172a', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
@@ -84,18 +84,52 @@ export default function ThemeSettings() {
     formData.append('file', file);
     formData.append('folder', 'app-logos');
 
-    const loadingToast = toast.loading('Uploading logo...');
+    const loadingToast = toast.loading('Uploading main logo...');
     try {
       const response = await adminClient.post('/uploads/image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (response.data?.success) {
         handleColorChange('logoUrl', response.data.data.url);
-        toast.success('Logo uploaded successfully', { id: loadingToast });
+        toast.success('Main logo uploaded successfully', { id: loadingToast });
       }
     } catch (error) {
-      toast.error('Failed to upload logo', { id: loadingToast });
+      toast.error('Failed to upload main logo', { id: loadingToast });
     }
+  };
+
+  const handleSubLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'app-logos');
+
+    const loadingToast = toast.loading('Uploading sub-logo...');
+    try {
+      const response = await adminClient.post('/uploads/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (response.data?.success) {
+        handleColorChange('subLogoUrl', response.data.data.url);
+        toast.success('Sub-logo uploaded successfully', { id: loadingToast });
+      }
+    } catch (error) {
+      toast.error('Failed to upload sub-logo', { id: loadingToast });
+    }
+  };
+
+  const handleRemoveLogo = (e) => {
+    e.stopPropagation();
+    handleColorChange('logoUrl', '');
+    toast.info('Main logo removed. Click Save to apply.');
+  };
+
+  const handleRemoveSubLogo = (e) => {
+    e.stopPropagation();
+    handleColorChange('subLogoUrl', '');
+    toast.info('Sub-logo removed. Click Save to apply.');
   };
 
   const handleSave = async () => {
@@ -105,12 +139,13 @@ export default function ThemeSettings() {
       await adminClient.put(`/app-config/${selectedApp}`, {
         primaryColor: currentConfig.primaryColor,
         secondaryColor: currentConfig.secondaryColor,
-        logoUrl: currentConfig.logoUrl,
+        logoUrl: currentConfig.logoUrl || '',
+        subLogoUrl: currentConfig.subLogoUrl || '',
         fontFamily: currentConfig.fontFamily
       });
       toast.success(`${apps.find(a => a.id === selectedApp).label} configuration saved!`);
       
-      // Update theme instantly (so the admin panel shows the updated colors if they are editing the active app)
+      // Update theme instantly (so the user & admin panel reflects updated colors/logos immediately)
       import('../../../utils/themeSettings.js')
         .then(({ applyDynamicTheme }) => applyDynamicTheme())
         .catch(() => {});
@@ -227,32 +262,97 @@ export default function ThemeSettings() {
                 </div>
               </div>
 
-              {/* Logo Upload */}
+              {/* Logo Upload Section */}
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-slate-700">App Logo</h3>
-                
-                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleLogoUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  {currentConfig.logoUrl ? (
-                    <div className="flex flex-col items-center">
-                      <img src={currentConfig.logoUrl} alt="App Logo" className="h-24 object-contain mb-4" />
-                      <p className="text-sm text-slate-500">Click to change logo</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                        <Upload className="w-8 h-8" />
+                {/* Main App Logo */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-slate-700">App Logo</h3>
+                    {currentConfig.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1 hover:underline cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove Logo
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative bg-white">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleLogoUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    {currentConfig.logoUrl ? (
+                      <div className="flex flex-col items-center">
+                        <img src={currentConfig.logoUrl} alt="App Logo" className="h-20 max-w-[200px] object-contain mb-2 p-1 bg-slate-50 rounded-lg border border-slate-200" />
+                        <p className="text-xs font-medium text-slate-500">Click to change main logo</p>
                       </div>
-                      <p className="font-medium text-slate-700">Drop your logo here, or click to browse</p>
-                      <p className="text-sm text-slate-500 mt-1">PNG, JPG or SVG (max 2MB)</p>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex flex-col items-center py-2">
+                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-2">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700">Drop main logo here, or browse</p>
+                        <p className="text-xs text-slate-400 mt-0.5">PNG, JPG, SVG or WEBP (max 2MB)</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* User Sub-Logo (ONLY for User App) */}
+                {selectedApp === 'user_app' && (
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold text-slate-700">Header Sub-Logo</h3>
+                        <span className="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+                          User App Only
+                        </span>
+                      </div>
+                      {currentConfig.subLogoUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveSubLogo}
+                          className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1 hover:underline cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove Sub-Logo
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Ye chhota logo User side header me left corner me display hoga (e.g. Sub-brand, tagline badge, ya powered-by).
+                    </p>
+
+                    <div className="border-2 border-dashed border-amber-300/80 bg-amber-50/30 rounded-xl p-5 flex flex-col items-center justify-center text-center hover:bg-amber-50/60 transition-colors relative">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleSubLogoUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      {currentConfig.subLogoUrl ? (
+                        <div className="flex flex-col items-center">
+                          <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-2xs mb-2">
+                            <img src={currentConfig.subLogoUrl} alt="Sub Logo" className="h-10 max-w-[180px] object-contain" />
+                          </div>
+                          <p className="text-xs font-medium text-slate-600">Click to change sub-logo</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center py-2">
+                          <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mb-2">
+                            <Upload className="w-6 h-6" />
+                          </div>
+                          <p className="text-sm font-semibold text-slate-700">Upload Small Sub-Logo</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Recommended: Horizontal PNG / SVG (chhota size, max 2MB)</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -262,16 +362,47 @@ export default function ThemeSettings() {
                 className="rounded-xl border border-slate-200 overflow-hidden shadow-sm"
                 style={{ backgroundColor: currentConfig.primaryColor, fontFamily: currentConfig.fontFamily || "'Poppins', sans-serif" }}
               >
-                <div className="p-6 text-white flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {currentConfig.logoUrl ? (
-                      <img src={currentConfig.logoUrl} alt="Logo" className="h-10 bg-white/20 p-1 rounded" />
-                    ) : (
-                      <div className="w-10 h-10 bg-white/20 rounded flex items-center justify-center">Logo</div>
-                    )}
-                    <span className="font-semibold text-lg">{apps.find(a => a.id === selectedApp).label}</span>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                <div className="p-4 sm:p-5 text-white flex items-center justify-between">
+                  {selectedApp === 'user_app' ? (
+                    <div className="w-full grid grid-cols-3 items-center">
+                      {/* Left Corner Sub-Logo */}
+                      <div className="justify-self-start flex items-center">
+                        {currentConfig.subLogoUrl ? (
+                          <div className="bg-white/25 px-2 py-1 rounded-lg backdrop-blur-xs flex items-center">
+                            <img src={currentConfig.subLogoUrl} alt="Sub Logo" className="h-6 max-w-[85px] object-contain" />
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-white/60 italic font-medium">Left Corner</span>
+                        )}
+                      </div>
+
+                      {/* Center Main Logo */}
+                      <div className="justify-self-center flex flex-col items-center">
+                        {currentConfig.logoUrl ? (
+                          <img src={currentConfig.logoUrl} alt="Main Logo" className="h-8 max-w-[130px] object-contain bg-white/20 p-1 rounded-lg" />
+                        ) : (
+                          <span className="font-extrabold text-sm text-white bg-white/20 px-3 py-1 rounded-lg">DietVala</span>
+                        )}
+                      </div>
+
+                      {/* Right Bell Icon */}
+                      <div className="justify-self-end flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs">🔔</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-4">
+                        {currentConfig.logoUrl ? (
+                          <img src={currentConfig.logoUrl} alt="Logo" className="h-10 bg-white/20 p-1 rounded" />
+                        ) : (
+                          <div className="w-10 h-10 bg-white/20 rounded flex items-center justify-center">Logo</div>
+                        )}
+                        <span className="font-semibold text-lg">{apps.find(a => a.id === selectedApp).label}</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                    </>
+                  )}
                 </div>
                 <div className="bg-white p-6 min-h-[150px] rounded-t-2xl mt-4 mx-2 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
                   <div className="h-4 w-1/3 rounded mb-4" style={{ backgroundColor: currentConfig.secondaryColor }}></div>

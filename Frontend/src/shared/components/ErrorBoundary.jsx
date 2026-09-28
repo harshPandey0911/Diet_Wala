@@ -38,10 +38,20 @@ export class ErrorBoundary extends React.Component {
               The application encountered an unexpected issue while rendering this page.
             </p>
 
-            <div className="bg-gray-50 dark:bg-[#202020] rounded-xl p-3 text-left mb-6 overflow-hidden">
-              <p className="text-xs font-mono text-red-600 dark:text-red-400 break-words">
+            <div className="bg-gray-50 dark:bg-[#202020] rounded-xl p-3 text-left mb-6 overflow-hidden max-h-60 overflow-y-auto">
+              <p className="text-xs font-mono text-red-600 dark:text-red-400 break-words font-semibold mb-2">
                 {errorMsg}
               </p>
+              {this.state.error?.stack && (
+                <pre className="text-[10px] font-mono text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-all mb-2">
+                  {this.state.error.stack}
+                </pre>
+              )}
+              {this.state.errorInfo?.componentStack && (
+                <pre className="text-[10px] font-mono text-gray-400 dark:text-gray-500 whitespace-pre-wrap break-all">
+                  {this.state.errorInfo.componentStack}
+                </pre>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">

@@ -13,7 +13,12 @@ import {
   normalizeIncomingOrder,
 } from '@food/utils/orderDispatchId';
 import { isValidSocketOrigin, resolveSocketOrigin } from '@food/utils/socketOrigin';
-import { DeliveryNotificationContext } from '../context/DeliveryNotificationContext';
+import {
+  DeliveryNotificationContext,
+  DEFAULT_DELIVERY_NOTIFICATIONS,
+  useDeliveryNotifications,
+  useDeliveryNotificationContext
+} from '../context/DeliveryNotificationContextBase';
 import { subscribeDeliveryPartnerOffers } from '@food/realtimeTracking';
 
 const shouldLogDeliverySocket = () => {
@@ -192,10 +197,18 @@ const triggerWebViewNativeNotification = async (orderData = {}) => {
 }
 
 
-export const useDeliveryNotifications = () => {
-  const context = useContext(DeliveryNotificationContext);
-  if (context) return context;
-  
+export {
+  DeliveryNotificationContext,
+  DEFAULT_DELIVERY_NOTIFICATIONS,
+  useDeliveryNotifications,
+  useDeliveryNotificationContext
+};
+
+/**
+ * Internal hook that creates and manages the actual notification state & socket.
+ * Called ONLY once inside DeliveryNotificationProvider.
+ */
+export const useDeliveryNotificationsState = () => {
   // CRITICAL: All hooks must be called unconditionally and in the same order every render
   // Order: useRef -> useState -> useEffect -> useCallback
   

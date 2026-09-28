@@ -56,3 +56,66 @@ export function useAppLogo(appType = 'user_app') {
 
   return logo;
 }
+
+const readDynamicSubLogo = (appType) => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(`${appType}_sub_logo`) || null;
+};
+
+/**
+ * Hook to get the dynamic app sub-logo (only for user_app, displayed under the main logo)
+ * @param {'user_app' | 'admin_app' | 'restaurant_app' | 'delivery_app'} appType
+ * @returns {string | null} The sub-logo URL if available
+ */
+export function useAppSubLogo(appType = 'user_app') {
+  const [subLogo, setSubLogo] = useState(() => readDynamicSubLogo(appType));
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (appType !== 'user_app') return; // Sub-logo is strictly for user_app
+
+    let cancelled = false;
+
+    const syncSubLogo = async () => {
+      const cachedSubLogo = readDynamicSubLogo(appType);
+      if (cachedSubLogo !== null) {
+        if (!cancelled) setSubLogo(cachedSubLogo || null);
+        return;
+      }
+
+      // If not yet in cache, fetch once from public API
+      try {
+        const { publicGetOnce } = await import("@food/api");
+        const res = await publicGetOnce(`/app-config/${appType}`);
+        const data = res?.data?.data || res?.data;
+        if (!cancelled && data) {
+          if (data.subLogoUrl) {
+            localStorage.setItem(`${appType}_sub_logo`, data.subLogoUrl);
+            setSubLogo(data.subLogoUrl);
+          } else {
+            localStorage.removeItem(`${appType}_sub_logo`);
+            setSubLogo(null);
+          }
+        }
+      } catch (_) {}
+    };
+
+    void syncSubLogo();
+
+    const handleSubLogoUpdate = () => {
+      const cached = readDynamicSubLogo(appType);
+      setSubLogo(cached || null);
+    };
+
+    window.addEventListener('themeLoaded', handleSubLogoUpdate);
+    window.addEventListener('storage', handleSubLogoUpdate);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('themeLoaded', handleSubLogoUpdate);
+      window.removeEventListener('storage', handleSubLogoUpdate);
+    };
+  }, [appType]);
+
+  return subLogo;
+}

@@ -34,7 +34,8 @@ const carouselData = [
 
 export default function RestaurantWelcome() {
   const navigate = useNavigate()
-  const companyName = useCompanyName() || "Tuggo Food Delivery"
+  const rawCompanyName = useCompanyName()
+  const companyName = rawCompanyName || "Tuggo Food Delivery"
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0) // 1 for next, -1 for previous
   const [touchStart, setTouchStart] = useState(null)
