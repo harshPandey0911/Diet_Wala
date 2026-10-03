@@ -674,6 +674,7 @@ export default function RestaurantOnboarding() {
   const [step1, setStep1] = useState({
     restaurantName: "",
     pureVegRestaurant: null,
+    chickenType: "",
     ownerName: "",
     ownerEmail: "",
     ownerPhone: "",
@@ -1062,6 +1063,7 @@ export default function RestaurantOnboarding() {
             ...prev,
             restaurantName: s1.restaurantName || apiData.name || "",
             pureVegRestaurant: typeof s1.pureVegRestaurant === 'boolean' ? s1.pureVegRestaurant : (apiData.pureVegRestaurant ?? null),
+            chickenType: s1.chickenType || apiData.chickenType || "",
             ownerName: s1.ownerName || apiData.ownerName || "",
             ownerEmail: s1.ownerEmail || apiData.email || "",
             ownerPhone: s1.ownerPhone || apiData.phone || "",
@@ -1326,6 +1328,9 @@ export default function RestaurantOnboarding() {
     if (typeof step1.pureVegRestaurant !== "boolean") {
       errors.push("Please select whether your restaurant is pure veg")
     }
+    if (!["halal", "jhatka"].includes(step1.chickenType)) {
+      errors.push("Please select chicken type (Halal or Jhatka)")
+    }
     if (!step1.ownerName?.trim()) {
       errors.push("Owner name is required")
     } else if (!OWNER_NAME_REGEX.test(step1.ownerName.trim())) {
@@ -1574,6 +1579,7 @@ export default function RestaurantOnboarding() {
           const updatePayload = {
             restaurantName: step1.restaurantName || "",
             pureVegRestaurant: step1.pureVegRestaurant === true,
+            chickenType: step1.chickenType || undefined,
             ownerName: step1.ownerName || "",
             ownerEmail: (step1.ownerEmail || "").trim(),
             ownerPhone: normalizePhoneDigits(step1.ownerPhone),
@@ -1634,6 +1640,7 @@ export default function RestaurantOnboarding() {
           "pureVegRestaurant",
           step1.pureVegRestaurant === true ? "true" : "false",
         )
+        formData.append("chickenType", step1.chickenType || "")
         formData.append("ownerName", step1.ownerName || "")
         formData.append("ownerEmail", (step1.ownerEmail || "").trim())
         formData.append("ownerPhone", normalizePhoneDigits(step1.ownerPhone))
@@ -1778,6 +1785,31 @@ export default function RestaurantOnboarding() {
             </div>
             <p className="text-[11px] text-gray-500 mt-1">
               This helps users filter restaurants by dietary preference.
+            </p>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-700">Chicken type*</Label>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {[
+                { value: "halal", label: "Halal" },
+                { value: "jhatka", label: "Jhatka" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => isEditing && setStep1({ ...step1, chickenType: option.value })}
+                  className={`px-3 py-1.5 text-xs rounded-full border ${
+                    step1.chickenType === option.value
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-700 border-gray-200"
+                  } ${!isEditing ? "opacity-70 cursor-not-allowed" : ""}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1">
+              Select the type of chicken your restaurant serves.
             </p>
           </div>
         </div>

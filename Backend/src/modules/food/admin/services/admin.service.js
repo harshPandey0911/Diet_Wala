@@ -2525,6 +2525,14 @@ export async function updateRestaurantById(id, body = {}) {
         doc.pureVegRestaurant = parseBooleanLike(body.pureVegRestaurant, 'pureVegRestaurant');
     }
 
+    if (body.chickenType !== undefined) {
+        const chickenType = toStr(body.chickenType).toLowerCase();
+        if (!['halal', 'jhatka'].includes(chickenType)) {
+            throw new ValidationError('chickenType must be either halal or jhatka');
+        }
+        doc.chickenType = chickenType;
+    }
+
     if (body.isAcceptingOrders !== undefined) {
         doc.isAcceptingOrders = parseBooleanLike(body.isAcceptingOrders, 'isAcceptingOrders');
     } else if (body.isActive !== undefined) {
@@ -3443,6 +3451,9 @@ export async function createRestaurantByAdmin(body) {
         pureVegRestaurant: body.pureVegRestaurant !== undefined
             ? parseBooleanLike(body.pureVegRestaurant, 'pureVegRestaurant')
             : false,
+        chickenType: ['halal', 'jhatka'].includes(toStr(body.chickenType).toLowerCase())
+            ? toStr(body.chickenType).toLowerCase()
+            : undefined,
         addressLine1: toStr(loc.addressLine1),
         addressLine2: toStr(loc.addressLine2),
         area: toStr(loc.area),

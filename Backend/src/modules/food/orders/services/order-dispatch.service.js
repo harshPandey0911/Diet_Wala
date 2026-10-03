@@ -623,6 +623,48 @@ export async function cancelPendingDispatchJob(orderId) {
   await cancelDispatchTimeoutJob(String(orderId));
 }
 
+/**
+ * Recovers dispatch hunts interrupted by a server crash/restart (e.g. nodemon
+ * restarting mid-hunt). The radius-expansion retry relies on an in-memory
+ * setTimeout when BullMQ/Redis is disabled, so it is lost on every restart,
+ * leaving orders stuck "unassigned" forever with no rider ever offered the
+ * order. Call this once at process startup.
+ */
+export async function resumeStuckDispatches() {
+  const dispatchableStatuses = ['confirmed', 'preparing', 'ready_for_pickup', 'ready', 'picked_up'];
+  const staleLockCutoff = new Date(Date.now() - 90000);
+
+  // A crash between setting 'dispatch.dispatchingAt' and the finally-block that
+  // clears it leaves that lock set forever, permanently blocking tryAutoAssign's
+  // atomic findOneAndUpdate for that order. Clear locks older than 90s.
+  await FoodOrder.updateMany(
+    {
+      orderStatus: { $in: dispatchableStatuses },
+      'dispatch.status': { $ne: 'accepted' },
+      'dispatch.dispatchingAt': { $lt: staleLockCutoff },
+    },
+    { $unset: { 'dispatch.dispatchingAt': '' } },
+  );
+
+  const stuckOrders = await FoodOrder.find({
+    orderStatus: { $in: dispatchableStatuses },
+    'dispatch.status': 'unassigned',
+    'dispatch.dispatchingAt': { $exists: false },
+  })
+    .select('_id dispatch.dispatchAttempt')
+    .lean();
+
+  if (!stuckOrders.length) return;
+
+  logger.info(`[Dispatch] Resuming ${stuckOrders.length} stuck dispatch hunt(s) after server (re)start.`);
+  for (const o of stuckOrders) {
+    const attempt = (o.dispatch?.dispatchAttempt || 0) + 1;
+    tryAutoAssign(o._id, { attempt }).catch((err) => {
+      logger.error(`[Dispatch] Resume failed for order ${o._id}: ${err.message}`);
+    });
+  }
+}
+
 /** Reset dispatch hunt state when restaurant first accepts an order. */
 export async function resetDispatchForFreshHunt(orderId) {
   await cancelDispatchTimeoutJob(String(orderId));

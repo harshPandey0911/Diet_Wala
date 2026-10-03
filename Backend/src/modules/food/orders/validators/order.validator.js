@@ -80,6 +80,7 @@ export function validateCreateOrderDto(body) {
         restaurantName: z.string().optional(),
         customerName: z.string().optional(),
         customerPhone: z.string().optional(),
+        customerAlternatePhone: z.string().max(30).optional(),
         pricing: pricingSchema,
         deliveryFleet: z.string().optional(),
         note: z.string().optional(),

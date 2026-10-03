@@ -11,8 +11,8 @@ import { responseTimeLogger } from './middleware/responseTimeLogger.js';
 import { requestIdMiddleware } from './middleware/requestId.js';
 import { healthCheck } from './config/health.js';
 import { config } from './config/env.js';
+import { getUploadDirectory } from './services/upload.service.js';
 import compression from 'compression';
-import path from 'path';
 
 const app = express();
 
@@ -27,7 +27,7 @@ app.use(requestIdMiddleware);
 
 // Root endpoint (no rate limit, minimal JSON, no secrets)
 app.get('/', (_req, res) => {
-    res.status(200).json({ status: 'ok', service: 'Fudron API' });
+    res.status(200).json({ status: 'ok', service: 'DietVala API' });
 });
 // Health endpoints (no rate limit, minimal JSON, no secrets)
 app.get('/health', async (_req, res) => {
@@ -118,14 +118,25 @@ app.use('/api', responseTimeLogger);
 // API Routes
 app.use('/api', routes);
 
-// Static file serving for uploads
-app.use(['/var/www/uploads', '/uploads'], express.static(path.resolve(config.uploadPath), {
+// Static file serving for uploads. Resolve lazily so settings loaded during
+// application bootstrap are honored without requiring a process restart.
+const uploadStaticOptions = {
     maxAge: '7d',
     setHeaders: (res) => {
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         res.setHeader('Access-Control-Allow-Origin', '*');
     }
-}));
+};
+let uploadStaticRoot = '';
+let uploadStaticHandler = null;
+app.use(['/var/www/uploads', '/uploads'], (req, res, next) => {
+    const currentRoot = getUploadDirectory();
+    if (!uploadStaticHandler || uploadStaticRoot !== currentRoot) {
+        uploadStaticRoot = currentRoot;
+        uploadStaticHandler = express.static(currentRoot, uploadStaticOptions);
+    }
+    return uploadStaticHandler(req, res, next);
+});
 
 // Error Handling
 app.use(errorHandler);

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react"
-import { Search, PiggyBank, Loader2, Package, RefreshCw } from "lucide-react"
+import { Search, PiggyBank, Loader2, Package, RefreshCw, Wallet } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
+import WalletAdjustModal from "@food/components/admin/wallet/WalletAdjustModal"
 const debugLog = (...args) => {}
 const debugError = (...args) => {}
 
@@ -18,6 +19,7 @@ export default function DeliveryBoyWallet() {
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(1)
   const [summary, setSummary] = useState(null)
+  const [walletModalTarget, setWalletModalTarget] = useState(null)
   const limit = 20
 
   const fetchWallets = useCallback(async (overrides = {}) => {
@@ -200,12 +202,13 @@ export default function DeliveryBoyWallet() {
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">Bonus</th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">Total Withdrawn</th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">Cash In Hand</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">Action</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-100">
                   {wallets.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-20 text-center">
+                      <td colSpan={11} className="px-6 py-20 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <Package className="w-16 h-16 text-slate-400 mb-4" />
                           <p className="text-lg font-semibold text-slate-700">No wallets found</p>
@@ -251,6 +254,15 @@ export default function DeliveryBoyWallet() {
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-700">
                             {formatCurrency(cashInHand)}
                           </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => setWalletModalTarget({ entityId: w.deliveryId, entityLabel: w.name || "Delivery Partner" })}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                            >
+                              <Wallet className="w-3.5 h-3.5" />
+                              Adjust
+                            </button>
+                          </td>
                         </tr>
                       );
                     })
@@ -286,6 +298,15 @@ export default function DeliveryBoyWallet() {
           )}
         </div>
       </div>
+
+      <WalletAdjustModal
+        open={Boolean(walletModalTarget)}
+        onClose={() => setWalletModalTarget(null)}
+        entityType="deliveryBoy"
+        entityId={walletModalTarget?.entityId}
+        entityLabel={walletModalTarget?.entityLabel}
+        onSuccess={() => fetchWallets({ silent: true })}
+      />
     </div>
   )
 }

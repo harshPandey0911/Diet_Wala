@@ -88,7 +88,7 @@ const foodLandingSettingsSchema = new mongoose.Schema(
         },
         copyrightText: {
             type: String,
-            default: '© 2026 Fudron Food Delivery™ Ltd. All rights reserved.'
+            default: '© 2026 DietVala™ Ltd. All rights reserved.'
         },
         heroSlides: {
             type: Array,

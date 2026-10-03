@@ -29,6 +29,16 @@ export const updateCurrentUserProfile = async (userId, body) => {
         }
     }
 
+    if (body.alternatePhone !== undefined) {
+        const nextAlternate = String(body.alternatePhone || '').trim();
+        const mainDigits = String(user.phone || '').replace(/\D/g, '').slice(-10);
+        const altDigits = nextAlternate.replace(/\D/g, '').slice(-10);
+        if (altDigits && altDigits === mainDigits) {
+            throw new ValidationError('Alternate number must be different from your login number');
+        }
+        user.alternatePhone = nextAlternate;
+    }
+
     if (body.name !== undefined) user.name = String(body.name || '').trim();
     if (body.email !== undefined) user.email = String(body.email || '').trim().toLowerCase();
     if (body.profileImage !== undefined) user.profileImage = String(body.profileImage || '').trim();

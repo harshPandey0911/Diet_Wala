@@ -76,6 +76,12 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: '+91'
         },
+        // Optional second contact number (can be added from profile or at checkout).
+        alternatePhone: {
+            type: String,
+            default: '',
+            trim: true
+        },
         name: {
             type: String
         },

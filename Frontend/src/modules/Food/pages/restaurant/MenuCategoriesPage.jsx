@@ -74,8 +74,9 @@ export default function MenuCategoriesPage() {
     navigate(location.pathname, { replace: true, state: null })
   }, [location.pathname, location.state, navigate])
 
+  // Categories are created by admin only; restaurants just view and use them.
   const ownCategories = useMemo(
-    () => categories.filter((category) => category.ownedByRestaurant),
+    () => categories.filter((category) => category?.approvalStatus === "approved" || category?.isGlobal),
     [categories],
   )
 
@@ -241,7 +242,7 @@ export default function MenuCategoriesPage() {
           </button>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Menu Categories</h1>
-            <p className="text-xs text-slate-500">Create categories, track approvals, and resubmit edits safely.</p>
+            <p className="text-xs text-slate-500">Categories created by admin. Add your foods under them.</p>
           </div>
         </div>
       </div>
@@ -250,18 +251,9 @@ export default function MenuCategoriesPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <p className="text-sm font-semibold text-slate-900">How this works</p>
           <p className="mt-2 text-sm text-slate-600">
-            New categories stay pending until admin approval. Editing an approved category sends it back for review.
-            Only approved categories can be used for food uploads.
+            Only admin can create, edit or delete categories. Choose one of these categories when adding your food items.
           </p>
         </div>
-
-        <button
-          onClick={openCreateModal}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white"
-        >
-          <Plus className="h-5 w-5" />
-          Add Category
-        </button>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -269,9 +261,9 @@ export default function MenuCategoriesPage() {
           </div>
         ) : ownCategories.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <p className="text-lg font-semibold text-slate-900">No restaurant categories yet</p>
+            <p className="text-lg font-semibold text-slate-900">No categories available yet</p>
             <p className="mt-2 text-sm text-slate-500">
-              Start with a category and choose whether it should accept veg, non-veg, or both kinds of dishes.
+              Please contact admin to add categories.
             </p>
           </div>
         ) : (
@@ -318,44 +310,11 @@ export default function MenuCategoriesPage() {
 
                       <div className="mt-2 space-y-1 text-sm text-slate-500">
                         <p>{category?.itemCount || 0} item(s) linked</p>
-                        {isGlobal ? (
-                          <p>Admin controls this category now, so you can use it but not rename or delete it.</p>
-                        ) : status === "approved" ? (
-                          <p>Editing this category will send it back for admin approval.</p>
-                        ) : (
-                          <p>Foods can be added only after approval.</p>
-                        )}
-                        {status === "rejected" && category?.rejectionReason && (
-                          <p className="text-rose-600">Reason: {category.rejectionReason}</p>
-                        )}
+                        <p>Managed by admin. You can use it for your foods.</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleActive(category)}
-                      className="rounded-xl bg-slate-100 p-2 text-slate-700 disabled:opacity-50"
-                      disabled={!isEditable}
-                      title={category?.isActive !== false ? "Deactivate" : "Activate"}
-                    >
-                      {category?.isActive !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                    <button
-                      onClick={() => openEditModal(category)}
-                      className="rounded-xl bg-blue-50 p-2 text-blue-700 disabled:opacity-50"
-                      disabled={!isEditable}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(category)}
-                      className="rounded-xl bg-rose-50 p-2 text-rose-700 disabled:opacity-50"
-                      disabled={!category?.canDelete}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
                 </motion.div>
               )
             })}

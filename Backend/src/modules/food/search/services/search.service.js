@@ -2,6 +2,7 @@ import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { FoodItem } from '../../admin/models/food.model.js';
 import { FoodCategory } from '../../admin/models/category.model.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
+import { getFoodMarkupMultiplier, applyFoodMarkup } from '../../admin/services/foodMarkup.service.js';
 import mongoose from 'mongoose';
 
 /**
@@ -27,6 +28,7 @@ export const searchUnified = async (query = {}, options = {}) => {
     const skip = (page - 1) * limit;
     const term = String(q || '').trim();
     const regex = term ? new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
+    const markupMultiplier = await getFoodMarkupMultiplier();
 
     // 1. Initial Filter (approved status and basic conditions)
     const restaurantFilter = { status: 'approved' };
@@ -138,7 +140,7 @@ export const searchUnified = async (query = {}, options = {}) => {
                         matchedDish: f.name,
                         matchedDishImage: f.image,
                         matchedDishId: f._id,
-                        matchedDishPrice: f.price,
+                        matchedDishPrice: applyFoodMarkup(f.price, markupMultiplier),
                         matchedDishDescription: f.description
                     });
                 }
@@ -179,7 +181,7 @@ export const searchUnified = async (query = {}, options = {}) => {
                         matchedDish: f.name,
                         matchedDishImage: f.image,
                         matchedDishId: f._id,
-                        matchedDishPrice: f.price,
+                        matchedDishPrice: applyFoodMarkup(f.price, markupMultiplier),
                         matchedDishDescription: f.description
                     });
                 }

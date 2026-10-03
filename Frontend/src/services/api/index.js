@@ -492,6 +492,13 @@ export const adminAPI = {
     adminClient.patch(`/food/admin/customers/${String(id)}/status`, { isActive: isActive !== false }),
   topupCustomerWallet: (id, amount, description) =>
     adminClient.post(`/food/admin/customers/${String(id)}/wallet-topup`, { amount: Number(amount), description }),
+  /** Generic wallet control (user / restaurant / deliveryBoy) */
+  adjustEntityWallet: ({ entityType, entityId, action, amount, reason }) =>
+    adminClient.post(`/food/admin/wallets/adjust`, { entityType, entityId, action, amount: Number(amount), reason }),
+  getEntityWallet: (entityType, entityId, params = {}) =>
+    adminClient.get(`/food/admin/wallets/${String(entityType)}/${String(entityId)}`, { params }),
+  getRestaurantWallets: (params = {}) =>
+    adminClient.get(`/food/admin/restaurant/wallets`, { params }),
   /** Orders (admin) â€“ list, get by id, assign delivery partner */
   getOrders: (params = {}) =>
     adminClient.get("/food/admin/orders", { params: { limit: 50, page: 1, ...params } }),

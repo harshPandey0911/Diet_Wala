@@ -392,7 +392,7 @@ export default function AppIntroAds() {
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. Welcome to Tuggo Food Foods"
+                placeholder="e.g. Welcome to DietVala"
                 className="mt-1"
               />
             </div>

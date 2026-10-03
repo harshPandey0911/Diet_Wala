@@ -104,8 +104,8 @@ export default function HeroBanner({
 
   if (loading) {
     return (
-      <div className="px-4 py-2">
-        <HeroBannerSkeleton className="w-full aspect-[21/9] rounded-3xl" />
+      <div className="px-4 py-2 md:px-6 md:py-3">
+        <HeroBannerSkeleton className="w-full aspect-[2/1] md:aspect-[16/5] rounded-2xl md:rounded-3xl" />
       </div>
     );
   }
@@ -118,7 +118,7 @@ export default function HeroBanner({
       <div
         ref={shellRef}
         data-home-hero-shell="true"
-        className="relative w-full overflow-hidden rounded-3xl shadow-md group cursor-pointer bg-gradient-to-r from-[#FFC700] via-[#FFD233] to-[#FFB700]"
+        className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl shadow-sm hover:shadow-md transition-shadow group cursor-pointer bg-gradient-to-r from-[#FFC700] via-[#FFD233] to-[#FFB700]"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -140,16 +140,14 @@ export default function HeroBanner({
         }}
       >
         {hasCustomImages ? (
-          <div className="relative z-0 w-full h-[125px] sm:h-[160px] md:h-[280px] lg:h-[340px] flex items-center justify-center overflow-hidden rounded-3xl">
-            <div className="w-full h-full flex items-center justify-center">
-              <img
-                src={getMediaUrl(images[currentIndex % images.length])}
-                alt={`Hero Banner ${currentIndex + 1}`}
-                className="w-full h-full object-cover rounded-3xl"
-                loading="eager"
-                draggable={false}
-              />
-            </div>
+          <div className="relative z-0 w-full flex items-center justify-center overflow-hidden rounded-2xl md:rounded-3xl">
+            <img
+              src={getMediaUrl(images[currentIndex % images.length])}
+              alt={`Hero Banner ${currentIndex + 1}`}
+              className="w-full h-auto object-cover rounded-2xl md:rounded-3xl block"
+              loading="eager"
+              draggable={false}
+            />
           </div>
         ) : (
           /* DietVala Signature Compact Banner Design */
@@ -191,14 +189,14 @@ export default function HeroBanner({
 
         {/* Carousel Pagination Dots */}
         {hasCustomImages && images.length > 1 && (
-          <div className="absolute bottom-1.5 left-4 z-30 flex gap-1 pointer-events-none">
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 pointer-events-none bg-black/30 backdrop-blur-xs px-2.5 py-1 rounded-full shadow-xs">
             {images.map((_, dotIndex) => (
               <span
                 key={`dot-${dotIndex}`}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   dotIndex === currentIndex
-                    ? "w-3 bg-[#16A34A]"
-                    : "w-1.5 bg-[#FFE28A]"
+                    ? "w-4 bg-white"
+                    : "w-1.5 bg-white/60"
                 }`}
               />
             ))}

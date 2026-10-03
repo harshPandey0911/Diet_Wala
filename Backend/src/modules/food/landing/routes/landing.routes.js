@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import { upload } from '../../../../middleware/upload.js';
 import {
     listHeroBannersController,
@@ -6,7 +6,8 @@ import {
     deleteHeroBannerController,
     updateHeroBannerOrderController,
     toggleHeroBannerStatusController,
-    linkRestaurantsToBannerController
+    linkRestaurantsToBannerController,
+    updateHeroBannerTypeController
 } from '../controllers/heroBanner.controller.js';
 
 import {
@@ -75,6 +76,7 @@ router.delete('/hero-banners/:id', deleteHeroBannerController);
 router.patch('/hero-banners/:id/order', updateHeroBannerOrderController);
 router.patch('/hero-banners/:id/status', toggleHeroBannerStatusController);
 router.patch('/hero-banners/:id/link-restaurants', linkRestaurantsToBannerController);
+router.patch('/hero-banners/:id/type', updateHeroBannerTypeController);
 
 
 // Admin under 250 banners

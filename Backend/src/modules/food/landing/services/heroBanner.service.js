@@ -1,13 +1,18 @@
 import { FoodHeroBanner } from '../models/heroBanner.model.js';
 import { uploadBannerImage } from '../../../../services/upload.service.js';
 
-export const listHeroBanners = async () => {
-    return FoodHeroBanner.find()
+export const listHeroBanners = async (bannerType) => {
+    const query = {};
+    if (bannerType && ['app', 'web'].includes(bannerType)) {
+        query.bannerType = bannerType;
+    }
+    return FoodHeroBanner.find(query)
         .populate('linkedRestaurantIds')
         .sort({ sortOrder: 1, createdAt: 1 })
         .lean()
         .then(banners => banners.map(b => ({
             ...b,
+            bannerType: b.bannerType || 'app',
             linkedRestaurants: b.linkedRestaurantIds
         })));
 };
@@ -29,6 +34,7 @@ export const createHeroBannersFromFiles = async (files, meta = {}) => {
                 title: meta.title,
                 ctaText: meta.ctaText,
                 ctaLink: meta.ctaLink,
+                bannerType: meta.bannerType || 'app',
                 linkedRestaurantIds: meta.linkedRestaurantIds || [],
                 sortOrder: meta.sortOrder ?? 0,
                 isActive: true
@@ -82,6 +88,19 @@ export const linkRestaurantsToBanner = async (id, restaurantIds) => {
         { new: true }
     ).populate('linkedRestaurantIds').lean();
     
+    if (updated) {
+        updated.linkedRestaurants = updated.linkedRestaurantIds;
+    }
+    return updated;
+};
+
+export const updateHeroBannerType = async (id, bannerType) => {
+    const updated = await FoodHeroBanner.findByIdAndUpdate(
+        id,
+        { bannerType },
+        { new: true }
+    ).populate('linkedRestaurantIds').lean();
+
     if (updated) {
         updated.linkedRestaurants = updated.linkedRestaurantIds;
     }

@@ -18,6 +18,7 @@ const feeSettingsUpsertSchema = z.object({
     gstOnDeliveryFee: z.number().min(0).max(100).nullable().optional(),
     gstOnPlatformFee: z.number().min(0).max(100).nullable().optional(),
     gstOnPackagingFee: z.number().min(0).max(100).nullable().optional(),
+    foodMarkupPercent: z.number().min(0).max(100).nullable().optional(),
     deliveryBonusAmount: z.number().min(0).nullable().optional(),
     dispatchRadiusExpansionEnabled: z.boolean().optional(),
     dispatchRadiusTiers: z.array(z.number().min(0)).optional(),
@@ -63,6 +64,8 @@ export const validateFeeSettingsUpsertDto = (body) => {
             body?.gstOnPlatformFee === null ? null : body?.gstOnPlatformFee !== undefined ? Number(body.gstOnPlatformFee) : undefined,
         gstOnPackagingFee:
             body?.gstOnPackagingFee === null ? null : body?.gstOnPackagingFee !== undefined ? Number(body.gstOnPackagingFee) : undefined,
+        foodMarkupPercent:
+            body?.foodMarkupPercent === null ? null : body?.foodMarkupPercent !== undefined ? Number(body.foodMarkupPercent) : undefined,
         deliveryBonusAmount:
             body?.deliveryBonusAmount === null ? null : body?.deliveryBonusAmount !== undefined ? Number(body.deliveryBonusAmount) : undefined,
         dispatchRadiusExpansionEnabled:

@@ -955,6 +955,16 @@ export default function JoiningRequest() {
                             </span>
                           </div>
                         )}
+                        {r?.chickenType && (
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <p className="text-xs text-slate-500">Chicken Type</p>
+                              <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${r.chickenType === "halal" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                🍗 {r.chickenType === "halal" ? "Halal" : "Jhatka"}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                         {(r?.primaryContactNumber || r?.phone) && (
                           <div className="flex items-center gap-3">
                             <Phone className="w-5 h-5 text-slate-400" />

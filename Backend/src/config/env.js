@@ -48,7 +48,10 @@ export const config = {
     bcryptSaltRounds: Number(process.env.BCRYPT_SALT_ROUNDS || 10),
 
     // Uploads
-    uploadPath: process.env.UPLOAD_DIR || process.env.UPLOAD_PATH || 'uploads/',
+    uploadPath:
+        process.env.UPLOAD_DIR ||
+        process.env.UPLOAD_PATH ||
+        ((process.env.NODE_ENV || 'development') === 'production' ? '/var/www/uploads' : 'uploads/'),
     cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
     cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
     cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,

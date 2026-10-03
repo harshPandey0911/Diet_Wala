@@ -151,7 +151,7 @@ const reverseGeocodeDirect = async (latitude, longitude) => {
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&addressdetails=1`,
             {
               signal: nomController.signal,
-              headers: { 'Accept-Language': 'en', 'User-Agent': 'Tuggo Food Delivery-App' }
+              headers: { 'Accept-Language': 'en', 'User-Agent': 'DietVala-App' }
             }
           )
           clearTimeout(nomTimeout)

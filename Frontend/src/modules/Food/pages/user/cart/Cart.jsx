@@ -180,6 +180,8 @@ export default function Cart() {
     phone: "",
   })
 
+  // Optional second contact number for this order (prefilled from profile).
+  const [alternatePhone, setAlternatePhone] = useState("")
   const [sendCutlery, setSendCutlery] = useState(true)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [showBillDetails, setShowBillDetails] = useState(true)
@@ -448,6 +450,12 @@ export default function Cart() {
       hasRestoredRecipientRef.current = true
     }
   }, [])
+
+  useEffect(() => {
+    if (userProfile?.alternatePhone) {
+      setAlternatePhone((prev) => prev || userProfile.alternatePhone)
+    }
+  }, [userProfile?.alternatePhone])
 
   useEffect(() => {
     setRecipientDetails((prev) => ({
@@ -1813,6 +1821,7 @@ export default function Cart() {
         },
         customerName: recipientName,
         customerPhone: recipientPhone || defaultAddress?.phone || "",
+        ...(sanitizeRecipientPhone(alternatePhone) ? { customerAlternatePhone: sanitizeRecipientPhone(alternatePhone) } : {}),
         restaurantId: finalRestaurantId,
         restaurantName: finalRestaurantName || undefined,
         pricing: orderPricing,
@@ -2827,6 +2836,20 @@ export default function Cart() {
                   >
                     {isEditingRecipient ? "Done" : "Change"}
                   </button>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+                    Alternate Number <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={alternatePhone}
+                    onChange={(e) => setAlternatePhone(sanitizeRecipientPhone(e.target.value))}
+                    placeholder="Add another number we can reach you on"
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111111] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary"
+                  />
                 </div>
 
                 {isEditingRecipient && (

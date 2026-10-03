@@ -46,6 +46,11 @@ router.get('/customers/:id', adminController.getCustomerById);
 router.patch('/customers/:id/status', adminController.updateCustomerStatus);
 router.post('/customers/:id/wallet-topup', adminController.topupCustomerWallet);
 
+// ----- Generic wallet control (user / restaurant / delivery partner) -----
+router.post('/wallets/adjust', adminController.adjustEntityWallet);
+router.get('/wallets/:entityType/:entityId', adminController.getEntityWallet);
+router.get('/restaurant/wallets', adminController.getRestaurantWalletsController);
+
 // ----- Safety / Emergency Reports -----
 router.get('/safety-emergency-reports', adminController.getSafetyEmergencyReports);
 router.put('/safety-emergency-reports/:id/status', adminController.updateSafetyEmergencyStatus);

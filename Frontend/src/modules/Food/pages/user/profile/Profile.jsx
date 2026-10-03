@@ -27,8 +27,10 @@ import {
   Trash2,
   Bell,
   Award,
+  Phone,
 } from "lucide-react";
 
+import { getSupportPhone, getSupportPhoneAsync } from "@food/utils/businessSettings";
 import AnimatedPage from "@food/components/user/AnimatedPage";
 import { Card, CardContent } from "@food/components/ui/card";
 import { Button } from "@food/components/ui/button";
@@ -84,6 +86,13 @@ export default function Profile() {
       .filter(Boolean)
       .join(", ")
     : "No address saved. Tap to save Home, Work, or Other.";
+
+  const [supportPhone, setSupportPhone] = useState(() => getSupportPhone("user"));
+  useEffect(() => {
+    getSupportPhoneAsync("user").then((phone) => {
+      if (phone) setSupportPhone(phone);
+    });
+  }, []);
 
   // Popup states
   const [vegModeOpen, setVegModeOpen] = useState(false);
@@ -1041,6 +1050,23 @@ export default function Profile() {
                     <ChevronRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </Link>
+
+                {supportPhone && (
+                  <a href={`tel:${String(supportPhone).replace(/[^\d+]/g, "")}`} className="block">
+                    <div className="p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-gray-700 hover:bg-emerald-50/40 dark:hover:bg-gray-800/40 transition-all flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400">
+                          <Phone className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">Call Support</p>
+                          <p className="text-xs text-gray-400">{supportPhone}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </a>
+                )}
               </div>
             </div>
 

@@ -83,6 +83,13 @@ const restaurantSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
+    // Type of chicken the restaurant serves: halal or jhatka.
+    chickenType: {
+      type: String,
+      enum: ['halal', 'jhatka'],
+      trim: true,
+      lowercase: true,
+    },
     addressLine1: {
       type: String,
     },

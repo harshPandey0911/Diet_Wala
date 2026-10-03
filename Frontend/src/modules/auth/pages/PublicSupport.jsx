@@ -26,7 +26,7 @@ export default function PublicSupport() {
         if (data) {
           setSettings({
             supportEmail: data.supportEmail || "switcheatsofficial@gmail.com",
-            supportPhone: data.supportPhone || "8919142335",
+            supportPhone: data.restaurantSupportPhone || data.supportPhone || "8919142335",
             supportHours: data.supportHours || "Merchant support is available from 8 AM to 12 AM, 7 days a week."
           })
         }

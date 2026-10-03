@@ -22,6 +22,10 @@ const feeSettingsSchema = new mongoose.Schema(
         gstOnDeliveryFee: { type: Number, min: 0, max: 100, default: 0 },
         gstOnPlatformFee: { type: Number, min: 0, max: 100, default: 0 },
         gstOnPackagingFee: { type: Number, min: 0, max: 100, default: 0 },
+        // Global hidden markup baked into every food item's price before GST is computed.
+        // e.g. foodMarkupPercent=10 turns a restaurant-entered ₹200 item into ₹220 shown to the
+        // user (GST is then computed on ₹220 and shown separately). Not a visible line item.
+        foodMarkupPercent: { type: Number, min: 0, max: 100, default: 0 },
         deliveryBonusAmount: { type: Number, min: 0, default: 0 },
         dispatchRadiusExpansionEnabled: { type: Boolean, default: true },
         dispatchRadiusTiers: { type: [Number], default: [2, 4, 6, 8, 15] },

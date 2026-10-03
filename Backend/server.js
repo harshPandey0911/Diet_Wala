@@ -13,6 +13,7 @@ import { initializeFirebaseRealtime } from './src/config/firebase.js';
 import { loadEnvFromDb } from './src/config/envLoader.js';
 import { initRedisEmitter } from './src/config/socket.js';
 import { logVoipConfigurationWarnings } from './src/core/notifications/voip.service.js';
+import { resumeStuckDispatches } from './src/modules/food/orders/services/order-dispatch.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
 let server = null;
@@ -88,6 +89,12 @@ const startServer = async () => {
         server = httpServer.listen(config.port, config.host, () => {
             logger.info(`Server running in ${config.nodeEnv} mode on ${config.host}:${config.port}`);
             console.log(`🌐 [URL] http://localhost:${config.port}`);
+        });
+
+        // Recover any order dispatch hunts left stuck "unassigned" by a previous
+        // crash/restart (the radius-expansion retry lives in memory when Redis/BullMQ is disabled).
+        resumeStuckDispatches().catch((err) => {
+            logger.error(`[Bootstrap] resumeStuckDispatches failed: ${err.message}`);
         });
 
         // Schedulers (expire offers, fssai sync) are moved to scheduler-server.js

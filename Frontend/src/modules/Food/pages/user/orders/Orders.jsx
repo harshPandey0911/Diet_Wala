@@ -4,7 +4,7 @@ import { ArrowLeft, Search, MoreVertical, ChevronRight, Star, RotateCcw, AlertCi
 import { orderAPI } from "@food/api"
 import { useCart } from "@food/context/CartContext"
 import { toast } from "sonner"
-import { getCompanyNameAsync } from "@food/utils/businessSettings"
+import { getCompanyNameAsync, getSupportPhone, getSupportPhoneAsync } from "@food/utils/businessSettings"
 import { isModuleAuthenticated } from "@food/utils/auth"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -29,6 +29,13 @@ export default function Orders() {
   const [deliveryFeedbackText, setDeliveryFeedbackText] = useState("")
   const [submittingRating, setSubmittingRating] = useState(false)
   const [countdowns, setCountdowns] = useState({})
+  const [supportPhone, setSupportPhone] = useState(() => getSupportPhone("user"))
+
+  useEffect(() => {
+    getSupportPhoneAsync("user").then((phone) => {
+      if (phone) setSupportPhone(phone)
+    })
+  }, [])
   // Track orders that have shown rating popup - persist in localStorage
   const [shownRatingForOrders, setShownRatingForOrders] = useState(() => {
     try {
@@ -1034,7 +1041,13 @@ Order again from this restaurant in the ${companyName} app.`
                       <p className="text-xs font-medium text-gray-500 mt-1">Cancelled</p>
                     )}
                   </div>
-                  <div className="flex items-center ml-4">
+                  <div className="flex items-center ml-4 gap-3">
+                    <Link to={`/user/profile/support?orderId=${encodeURIComponent(order.mongoId || order._id || order.id)}`}>
+                      <button className="text-xs text-gray-600 dark:text-gray-300 font-medium hover:text-primary flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-full px-2.5 py-1">
+                        <MessagesSquare className="w-3.5 h-3.5" />
+                        Support
+                      </button>
+                    </Link>
                     <Link to={(isDelivered || isCancelled) ? `/user/orders/${order.id}/details` : `/user/orders/${order.id}`}>
                       <button className="text-xs text-primary font-medium hover:text-secondary flex items-center gap-1">
                         View Details
@@ -1074,8 +1087,8 @@ Order again from this restaurant in the ${companyName} app.`
                       <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 ml-7 leading-tight">
                         We apologize, but your order could not be completed.
                       </p>
-                      <a 
-                        href="tel:+919755633147" 
+                      <a
+                        href={supportPhone ? `tel:${supportPhone}` : undefined}
                         className="ml-7 inline-flex items-center gap-1.5 w-fit bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 text-[10px] sm:text-xs font-medium py-1.5 px-3 rounded-md border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                       >
                         <Phone className="w-3 h-3" />
@@ -1146,7 +1159,7 @@ Order again from this restaurant in the ${companyName} app.`
 
        {/* Footer Branding */}
       <div className="flex justify-center mt-8 mb-4">
-        <h1 className="text-4xl font-black text-gray-200 dark:text-gray-800 tracking-tighter italic uppercase">fudron</h1>
+        <h1 className="text-4xl font-black text-gray-200 dark:text-gray-800 tracking-tighter italic uppercase">dietvala</h1>
       </div>
 
       {/* Rating & Feedback Modal */}

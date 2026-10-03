@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { useParams, Link, useNavigate } from "react-router-dom"
 import {
   ArrowLeft,
@@ -22,6 +23,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@food
 import { Button } from "@food/components/ui/button"
 import { Badge } from "@food/components/ui/badge"
 import { useOrders } from "@food/context/OrdersContext"
+import { getSupportPhone, getSupportPhoneAsync } from "@food/utils/businessSettings"
 
 const commonIssues = [
   {
@@ -127,6 +129,13 @@ export default function OrderHelp() {
   const navigate = useNavigate()
   const { getOrderById } = useOrders()
   const order = getOrderById(orderId)
+  const [supportPhone, setSupportPhone] = useState(() => getSupportPhone("user"))
+
+  useEffect(() => {
+    getSupportPhoneAsync("user").then((phone) => {
+      if (phone) setSupportPhone(phone)
+    })
+  }, [])
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A"
@@ -417,10 +426,10 @@ export default function OrderHelp() {
                       Mention order {order.id}
                     </p>
                     <a
-                      href="tel:+1-800-123-4567"
+                      href={supportPhone ? `tel:${supportPhone}` : undefined}
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      +1 (800) 123-4567
+                      {supportPhone || "Not available"}
                     </a>
                   </div>
                 </div>
@@ -434,10 +443,10 @@ export default function OrderHelp() {
                       Include order {order.id} in subject
                     </p>
                     <a
-                      href={`mailto:support@tuggo.com?subject=Help with Order ${order.id}`}
+                      href={`mailto:support@dietvala.com?subject=Help with Order ${order.id}`}
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      support@fudron.com
+                      support@dietvala.com
                     </a>
                   </div>
                 </div>

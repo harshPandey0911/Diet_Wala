@@ -855,25 +855,51 @@ export default function Home() {
     };
   }, [effectiveZoneId, effectiveZoneLoading]);
 
-  // Fetch hero banners from public API (no auth required)
+  const [isDesktopView, setIsDesktopView] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 768 : false));
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 768;
+      setIsDesktopView((prev) => (prev !== isDesktop ? isDesktop : prev));
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Fetch hero banners from public API (no auth required) - filtered by device (app vs web)
   useEffect(() => {
     if (effectiveZoneLoading) return;
 
-    if (homePageCache.heroBannersFetched && homePageCache.effectiveZoneId === effectiveZoneId) {
+    const deviceType = isDesktopView ? 'web' : 'app';
+
+    if (
+      homePageCache.heroBannersFetched &&
+      homePageCache.effectiveZoneId === effectiveZoneId &&
+      homePageCache.deviceType === deviceType
+    ) {
       setLoadingBanners(false);
       return;
     }
     let cancelled = false;
     setLoadingBanners(true);
-    publicGetOnce("/food/hero-banners/public", { params: { zoneId: effectiveZoneId } })
+    publicGetOnce("/food/hero-banners/public", { params: { zoneId: effectiveZoneId, device: deviceType } })
       .then((response) => {
         if (cancelled) return;
         const data = response?.data?.data;
-        const list = Array.isArray(data?.banners)
+        const rawList = Array.isArray(data?.banners)
           ? data.banners
           : Array.isArray(data)
             ? data
             : [];
+        // Strict device filter: app banner only in app, website banner only on website
+        const list = rawList.filter((b) => {
+          if (!b) return false;
+          if (deviceType === 'web') {
+            return b.bannerType === 'web' || b.bannerType === 'all';
+          }
+          return b.bannerType === 'app' || b.bannerType === 'all' || !b.bannerType;
+        });
+
         const images = list
           .map((b) => (b && typeof b.imageUrl === "string" ? b.imageUrl : ""))
           .filter(Boolean);
@@ -884,6 +910,7 @@ export default function Home() {
         homePageCache.heroBannersData = list;
         homePageCache.heroBannersFetched = true;
         homePageCache.effectiveZoneId = effectiveZoneId;
+        homePageCache.deviceType = deviceType;
       })
       .catch((err) => {
         if (cancelled) return;
@@ -894,6 +921,7 @@ export default function Home() {
         homePageCache.heroBannersData = [];
         homePageCache.heroBannersFetched = true;
         homePageCache.effectiveZoneId = effectiveZoneId;
+        homePageCache.deviceType = deviceType;
       })
       .finally(() => {
         if (!cancelled) setLoadingBanners(false);
@@ -901,7 +929,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [effectiveZoneId, effectiveZoneLoading]);
+  }, [effectiveZoneId, effectiveZoneLoading, isDesktopView]);
 
   // Fetch ads banners from public API (no auth required)
   useEffect(() => {
@@ -2244,7 +2272,7 @@ export default function Home() {
                           </Link>
 
                           <div className="p-2 pt-0 flex items-center justify-between">
-                            <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                            <span className="text-[15px] sm:text-base font-black text-gray-900 dark:text-white tracking-tight">
                               ₹{restaurant.minOrderAmount || restaurant.price || 150}
                             </span>
                             <Link 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react"
-import { Upload, Trash2, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2, ArrowUp, ArrowDown, Layout, Tag, UtensilsCrossed, ChefHat, Megaphone, Search } from "lucide-react"
+import { Upload, Trash2, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2, ArrowUp, ArrowDown, Layout, Tag, UtensilsCrossed, ChefHat, Megaphone, Search, Smartphone, Monitor, Info } from "lucide-react"
 import api from "@food/api"
 import { adminAPI } from "@food/api"
 import { getMediaUrl, getPlaceholderImage } from "@/shared/utils/media"
@@ -24,6 +24,8 @@ export default function LandingPageManagement() {
   const [bannersUploading, setBannersUploading] = useState(false)
   const [bannersUploadProgress, setBannersUploadProgress] = useState({ current: 0, total: 0 })
   const [bannersDeleting, setBannersDeleting] = useState(null)
+  const [bannerTarget, setBannerTarget] = useState('app') // 'app' (Mobile App) or 'web' (Website Desktop)
+  const [bannerFilter, setBannerFilter] = useState('all') // 'all', 'app', 'web'
   const bannersFileInputRef = useRef(null)
 
   // Categories
@@ -87,7 +89,7 @@ export default function LandingPageManagement() {
         { label: 'Sitemap', url: '#' }
       ]
     },
-    copyrightText: '© 2026 Fudron Food Delivery™ Ltd. All rights reserved.',
+    copyrightText: '© 2026 DietVala™ Ltd. All rights reserved.',
     heroSlides: []
   })
   const [settingsLoading, setSettingsLoading] = useState(true)
@@ -264,6 +266,7 @@ export default function LandingPageManagement() {
         // Backend expects field name "files" (upload.array('files'))
         formData.append('files', file)
       })
+      formData.append('bannerType', bannerTarget || 'app')
 
       // Use getAuthConfig to ensure proper Authorization header
       // Don't set Content-Type - axios will set it automatically with boundary for FormData
@@ -372,6 +375,21 @@ export default function LandingPageManagement() {
       await fetchBanners()
     } catch (err) {
       setErrorSafely('Failed to update banner order.')
+    }
+  }
+
+  const handleBannerTypeChange = async (id, newType) => {
+    try {
+      setError(null)
+      setSuccess(null)
+      const response = await api.patch(`/food/hero-banners/${id}/type`, { bannerType: newType }, getAuthConfig())
+      if (response.data.success) {
+        setSuccess(`Banner target moved to ${newType === 'app' ? 'Mobile App' : 'Website (Desktop)'} successfully!`)
+        await fetchBanners()
+        setTimeout(() => setSuccess(null), 3000)
+      }
+    } catch (err) {
+      setErrorSafely(err.response?.data?.message || 'Failed to update banner target type.')
     }
   }
 
@@ -1108,7 +1126,7 @@ export default function LandingPageManagement() {
               { label: 'Sitemap', url: '#' }
             ]
           },
-          copyrightText: nextSettings.copyrightText || '© 2026 Fudron Food Delivery™ Ltd. All rights reserved.',
+          copyrightText: nextSettings.copyrightText || '© 2026 DietVala™ Ltd. All rights reserved.',
           heroSlides: Array.isArray(nextSettings.heroSlides) ? nextSettings.heroSlides : []
         })
       }
@@ -1446,11 +1464,135 @@ export default function LandingPageManagement() {
         {/* Hero Banners Tab */}
         {activeTab === 'banners' && (
           <>
+            {/* Target Platform Selector (App vs Website) */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <span>Banner Platform & Dimensions</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    App banner sirf Mobile App par aur Website banner sirf Desktop browser par dikhta hai.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">Upload Target:</span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    bannerTarget === 'app'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-purple-100 text-purple-800 border border-purple-200'
+                  }`}>
+                    {bannerTarget === 'app' ? '📱 Mobile App' : '💻 Website'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 2 Big Platform Switch Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. App Banner Card */}
+                <div
+                  onClick={() => setBannerTarget('app')}
+                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
+                    bannerTarget === 'app'
+                      ? 'border-blue-500 bg-blue-50/60 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-2 rounded-lg ${bannerTarget === 'app' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">App Banner (Mobile View)</h3>
+                        <p className="text-[11px] text-slate-500">For Mobile Apps & Mobile Web Screens</p>
+                      </div>
+                    </div>
+                    {bannerTarget === 'app' && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-600 text-white">
+                        Selected
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-blue-200/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500 font-medium">Recommended Size: </span>
+                      <span className="font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded border border-blue-300">
+                        800 x 400 px
+                      </span>
+                      <span className="text-[11px] text-slate-500 ml-1.5">(Aspect Ratio 2:1)</span>
+                    </div>
+                    <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                      ✓ Shows only in Mobile App
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Website Banner Card */}
+                <div
+                  onClick={() => setBannerTarget('web')}
+                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
+                    bannerTarget === 'web'
+                      ? 'border-purple-500 bg-purple-50/60 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-2 rounded-lg ${bannerTarget === 'web' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                        <Monitor className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">Website Banner (Desktop View)</h3>
+                        <p className="text-[11px] text-slate-500">For Desktop & Laptop Browser Screens</p>
+                      </div>
+                    </div>
+                    {bannerTarget === 'web' && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-600 text-white">
+                        Selected
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-purple-200/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500 font-medium">Recommended Size: </span>
+                      <span className="font-bold text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded border border-purple-300">
+                        1600 x 500 px
+                      </span>
+                      <span className="text-[11px] text-slate-500 ml-1.5">(Aspect Ratio ~3.2:1 / Wide)</span>
+                    </div>
+                    <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                      ✓ Shows only on Website
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Upload Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Upload New Banner(s)</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span>Upload {bannerTarget === 'app' ? 'Mobile App' : 'Website'} Banner(s)</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    bannerTarget === 'app' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {bannerTarget === 'app' ? '800 x 400 px' : '1600 x 500 px'}
+                  </span>
+                </h2>
+                <div className="text-xs text-slate-500 hidden sm:block">
+                  Target: <strong className="text-slate-800">{bannerTarget === 'app' ? '📱 Mobile App Only' : '💻 Website Desktop Only'}</strong>
+                </div>
+              </div>
+
               <div
-                className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center bg-blue-50/30 cursor-pointer transition-colors hover:border-blue-400 hover:bg-blue-50/50"
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  bannerTarget === 'app'
+                    ? 'border-blue-300 bg-blue-50/30 hover:border-blue-400 hover:bg-blue-50/50'
+                    : 'border-purple-300 bg-purple-50/30 hover:border-purple-400 hover:bg-purple-50/50'
+                }`}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={(e) => {
@@ -1472,15 +1614,15 @@ export default function LandingPageManagement() {
                 />
                 {bannersUploading ? (
                   <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                    <p className="text-blue-600 font-medium">
-                      Uploading image {bannersUploadProgress.current} of {bannersUploadProgress.total}...
+                    <Loader2 className={`w-8 h-8 animate-spin ${bannerTarget === 'app' ? 'text-blue-600' : 'text-purple-600'}`} />
+                    <p className={`font-medium ${bannerTarget === 'app' ? 'text-blue-600' : 'text-purple-600'}`}>
+                      Uploading {bannerTarget === 'app' ? 'App' : 'Website'} image {bannersUploadProgress.current} of {bannersUploadProgress.total}...
                     </p>
                     {bannersUploadProgress.total > 0 && (
                       <div className="w-full max-w-xs">
-                        <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div className="w-full bg-slate-200 rounded-full h-2">
                           <div
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            className={`h-2 rounded-full transition-all duration-300 ${bannerTarget === 'app' ? 'bg-blue-600' : 'bg-purple-600'}`}
                             style={{ width: `${(bannersUploadProgress.current / bannersUploadProgress.total) * 100}%` }}
                           />
                         </div>
@@ -1489,18 +1631,20 @@ export default function LandingPageManagement() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    <Upload className="w-8 h-8 text-blue-600" />
+                    <Upload className={`w-8 h-8 ${bannerTarget === 'app' ? 'text-blue-600' : 'text-purple-600'}`} />
                     <div>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); bannersFileInputRef.current?.click(); }}
-                        className="text-blue-600 font-medium hover:text-blue-700 underline"
+                        className={`font-medium underline ${bannerTarget === 'app' ? 'text-blue-600 hover:text-blue-700' : 'text-purple-600 hover:text-purple-700'}`}
                       >
-                        Click to upload
+                        Click to upload {bannerTarget === 'app' ? 'App Banner' : 'Website Banner'}
                       </button>
                       <span className="text-slate-600"> or drag and drop</span>
                     </div>
-                    <p className="text-xs text-slate-500">PNG, JPG, WEBP up to 5MB each (Max 25 images at once)</p>
+                    <p className="text-xs text-slate-500">
+                      <strong>Recommended: {bannerTarget === 'app' ? '800 x 400 px (2:1)' : '1600 x 500 px (~3.2:1)'}</strong> • PNG, JPG, WEBP up to 5MB (Max 25 images)
+                    </p>
                   </div>
                 )}
               </div>
@@ -1508,7 +1652,54 @@ export default function LandingPageManagement() {
 
             {/* Banners List */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Banner List ({banners.length})</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-100">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Banner List ({banners.length})
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Filter by platform to view or manage your banners.
+                  </p>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setBannerFilter('all')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      bannerFilter === 'all'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    All ({banners.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBannerFilter('app')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                      bannerFilter === 'app'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-blue-600'
+                    }`}
+                  >
+                    📱 App ({banners.filter(b => (b.bannerType || 'app') === 'app').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBannerFilter('web')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                      bannerFilter === 'web'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-purple-600'
+                    }`}
+                  >
+                    💻 Website ({banners.filter(b => b.bannerType === 'web').length})
+                  </button>
+                </div>
+              </div>
+
               {bannersLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
@@ -1520,69 +1711,111 @@ export default function LandingPageManagement() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {banners.map((banner, index) => (
-                    <div key={banner._id} className="border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="relative aspect-video bg-slate-100">
-                        <img src={banner.imageUrl} alt={`Hero Banner ${index + 1}`} className="w-full h-full object-cover" />
-                        <div className="absolute top-2 right-2">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${banner.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                            {banner.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <div className="absolute top-2 left-2">
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">Order: {banner.order}</span>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-white">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => handleBannerOrderChange(banner._id, 'up')} disabled={index === 0} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-50">
-                              <ArrowUp className="w-4 h-4 text-slate-600" />
-                            </button>
-                            <button onClick={() => handleBannerOrderChange(banner._id, 'down')} disabled={index === banners.length - 1} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-50">
-                              <ArrowDown className="w-4 h-4 text-slate-600" />
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <button
-                              onClick={() => {
-                                setSelectedBannerId(banner._id)
-                                setSelectedRestaurantIds(banner.linkedRestaurants?.map(r => r._id || r) || [])
-                                setShowRestaurantModal(true)
-                              }}
-                              className="px-3 py-1.5 rounded text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center gap-1"
-                            >
-                              <Megaphone className="w-4 h-4" />
-                              Advertise
-                            </button>
-                            <button onClick={() => handleToggleBannerStatus(banner._id, banner.isActive)} className={`px-3 py-1.5 rounded text-sm font-medium ${banner.isActive ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                              {banner.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
-                            <button onClick={() => handleDeleteBanner(banner._id)} disabled={bannersDeleting === banner._id} className="p-1.5 rounded hover:bg-red-100 text-red-600 disabled:opacity-50">
-                              {bannersDeleting === banner._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        </div>
-                        {banner.linkedRestaurants && banner.linkedRestaurants.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-slate-200">
-                            <p className="text-xs text-slate-600 mb-1">Linked Restaurants ({banner.linkedRestaurants.length}):</p>
-                            <div className="flex flex-wrap gap-1">
-                              {banner.linkedRestaurants.slice(0, 3).map((restaurant) => (
-                                <span key={restaurant._id || restaurant} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
-                                  {restaurant.name || 'Restaurant'}
+                  {banners
+                    .filter(b => {
+                      if (bannerFilter === 'app') return (b.bannerType || 'app') === 'app';
+                      if (bannerFilter === 'web') return b.bannerType === 'web';
+                      return true;
+                    })
+                    .map((banner, index) => {
+                      const isWeb = banner.bannerType === 'web';
+                      return (
+                        <div key={banner._id} className="border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col justify-between bg-white">
+                          <div>
+                            <div className="relative aspect-video bg-slate-100 overflow-hidden">
+                              <img src={banner.imageUrl} alt={`Hero Banner ${index + 1}`} className="w-full h-full object-cover" />
+                              
+                              {/* Target Device Badge */}
+                              <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                                <span className={`px-2.5 py-1 rounded-md text-xs font-black shadow-xs flex items-center gap-1 ${
+                                  isWeb
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-blue-600 text-white'
+                                }`}>
+                                  {isWeb ? <Monitor className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
+                                  {isWeb ? 'Website (1600x500)' : 'App (800x400)'}
                                 </span>
-                              ))}
-                              {banner.linkedRestaurants.length > 3 && (
-                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
-                                  +{banner.linkedRestaurants.length - 3} more
+                                <span className="px-2 py-1 rounded text-xs font-medium bg-black/60 text-white backdrop-blur-xs">
+                                  #{banner.order ?? index + 1}
                                 </span>
-                              )}
+                              </div>
+
+                              <div className="absolute top-2 right-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium shadow-xs ${banner.isActive ? 'bg-green-600 text-white' : 'bg-gray-700 text-white'}`}>
+                                  {banner.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+                              <span className="text-slate-500 font-medium">Target Screen:</span>
+                              <div className="flex items-center gap-1">
+                                <span className={`font-bold ${isWeb ? 'text-purple-700' : 'text-blue-700'}`}>
+                                  {isWeb ? '💻 Website Only' : '📱 Mobile App Only'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleBannerTypeChange(banner._id, isWeb ? 'app' : 'web')}
+                                  title={isWeb ? 'Switch to App' : 'Switch to Website'}
+                                  className="ml-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 underline bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs"
+                                >
+                                  {isWeb ? 'Make App' : 'Make Web'}
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+
+                          <div className="p-4 bg-white">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleBannerOrderChange(banner._id, 'up')} disabled={index === 0} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-50" title="Move Up">
+                                  <ArrowUp className="w-4 h-4 text-slate-600" />
+                                </button>
+                                <button onClick={() => handleBannerOrderChange(banner._id, 'down')} disabled={index === banners.length - 1} className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-50" title="Move Down">
+                                  <ArrowDown className="w-4 h-4 text-slate-600" />
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                  onClick={() => {
+                                    setSelectedBannerId(banner._id)
+                                    setSelectedRestaurantIds(banner.linkedRestaurants?.map(r => r._id || r) || [])
+                                    setShowRestaurantModal(true)
+                                  }}
+                                  className="px-3 py-1.5 rounded text-xs font-bold bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center gap-1"
+                                >
+                                  <Megaphone className="w-3.5 h-3.5" />
+                                  Advertise
+                                </button>
+                                <button onClick={() => handleToggleBannerStatus(banner._id, banner.isActive)} className={`px-2.5 py-1.5 rounded text-xs font-bold ${banner.isActive ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                                  {banner.isActive ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button onClick={() => handleDeleteBanner(banner._id)} disabled={bannersDeleting === banner._id} className="p-1.5 rounded hover:bg-red-100 text-red-600 disabled:opacity-50" title="Delete Banner">
+                                  {bannersDeleting === banner._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                </button>
+                              </div>
+                            </div>
+                            {banner.linkedRestaurants && banner.linkedRestaurants.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-slate-200">
+                                <p className="text-xs text-slate-600 mb-1">Linked Restaurants ({banner.linkedRestaurants.length}):</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {banner.linkedRestaurants.slice(0, 3).map((restaurant) => (
+                                    <span key={restaurant._id || restaurant} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                                      {restaurant.name || 'Restaurant'}
+                                    </span>
+                                  ))}
+                                  {banner.linkedRestaurants.length > 3 && (
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
+                                      +{banner.linkedRestaurants.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>
@@ -2350,7 +2583,7 @@ export default function LandingPageManagement() {
 
               <div className="mb-6">
                 <Label>Copyright Text</Label>
-                <Input value={settings.copyrightText || ''} onChange={(e) => setSettings({ ...settings, copyrightText: e.target.value })} placeholder="© 2026 Fudron Food Delivery™ Ltd." />
+                <Input value={settings.copyrightText || ''} onChange={(e) => setSettings({ ...settings, copyrightText: e.target.value })} placeholder="© 2026 DietVala™ Ltd." />
               </div>
 
               <div className="mb-6 space-y-6 mt-8">

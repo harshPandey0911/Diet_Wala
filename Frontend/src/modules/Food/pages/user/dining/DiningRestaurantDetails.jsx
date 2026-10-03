@@ -225,7 +225,7 @@ export default function DiningRestaurantDetails() {
   const handleShare = async () => {
     const shareData = {
       title: restaurantName,
-      text: `Check out ${restaurantName} on fudron Food Delivery!`,
+      text: `Check out ${restaurantName} on DietVala!`,
       url: window.location.href,
     }
 

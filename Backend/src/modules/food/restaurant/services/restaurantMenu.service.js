@@ -4,9 +4,10 @@ import { FoodRestaurant } from '../models/restaurant.model.js';
 import { FoodItem } from '../../admin/models/food.model.js';
 import { FoodCategory } from '../../admin/models/category.model.js';
 import { getFoodDisplayPrice, serializeFoodVariants } from '../../admin/services/foodVariant.service.js';
+import { getFoodMarkupMultiplier, applyFoodMarkup } from '../../admin/services/foodMarkup.service.js';
 import { resolveStoredUploadPath } from '../../../../services/upload.service.js';
 
-const buildMenuFromFoods = async (foods = []) => {
+const buildMenuFromFoods = async (foods = [], { markupMultiplier = 1 } = {}) => {
     const categoryIds = Array.from(
         new Set(
             (foods || [])
@@ -51,11 +52,11 @@ const buildMenuFromFoods = async (foods = []) => {
             category: sectionName,
             name: food.name,
             description: food.description || '',
-            price: getFoodDisplayPrice(food),
+            price: applyFoodMarkup(getFoodDisplayPrice(food), markupMultiplier),
             priceOnOtherPlatforms: food.priceOnOtherPlatforms || null,
             otherPlatformGst: food.otherPlatformGst ?? null,
-            variants: serializeFoodVariants(food.variants),
-            variations: serializeFoodVariants(food.variants),
+            variants: serializeFoodVariants(food.variants).map((v) => ({ ...v, price: applyFoodMarkup(v.price, markupMultiplier) })),
+            variations: serializeFoodVariants(food.variants).map((v) => ({ ...v, price: applyFoodMarkup(v.price, markupMultiplier) })),
             image: resolveStoredUploadPath(food.image || ''),
             foodType: food.foodType || 'Non-Veg',
             isAvailable: food.isAvailable !== false,
@@ -142,7 +143,8 @@ export async function getPublicApprovedRestaurantMenu(restaurantIdOrSlug) {
         .sort({ createdAt: -1 })
         .limit(2000)
         .lean();
-    return buildMenuFromFoods(foods);
+    const markupMultiplier = await getFoodMarkupMultiplier();
+    return buildMenuFromFoods(foods, { markupMultiplier });
 }
 
 export async function syncMenuItemApprovalStatus(restaurantId, itemId, status, rejectionReason = '') {

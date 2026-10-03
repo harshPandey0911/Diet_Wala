@@ -105,7 +105,8 @@ export async function listRestaurantCategories(restaurantId, query = {}) {
     applyZoneVisibilityFilter(filter.$and, zoneIdRaw);
 
     if (compact && context.pureVegRestaurant) {
-        filter.$and.push({ foodTypeScope: 'Veg' });
+        // Pure veg restaurants can use Veg-only and Both categories (same rule as food creation).
+        filter.$and.push({ foodTypeScope: { $in: ['Veg', 'Both'] } });
     }
 
     const queryBuilder = FoodCategory.find(filter)

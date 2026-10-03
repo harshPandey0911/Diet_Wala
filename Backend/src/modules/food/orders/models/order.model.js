@@ -258,6 +258,7 @@ const orderSchema = new mongoose.Schema(
         },
         customerName: { type: String, default: '', trim: true },
         customerPhone: { type: String, default: '', trim: true },
+        customerAlternatePhone: { type: String, default: '', trim: true },
         pricing: {
             type: pricingSchema,
             required: false

@@ -10,6 +10,7 @@ import {
     hasFoodVariants,
     normalizeFoodVariantsInput
 } from '../../admin/services/foodVariant.service.js';
+import { getFoodMarkupMultiplier, applyFoodMarkup } from '../../admin/services/foodMarkup.service.js';
 import {
     backfillLegacyCategoryWorkflow,
     categoryAllowsFoodType,
@@ -217,17 +218,9 @@ const resolveCategoryForRestaurant = async (context, body = {}) => {
         }
         category = matches[0] || null;
 
-        // Automatically create category if not found by name
+        // Only admin can create categories; restaurants must pick an existing one.
         if (!category) {
-            category = await FoodCategory.create({
-                name: categoryNameRaw,
-                restaurantId: context.restaurantId,
-                createdByRestaurantId: context.restaurantId,
-                foodTypeScope: context.pureVegRestaurant ? 'Veg' : 'Both',
-                approvalStatus: 'approved',
-                isApproved: true,
-                isActive: true
-            });
+            throw new ValidationError('Category not found. Please select a category created by admin.');
         }
     }
 
@@ -534,6 +527,8 @@ export async function listPublicApprovedFoods(query = {}) {
         restaurants.map((r) => [String(r._id), r.restaurantName])
     );
 
+    const markupMultiplier = await getFoodMarkupMultiplier();
+
     const foods = list.map((f) => ({
         id: f._id,
         _id: f._id,
@@ -543,7 +538,7 @@ export async function listPublicApprovedFoods(query = {}) {
         categoryName: f.categoryName || '',
         name: f.name,
         description: f.description || '',
-        price: getFoodDisplayPrice(f),
+        price: applyFoodMarkup(getFoodDisplayPrice(f), markupMultiplier),
         image: resolveStoredUploadPath(f.image || ''),
         foodType: f.foodType || 'Non-Veg',
         isAvailable: f.isAvailable !== false,

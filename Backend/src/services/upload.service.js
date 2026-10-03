@@ -5,14 +5,26 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
 import { config } from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
-// Ensure the single upload directory exists.
-const baseUploadDir = config.uploadPath || path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(baseUploadDir)) {
-    fs.mkdirSync(baseUploadDir, { recursive: true });
-}
+const isProduction = () => config.nodeEnv === 'production';
+
+// Resolve this dynamically because production settings may be loaded from the
+// database after modules have already been imported during application boot.
+export const getUploadDirectory = () => {
+    const configuredPath = config.uploadPath || 'uploads';
+
+    // A relative production path such as `uploads/` must not land inside the
+    // release directory. Keep it under the server's persistent data location.
+    if (isProduction() && !path.isAbsolute(configuredPath)) {
+        return path.resolve('/var/www', configuredPath);
+    }
+
+    return path.resolve(configuredPath);
+};
 
 const ensureUploadDirExists = () => {
+    const baseUploadDir = getUploadDirectory();
     if (!fs.existsSync(baseUploadDir)) {
         fs.mkdirSync(baseUploadDir, { recursive: true });
     }
@@ -86,7 +98,7 @@ export const upload = multer({
     fileFilter
 });
 
-const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', filename) => {
+const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', filename, resourceType = 'auto') => {
     const cloudName = config.cloudinaryCloudName || process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = config.cloudinaryApiKey || process.env.CLOUDINARY_API_KEY;
     const apiSecret = config.cloudinaryApiSecret || process.env.CLOUDINARY_API_SECRET;
@@ -106,8 +118,11 @@ const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', fi
         const stream = cloudinary.uploader.upload_stream(
             {
                 folder,
-                public_id: filename ? filename.replace(/\.[^/.]+$/, '') : undefined,
-                resource_type: 'auto'
+                // Raw files (e.g. PDF) keep their extension in the public id so the URL stays downloadable.
+                public_id: filename
+                    ? (resourceType === 'raw' ? filename : filename.replace(/\.[^/.]+$/, ''))
+                    : undefined,
+                resource_type: resourceType
             },
             (error, result) => {
                 if (error) {
@@ -126,9 +141,7 @@ const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', fi
  * Returns the Cloudinary URL or relative public path (e.g., '/uploads/food_123.webp')
  */
 const processAndSaveImage = async ({ buffer, prefix, folder = 'banners', width, height, quality = 80 }) => {
-    const dir = ensureUploadDirExists();
     const filename = buildFlatUploadFilename({ prefix, extension: 'webp' });
-    const filepath = path.join(dir, filename);
 
     let sharpInstance = sharp(buffer);
 
@@ -145,16 +158,24 @@ const processAndSaveImage = async ({ buffer, prefix, folder = 'banners', width, 
         .webp({ quality })
         .toBuffer();
 
-    // Try Cloudinary first
-    const cloudinaryFolder = `diet_wala/${folder}`;
-    const cloudinaryUrl = await uploadToCloudinaryBuffer(processedBuffer, cloudinaryFolder, filename);
-    if (cloudinaryUrl) {
-        return cloudinaryUrl;
+    if (isProduction()) {
+        const filepath = path.join(ensureUploadDirExists(), filename);
+        fs.writeFileSync(filepath, processedBuffer);
+        return `/uploads/${filename}`;
     }
 
-    // Local fallback
-    fs.writeFileSync(filepath, processedBuffer);
-    return `/uploads/${filename}`;
+    // Local/development image uploads must be durable and centralized in
+    // Cloudinary. Do not silently fall back to a machine-local uploads folder.
+    const cloudinaryFolder = `diet_wala/${folder}`;
+    const cloudinaryUrl = await uploadToCloudinaryBuffer(processedBuffer, cloudinaryFolder, filename);
+    if (!cloudinaryUrl) {
+        logger.error(`[Upload] Cloudinary image upload failed for "${filename}" in ${config.nodeEnv} mode.`);
+        throw new Error(
+            'Cloudinary image upload failed. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.'
+        );
+    }
+
+    return cloudinaryUrl;
 };
 
 /**
@@ -216,9 +237,10 @@ export const uploadDeliveryImage = async (buffer) => {
     });
 };
 
-export const uploadGenericImage = async (buffer, _folder = 'misc') => {
+export const uploadGenericImage = async (buffer, folder = 'misc') => {
     return processAndSaveImage({
         buffer,
+        folder,
         prefix: 'img',
         quality: 85
     });
@@ -233,6 +255,15 @@ export const uploadFileBuffer = async (buffer, _folder = 'misc', options = {}) =
     });
     const filepath = path.join(dir, filename);
 
+    if (!isProduction()) {
+        const cloudinaryUrl = await uploadToCloudinaryBuffer(buffer, 'diet_wala/files', filename, 'raw');
+        if (!cloudinaryUrl) {
+            logger.error(`[Upload] Cloudinary file upload failed for "${filename}" in ${config.nodeEnv} mode.`);
+            throw new Error('Cloudinary file upload failed. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.');
+        }
+        return cloudinaryUrl;
+    }
+
     fs.writeFileSync(filepath, buffer);
     return `/uploads/${filename}`;
 };
@@ -244,6 +275,16 @@ export const uploadVideoBuffer = async (buffer, _folder = 'videos', options = {}
         extension: options.format ? normalizeUploadToken(options.format, 'mp4') : 'mp4'
     });
     const filepath = path.join(dir, filename);
+
+    if (!isProduction()) {
+        const cloudinaryUrl = await uploadToCloudinaryBuffer(buffer, 'diet_wala/videos', filename, 'video');
+        if (!cloudinaryUrl) {
+            logger.error(`[Upload] Cloudinary video upload failed for "${filename}" in ${config.nodeEnv} mode.`);
+            throw new Error('Cloudinary video upload failed. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.');
+        }
+        return cloudinaryUrl;
+    }
+
     fs.writeFileSync(filepath, buffer);
     return `/uploads/${filename}`;
 };
@@ -370,3 +411,31 @@ export const genericUpload = multer({
     fileFilter: genericFileFilter
 });
 
+
+/**
+ * Generic multer upload writes to disk first. Production keeps the file in the upload
+ * folder; local/dev moves it to Cloudinary and removes the temporary local copy so
+ * local machines never create `/uploads/...` paths that live cannot serve.
+ * Returns the public URL to store in the DB.
+ */
+export const finalizeGenericUpload = async (file) => {
+    if (isProduction()) {
+        return `/uploads/${file.filename}`;
+    }
+
+    const mimeType = String(file.mimetype || '').toLowerCase();
+    const resourceType = mimeType.startsWith('video/') ? 'video' : mimeType === 'application/pdf' ? 'raw' : 'image';
+    const buffer = fs.readFileSync(file.path);
+    const cloudinaryUrl = await uploadToCloudinaryBuffer(buffer, 'diet_wala/uploads', file.filename, resourceType);
+    if (!cloudinaryUrl) {
+        logger.error(`[Upload] Cloudinary upload failed for "${file.filename}" in ${config.nodeEnv} mode.`);
+        throw new Error('Cloudinary upload failed. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.');
+    }
+
+    try {
+        fs.unlinkSync(file.path);
+    } catch {
+        // Temporary local copy; ignore cleanup errors.
+    }
+    return cloudinaryUrl;
+};

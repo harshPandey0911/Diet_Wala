@@ -4,14 +4,16 @@ import {
     deleteHeroBanner,
     updateHeroBannerOrder,
     toggleHeroBannerStatus,
-    linkRestaurantsToBanner
+    linkRestaurantsToBanner,
+    updateHeroBannerType
 } from '../services/heroBanner.service.js';
 import { sendResponse } from '../../../../utils/response.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 
 export const listHeroBannersController = async (req, res, next) => {
     try {
-        const data = await listHeroBanners();
+        const { bannerType } = req.query;
+        const data = await listHeroBanners(bannerType);
         // Wrap in { banners } to match LandingPageManagement.jsx expectations
         return sendResponse(res, 200, 'Hero banners fetched successfully', { banners: data });
     } catch (error) {
@@ -28,7 +30,8 @@ export const uploadHeroBannersController = async (req, res, next) => {
         const meta = {
             title: req.body.title,
             ctaText: req.body.ctaText,
-            ctaLink: req.body.ctaLink
+            ctaLink: req.body.ctaLink,
+            bannerType: req.body.bannerType || 'app'
         };
 
         const results = await createHeroBannersFromFiles(req.files, meta);
@@ -88,6 +91,20 @@ export const linkRestaurantsToBannerController = async (req, res, next) => {
         }
         const updated = await linkRestaurantsToBanner(id, restaurantIds);
         return sendResponse(res, 200, 'Restaurants linked to banner successfully', updated);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateHeroBannerTypeController = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { bannerType } = req.body;
+        if (!id || !['app', 'web', 'all'].includes(bannerType)) {
+            throw new ValidationError('Valid id and bannerType (app, web, all) are required');
+        }
+        const updated = await updateHeroBannerType(id, bannerType);
+        return sendResponse(res, 200, 'Hero banner target type updated successfully', updated);
     } catch (error) {
         next(error);
     }

@@ -258,6 +258,8 @@ export function buildDeliverySocketPayload(orderDoc, restaurantDoc = null) {
     customerPhone: order?.customerPhone || order?.deliveryAddress?.phone || order?.userId?.phone || "",
     userName: order?.customerName || order?.deliveryAddress?.fullName || order?.deliveryAddress?.name || order?.userId?.name || "",
     userPhone: order?.customerPhone || order?.deliveryAddress?.phone || order?.userId?.phone || "",
+    customerAlternatePhone: order?.customerAlternatePhone || "",
+    userAlternatePhone: order?.customerAlternatePhone || "",
     note: order?.note || "",
     riderEarning: order?.riderEarning || 0,
     deliveryBonusAmount: order?.deliveryBonusAmount || 0,

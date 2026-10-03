@@ -9,7 +9,11 @@ const normalizeToUploadsPath = (value) => {
 
     try {
         const parsed = new URL(trimmed);
-        const matchedPath = parsed.pathname.match(/(?:(?:\/var\/www)?\/uploads\/|^\/)([^?#]+)/i);
+        if (['http:', 'https:'].includes(parsed.protocol) && !['localhost', '127.0.0.1', '::1'].includes(parsed.hostname)) {
+            return trimmed;
+        }
+
+        const matchedPath = parsed.pathname.match(/(?:^|\/)(?:var\/www\/)?uploads\/([^?#]+)/i);
         if (matchedPath?.[1]) {
             const filename = matchedPath[1].split('/').filter(Boolean).pop();
             return filename ? `/uploads/${filename}` : '';
@@ -77,7 +81,7 @@ export const createAppIntroAd = async (req, res) => {
         const mediaUrl = uploadedMedia?.mediaUrl || normalizedBodyMediaUrl;
 
         if (!mediaUrl) {
-            return res.status(400).json({ success: false, message: 'Media must be uploaded into /uploads before saving this screen' });
+            return res.status(400).json({ success: false, message: 'A valid uploaded media URL is required' });
         }
 
         const newAd = new AppIntroAd({
@@ -113,7 +117,7 @@ export const updateAppIntroAd = async (req, res) => {
         } else if (updates.mediaUrl !== undefined) {
             const normalizedMediaUrl = normalizeToUploadsPath(updates.mediaUrl);
             if (!normalizedMediaUrl) {
-                return res.status(400).json({ success: false, message: 'Media URL must point to a file inside /uploads' });
+                return res.status(400).json({ success: false, message: 'A valid uploaded media URL is required' });
             }
             updates.mediaUrl = normalizedMediaUrl;
         }

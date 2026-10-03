@@ -177,3 +177,26 @@ export const getCompanyNameAsync = async () => {
   }
 };
 
+const ROLE_SUPPORT_PHONE_FIELD = {
+  user: 'userSupportPhone',
+  restaurant: 'restaurantSupportPhone',
+  delivery: 'deliverySupportPhone',
+};
+
+/**
+ * Admin-configured "Call Support" number for a given role. Falls back to the
+ * general Support Phone if the role-specific number hasn't been set, and
+ * finally to '' (callers should hide/disable the Call Support button in that case).
+ */
+export const getSupportPhone = (role, settings = getCachedSettings()) => {
+  const field = ROLE_SUPPORT_PHONE_FIELD[role];
+  const specific = field ? settings?.[field] : '';
+  const value = (specific && String(specific).trim()) || settings?.supportPhone || '';
+  return value.trim();
+};
+
+export const getSupportPhoneAsync = async (role) => {
+  const settings = await loadBusinessSettings();
+  return getSupportPhone(role, settings);
+};
+

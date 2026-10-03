@@ -6,6 +6,7 @@ import { exportCustomersToCSV, exportCustomersToExcel, exportCustomersToPDF } fr
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@food/components/ui/dialog"
+import WalletAdjustModal from "@food/components/admin/wallet/WalletAdjustModal"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -26,6 +27,7 @@ export default function Customers() {
   const [topupDescription, setTopupDescription] = useState("")
   const [isToppingUp, setIsToppingUp] = useState(false)
   const [customerToTopup, setCustomerToTopup] = useState(null)
+  const [walletAdjustTarget, setWalletAdjustTarget] = useState(null)
 
   const [filters, setFilters] = useState({
     orderDate: "",
@@ -523,6 +525,16 @@ export default function Customers() {
                             <Wallet className="w-4 h-4" />
                           </button>
                           <button
+                            title="Adjust Wallet (Credit/Debit)"
+                            onClick={() => setWalletAdjustTarget({
+                              entityId: customer._id || customer.id || customer.sl,
+                              entityLabel: customer.name || customer.fullName || "Customer",
+                            })}
+                            className="p-1.5 rounded text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <IndianRupee className="w-4 h-4" />
+                          </button>
+                          <button
                             title="View Details"
                             onClick={() => handleViewDetails(customer._id || customer.id || customer.sl)}
                             className="p-1.5 rounded text-blue-600 hover:bg-blue-50 transition-colors"
@@ -801,6 +813,19 @@ export default function Customers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <WalletAdjustModal
+        open={Boolean(walletAdjustTarget)}
+        onClose={() => setWalletAdjustTarget(null)}
+        entityType="user"
+        entityId={walletAdjustTarget?.entityId}
+        entityLabel={walletAdjustTarget?.entityLabel}
+        onSuccess={() => {
+          if (showUserDetails && selectedCustomer === walletAdjustTarget?.entityId) {
+            handleViewDetails(walletAdjustTarget.entityId);
+          }
+        }}
+      />
     </div>
   )
 }

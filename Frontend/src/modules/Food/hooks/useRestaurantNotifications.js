@@ -11,9 +11,10 @@ import {
   useRestaurantNotificationContext
 } from '../context/RestaurantNotificationContextBase';
 import { isModuleAuthenticated } from '@food/utils/auth';
-const debugLog = (...args) => {}
-const debugWarn = (...args) => {}
-const debugError = (...args) => {}
+import { dispatchNotificationInboxRefresh } from '@food/hooks/useNotificationInbox';
+const debugLog = (...args) => console.log(...args)
+const debugWarn = (...args) => console.warn(...args)
+const debugError = (...args) => console.error(...args)
 
 const resolveAudioSource = (source) => {
   if (!source) return '';
@@ -871,6 +872,22 @@ export const useRestaurantNotificationsState = () => {
       userInteractedRef.current = true;
       audioUnlockAttemptedRef.current = true;
 
+      // Actually unlock the <audio> element: a muted play+pause during this
+      // real user gesture lets the browser allow later programmatic .play()
+      // calls (e.g. from the socket 'new_order' handler, which has no gesture).
+      if (audioRef.current) {
+        try {
+          const wasMuted = audioRef.current.muted;
+          audioRef.current.muted = true;
+          await audioRef.current.play();
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.muted = wasMuted;
+        } catch (err) {
+          debugWarn('Audio unlock attempt failed:', err);
+        }
+      }
+
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('touchstart', handleUserInteraction);
       document.removeEventListener('keydown', handleUserInteraction);
@@ -915,17 +932,17 @@ export const useRestaurantNotificationsState = () => {
         audioRef.current.volume = 1;
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(error => {
-          // Don't log autoplay policy errors as they're expected
-          if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
-            debugWarn('Error playing notification sound:', error);
-            // Fallback: try one-shot audio instance (more reliable in background tabs on some browsers)
-            try {
-              const fallbackAudio = new Audio(resolveAudioSource(alertSound, `restaurant-alert-${Date.now()}`));
-              fallbackAudio.volume = 1;
-              fallbackAudio.play().catch(() => {});
-            } catch (fallbackError) {
+          debugWarn('Error playing notification sound:', error);
+          // Fallback: try one-shot audio instance (more reliable in background tabs on some browsers,
+          // and worth trying even after a NotAllowedError since browser autoplay state can vary per element).
+          try {
+            const fallbackAudio = new Audio(resolveAudioSource(alertSound, `restaurant-alert-${Date.now()}`));
+            fallbackAudio.volume = 1;
+            fallbackAudio.play().catch(fallbackError => {
               debugWarn('Fallback audio playback failed:', fallbackError);
-            }
+            });
+          } catch (fallbackError) {
+            debugWarn('Fallback audio playback failed:', fallbackError);
           }
         });
       }

@@ -1671,6 +1671,18 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                                     <Phone className="w-4 h-4 fill-current" />
                                   </button>
                                 )}
+                                {(activeOrder?.customerAlternatePhone || activeOrder?.userAlternatePhone) && (
+                                  <button
+                                    onClick={() => {
+                                      const alt = activeOrder?.customerAlternatePhone || activeOrder?.userAlternatePhone;
+                                      if (alt) window.location.href = `tel:${alt}`;
+                                    }}
+                                    className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 active:scale-95 transition-all shadow-sm"
+                                    title={`Alternate number: ${activeOrder?.customerAlternatePhone || activeOrder?.userAlternatePhone}`}
+                                  >
+                                    <Phone className="w-4 h-4" />
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => openCustomerDropInMaps(activeOrder)}

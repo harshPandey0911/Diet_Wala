@@ -34,6 +34,9 @@ export default function BusinessSetup() {
     supportEmail: "",
     supportPhone: "",
     supportHours: "",
+    userSupportPhone: "",
+    restaurantSupportPhone: "",
+    deliverySupportPhone: "",
     fssai: "",
     gstin: "",
   });
@@ -63,6 +66,9 @@ export default function BusinessSetup() {
           supportEmail: settings.supportEmail || "",
           supportPhone: settings.supportPhone || "",
           supportHours: settings.supportHours || "",
+          userSupportPhone: settings.userSupportPhone || "",
+          restaurantSupportPhone: settings.restaurantSupportPhone || "",
+          deliverySupportPhone: settings.deliverySupportPhone || "",
           fssai: settings.fssai || "",
           gstin: settings.gstin || "",
         });
@@ -167,6 +173,18 @@ export default function BusinessSetup() {
         }
       }
 
+      for (const [field, label] of [
+        ["userSupportPhone", "User support phone"],
+        ["restaurantSupportPhone", "Restaurant support phone"],
+        ["deliverySupportPhone", "Delivery support phone"],
+      ]) {
+        const val = formData[field]?.trim();
+        if (val && !/^\d{7,15}$/.test(val.replace(/\D/g, ""))) {
+          toast.error(`${label} must be a valid phone number (7-15 digits)`);
+          return;
+        }
+      }
+
       if (!logoPreview && !logoFile) {
         toast.error("Company logo picture is required. Please upload a logo.");
         return;
@@ -187,6 +205,9 @@ export default function BusinessSetup() {
         supportEmail: formData.supportEmail?.trim(),
         supportPhone: formData.supportPhone?.trim(),
         supportHours: formData.supportHours?.trim(),
+        userSupportPhone: formData.userSupportPhone?.trim(),
+        restaurantSupportPhone: formData.restaurantSupportPhone?.trim(),
+        deliverySupportPhone: formData.deliverySupportPhone?.trim(),
         fssai: formData.fssai?.trim(),
         gstin: formData.gstin?.trim(),
       };
@@ -452,7 +473,7 @@ export default function BusinessSetup() {
                     </label>
                     <input
                       type="email"
-                      placeholder="support@fudron.com"
+                      placeholder="support@dietvala.com"
                       value={formData.supportEmail || ""}
                       onChange={(e) => handleInputChange("supportEmail", e.target.value)}
                       className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -483,6 +504,55 @@ export default function BusinessSetup() {
                       placeholder="e.g., 24/7 Availability"
                       value={formData.supportHours || ""}
                       onChange={(e) => handleInputChange("supportHours", e.target.value)}
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:col-span-2 border-t pt-4 mt-2">
+                <h4 className="text-sm font-bold text-slate-800 mb-1">Help &amp; Support Numbers</h4>
+                <p className="text-xs text-slate-500 mb-3">
+                  The "Call Support" button shows this number on each side of the app. Leave a field blank to fall
+                  back to the general Support Phone above.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      User Support Phone
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1234567890"
+                      value={formData.userSupportPhone || ""}
+                      maxLength={15}
+                      onChange={(e) => handleInputChange("userSupportPhone", e.target.value.replace(/[^\d+\s-]/g, ""))}
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Restaurant Support Phone
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1234567890"
+                      value={formData.restaurantSupportPhone || ""}
+                      maxLength={15}
+                      onChange={(e) => handleInputChange("restaurantSupportPhone", e.target.value.replace(/[^\d+\s-]/g, ""))}
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Delivery Support Phone
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1234567890"
+                      value={formData.deliverySupportPhone || ""}
+                      maxLength={15}
+                      onChange={(e) => handleInputChange("deliverySupportPhone", e.target.value.replace(/[^\d+\s-]/g, ""))}
                       className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

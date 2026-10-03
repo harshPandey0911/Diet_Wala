@@ -1,7 +1,7 @@
 {
-  "name": "Diet Wala Food Delivery",
-  "short_name": "Diet Wala",
-  "description": "Diet Wala Food Delivery Super App",
+  "name": "DietVala",
+  "short_name": "DietVala",
+  "description": "DietVala - Healthy khana, Aapke ghar tak",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

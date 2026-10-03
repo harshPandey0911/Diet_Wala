@@ -243,6 +243,15 @@ export default function ViewOrderDialog({ isOpen, onOpenChange, order, onAssignD
                   <p className="text-sm font-medium text-slate-900">{order.customerPhone}</p>
                 </div>
               )}
+              {order.customerAlternatePhone && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Alternate Phone
+                  </p>
+                  <p className="text-sm font-medium text-slate-900">{order.customerAlternatePhone}</p>
+                </div>
+              )}
               {order.customerEmail && (
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">

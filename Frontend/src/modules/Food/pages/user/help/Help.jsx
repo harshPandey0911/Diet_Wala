@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import {
   Search,
@@ -24,6 +24,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@food
 import { Button } from "@food/components/ui/button"
 import { Input } from "@food/components/ui/input"
 import { Badge } from "@food/components/ui/badge"
+import { getSupportPhone, getSupportPhoneAsync } from "@food/utils/businessSettings"
 
 const helpCategories = [
   {
@@ -188,6 +189,13 @@ export default function Help() {
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [expandedQuestion, setExpandedQuestion] = useState(null)
+  const [supportPhone, setSupportPhone] = useState(() => getSupportPhone("user"))
+
+  useEffect(() => {
+    getSupportPhoneAsync("user").then((phone) => {
+      if (phone) setSupportPhone(phone)
+    })
+  }, [])
 
   const filteredCategories = helpCategories.filter(category =>
     category.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -389,10 +397,10 @@ export default function Help() {
                       Call us anytime
                     </p>
                     <a
-                      href="tel:+1-800-123-4567"
+                      href={supportPhone ? `tel:${supportPhone}` : undefined}
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      +1 (800) 123-4567
+                      {supportPhone || "Not available"}
                     </a>
                   </div>
                 </div>
@@ -406,10 +414,10 @@ export default function Help() {
                       We'll respond within 24 hours
                     </p>
                     <a
-                      href="mailto:support@tuggo.com"
+                      href="mailto:support@dietvala.com"
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      support@fudron.com
+                      support@dietvala.com
                     </a>
                   </div>
                 </div>

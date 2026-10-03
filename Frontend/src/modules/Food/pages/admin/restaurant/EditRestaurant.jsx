@@ -71,6 +71,7 @@ const normalizeDetailsFormFromRestaurant = (restaurant) => {
       typeof restaurant?.pureVegRestaurant === "boolean"
         ? restaurant.pureVegRestaurant
         : false,
+    chickenType: restaurant?.chickenType || "",
     ownerName: restaurant?.ownerName || "",
     ownerEmail: restaurant?.ownerEmail || "",
     ownerPhone: restaurant?.ownerPhone || "",
@@ -303,6 +304,7 @@ export default function EditRestaurant() {
       const payload = {
         name: detailsForm.name,
         pureVegRestaurant: detailsForm.pureVegRestaurant === true,
+        ...(detailsForm.chickenType ? { chickenType: detailsForm.chickenType } : {}),
         ownerName: detailsForm.ownerName,
         ownerEmail: detailsForm.ownerEmail,
         ownerPhone: detailsForm.ownerPhone,
@@ -457,6 +459,28 @@ export default function EditRestaurant() {
                     >
                       No
                     </button>
+                  </div>
+                </div>
+                <div>
+                  <Label>Chicken Type</Label>
+                  <div className="mt-2 flex items-center gap-2">
+                    {[
+                      { value: "halal", label: "Halal" },
+                      { value: "jhatka", label: "Jhatka" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setDetailsForm((p) => ({ ...p, chickenType: option.value }))}
+                        className={`px-3 py-1.5 text-xs rounded-full border ${
+                          detailsForm.chickenType === option.value
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "bg-white text-slate-700 border-slate-300"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div>

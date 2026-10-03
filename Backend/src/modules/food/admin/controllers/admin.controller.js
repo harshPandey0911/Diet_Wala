@@ -10,6 +10,7 @@ import { validateFeeSettingsUpsertDto } from '../validators/feeSettings.validato
 import { validateDeliveryEmergencyHelpUpsertDto } from '../validators/deliveryEmergencyHelp.validator.js';
 import { validateReferralSettingsUpsertDto } from '../validators/referralSettings.validator.js';
 import { topupUserWalletByAdmin } from '../../user/services/userWallet.service.js';
+import { adminAdjustWallet, adminGetWallet, getRestaurantWallets } from '../services/adminWallet.service.js';
 import { invalidateCache } from '../../../../middleware/cache.js';
 import { FoodBusinessSettings } from '../models/businessSettings.model.js';
 import { sendRestaurantOnboardingEmail } from '../../../../utils/email.js';
@@ -70,6 +71,44 @@ export async function topupCustomerWallet(req, res, next) {
         
         const result = await topupUserWalletByAdmin(id, amount, adminId, description);
         res.status(200).json({ success: true, message: 'Wallet topped up successfully', data: result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ----- Generic wallet control (user / restaurant / delivery partner) -----
+
+/** Admin manually credits or debits any actor's wallet, with a required reason for the audit trail. */
+export async function adjustEntityWallet(req, res, next) {
+    try {
+        const { entityType, entityId, action, amount, reason } = req.body || {};
+        const adminId = req.user ? req.user.id : null;
+
+        const result = await adminAdjustWallet({ entityType, entityId, action, amount, reason, adminId });
+        res.status(200).json({ success: true, message: `Wallet ${action}ed successfully`, data: result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** Admin views any actor's wallet balance + recent transactions (includes manual adjustments). */
+export async function getEntityWallet(req, res, next) {
+    try {
+        const { entityType, entityId } = req.params;
+        const { page, limit } = req.query;
+        const result = await adminGetWallet(entityType, entityId, { page: Number(page) || 1, limit: Number(limit) || 20 });
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** Admin: paginated restaurant wallets list (balance/earnings), mirrors getDeliveryWallets. */
+export async function getRestaurantWalletsController(req, res, next) {
+    try {
+        const { page, limit, search } = req.query;
+        const result = await getRestaurantWallets({ page: Number(page) || 1, limit: Number(limit) || 20, search });
+        res.status(200).json({ success: true, data: result });
     } catch (error) {
         next(error);
     }

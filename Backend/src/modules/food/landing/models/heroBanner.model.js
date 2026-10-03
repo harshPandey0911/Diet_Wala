@@ -30,6 +30,12 @@ const foodHeroBannerSchema = new mongoose.Schema(
             default: 0,
             index: true
         },
+        bannerType: {
+            type: String,
+            enum: ['app', 'web', 'all'],
+            default: 'app',
+            index: true
+        },
         isActive: {
             type: Boolean,
             default: true,

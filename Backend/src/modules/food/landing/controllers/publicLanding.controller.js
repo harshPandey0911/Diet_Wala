@@ -11,8 +11,27 @@ import mongoose from 'mongoose';
 /** Public hero banners for user home: active only, sorted, with linkedRestaurants populated for click-through */
 export const getPublicHeroBannersController = async (req, res, next) => {
     try {
-        const { zoneId } = req.query;
-        let docs = await FoodHeroBanner.find({ isActive: true })
+        const { zoneId, device, bannerType } = req.query;
+        const targetDevice = (bannerType || device || '').toLowerCase().trim();
+
+        const query = { isActive: true };
+        if (targetDevice === 'app') {
+            // App only: app, all, or legacy banners where bannerType is unset
+            query.$or = [
+                { bannerType: 'app' },
+                { bannerType: 'all' },
+                { bannerType: { $exists: false } },
+                { bannerType: null }
+            ];
+        } else if (targetDevice === 'web') {
+            // Website only: web or all
+            query.$or = [
+                { bannerType: 'web' },
+                { bannerType: 'all' }
+            ];
+        }
+
+        let docs = await FoodHeroBanner.find(query)
             .sort({ sortOrder: 1, createdAt: -1 })
             .populate({
                 path: 'linkedRestaurantIds',
@@ -34,6 +53,7 @@ export const getPublicHeroBannersController = async (req, res, next) => {
             const { linkedRestaurantIds, ...rest } = b;
             return {
                 ...rest,
+                bannerType: b.bannerType || 'app',
                 linkedRestaurants: Array.isArray(linkedRestaurantIds) ? linkedRestaurantIds : [],
                 imageUrl: b.imageUrl
             };

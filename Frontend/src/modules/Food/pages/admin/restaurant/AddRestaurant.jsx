@@ -169,6 +169,7 @@ export default function AddRestaurant() {
   const [step1, setStep1] = useState({
     restaurantName: "",
     pureVegRestaurant: null,
+    chickenType: "",
     ownerName: "",
     ownerEmail: "",
     ownerPhone: "",
@@ -418,6 +419,7 @@ export default function AddRestaurant() {
     const errors = []
     if (!step1.restaurantName?.trim()) errors.push("Restaurant name is required")
     if (typeof step1.pureVegRestaurant !== "boolean") errors.push("Please select whether restaurant is pure veg")
+    if (!["halal", "jhatka"].includes(step1.chickenType)) errors.push("Please select chicken type (Halal or Jhatka)")
     if (!step1.ownerName?.trim()) errors.push("Owner name is required")
     if (step1.ownerName?.trim() && (!NAME_REGEX.test(step1.ownerName.trim()) || !hasLetters(step1.ownerName))) {
       errors.push("Owner name must contain valid characters")
@@ -573,6 +575,7 @@ export default function AddRestaurant() {
         // Step 1
         restaurantName: step1.restaurantName,
         pureVegRestaurant: step1.pureVegRestaurant,
+        chickenType: step1.chickenType,
         ownerName: step1.ownerName,
         ownerEmail: step1.ownerEmail,
         ownerPhone: step1.ownerPhone,
@@ -914,6 +917,28 @@ export default function AddRestaurant() {
             <p className="text-[11px] text-gray-500 mt-1">
               This helps users filter restaurants by dietary preference.
             </p>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-700">Chicken type*</Label>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {[
+                { value: "halal", label: "Halal" },
+                { value: "jhatka", label: "Jhatka" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setStep1({ ...step1, chickenType: option.value })}
+                  className={`px-3 py-1.5 text-xs rounded-full border ${
+                    step1.chickenType === option.value
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-700 border-gray-200"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>

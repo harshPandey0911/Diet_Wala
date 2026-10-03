@@ -38,6 +38,7 @@ import { useLocation as useUserLocation } from "@food/hooks/useLocation"
 import DeliveryTrackingMap from "@food/components/user/DeliveryTrackingMap"
 import { orderAPI, restaurantAPI } from "@food/api"
 import { useCompanyName } from "@food/hooks/useCompanyName"
+import { getSupportPhone, getSupportPhoneAsync } from "@food/utils/businessSettings"
 import { useUserNotifications } from "@food/hooks/useUserNotifications"
 import {
   patchOrderFromSocketPayload,
@@ -495,6 +496,13 @@ export default function OrderTracking() {
   const { location: userLiveLocation } = useUserLocation()
 
   const { isConnected: isSocketConnected } = useUserNotifications()
+  const [supportPhone, setSupportPhone] = useState(() => getSupportPhone("user"))
+
+  useEffect(() => {
+    getSupportPhoneAsync("user").then((phone) => {
+      if (phone) setSupportPhone(phone)
+    })
+  }, [])
 
   const checkoutOrderSeedRef = useRef(location.state?.order ?? null)
   
@@ -1771,8 +1779,8 @@ export default function OrderTracking() {
                     <p className="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
                       If your money was deducted, it will be automatically refunded. Please reach out to support for instant help.
                     </p>
-                    <a 
-                      href="tel:+919755633147" 
+                    <a
+                      href={supportPhone ? `tel:${supportPhone}` : undefined}
                       className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded-full transition-colors shadow-sm"
                     >
                       <Phone className="w-3 h-3" />
@@ -2080,6 +2088,44 @@ export default function OrderTracking() {
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
+          </div>
+        </motion.div>
+
+        {/* Help & Support */}
+        <motion.div
+          className="bg-white dark:bg-[#1a1a1a] rounded-xl shadow-sm overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.78 }}
+        >
+          <div className="flex items-center gap-3 p-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-gray-100">Help & Support</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {supportPhone ? `Call us: ${supportPhone}` : "Facing an issue with this order?"}
+              </p>
+            </div>
+            {supportPhone && (
+              <a
+                href={`tel:${String(supportPhone).replace(/[^\d+]/g, '')}`}
+                className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center"
+                aria-label="Call support"
+              >
+                <Phone className="w-5 h-5 text-emerald-600" />
+              </a>
+            )}
+          </div>
+          <div className="px-4 pb-4">
+            <Button
+              variant="outline"
+              className="w-full h-11 rounded-xl font-semibold"
+              onClick={() => navigate(`/user/profile/support?orderId=${encodeURIComponent(String(order?.mongoId || order?._id || orderId))}`)}
+            >
+              Raise a support ticket
+            </Button>
           </div>
         </motion.div>
 

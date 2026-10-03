@@ -21,6 +21,7 @@ export default function FeeSettings() {
     gstOnDeliveryFee: "",
     gstOnPlatformFee: "",
     gstOnPackagingFee: "",
+    foodMarkupPercent: "",
     deliveryBonusAmount: "",
     dispatchRadiusExpansionEnabled: true,
     dispatchRadiusTiers: "2, 4, 6, 8, 15",
@@ -47,6 +48,7 @@ export default function FeeSettings() {
           gstOnDeliveryFee: response.data.data.feeSettings.gstOnDeliveryFee ?? "",
           gstOnPlatformFee: response.data.data.feeSettings.gstOnPlatformFee ?? "",
           gstOnPackagingFee: response.data.data.feeSettings.gstOnPackagingFee ?? "",
+          foodMarkupPercent: response.data.data.feeSettings.foodMarkupPercent ?? "",
           deliveryBonusAmount: response.data.data.feeSettings.deliveryBonusAmount ?? "",
           dispatchRadiusExpansionEnabled: response.data.data.feeSettings.dispatchRadiusExpansionEnabled !== false,
           dispatchRadiusTiers: response.data.data.feeSettings.dispatchRadiusTiers?.join(", ") ?? "2, 4, 6, 8, 15",
@@ -64,6 +66,7 @@ export default function FeeSettings() {
           gstOnDeliveryFee: "",
           gstOnPlatformFee: "",
           gstOnPackagingFee: "",
+          foodMarkupPercent: "",
           deliveryBonusAmount: "",
           dispatchRadiusExpansionEnabled: true,
           dispatchRadiusTiers: "2, 4, 6, 8, 15",
@@ -97,6 +100,7 @@ export default function FeeSettings() {
         gstOnDeliveryFee: feeSettings.gstOnDeliveryFee === "" ? undefined : Number(feeSettings.gstOnDeliveryFee),
         gstOnPlatformFee: feeSettings.gstOnPlatformFee === "" ? undefined : Number(feeSettings.gstOnPlatformFee),
         gstOnPackagingFee: feeSettings.gstOnPackagingFee === "" ? undefined : Number(feeSettings.gstOnPackagingFee),
+        foodMarkupPercent: feeSettings.foodMarkupPercent === "" ? undefined : Number(feeSettings.foodMarkupPercent),
         deliveryBonusAmount: feeSettings.deliveryBonusAmount === "" ? undefined : Number(feeSettings.deliveryBonusAmount),
         dispatchRadiusExpansionEnabled: Boolean(feeSettings.dispatchRadiusExpansionEnabled),
         dispatchRadiusTiers: feeSettings.dispatchRadiusTiers ? feeSettings.dispatchRadiusTiers.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : undefined,
@@ -119,6 +123,7 @@ export default function FeeSettings() {
             gstOnDeliveryFee: saved.gstOnDeliveryFee ?? "",
             gstOnPlatformFee: saved.gstOnPlatformFee ?? "",
             gstOnPackagingFee: saved.gstOnPackagingFee ?? "",
+            foodMarkupPercent: saved.foodMarkupPercent ?? "",
             deliveryBonusAmount: saved.deliveryBonusAmount ?? "",
             dispatchRadiusExpansionEnabled: saved.dispatchRadiusExpansionEnabled !== false,
             dispatchRadiusTiers: saved.dispatchRadiusTiers?.join(", ") ?? "2, 4, 6, 8, 15",
@@ -606,6 +611,28 @@ export default function FeeSettings() {
                   />
                   <p className="text-xs text-slate-500">
                     GST percentage applied on packaging fee
+                  </p>
+                </div>
+
+                {/* Food % (hidden markup) */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Food % (Markup)
+                  </label>
+                  <input
+                    type="number"
+                    value={feeSettings.foodMarkupPercent}
+                    onChange={(e) => setFeeSettings({ ...feeSettings, foodMarkupPercent: e.target.value })}
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Global % added on top of every food item's price (e.g. 10% turns ₹200 into ₹220). Hidden
+                    from the customer — only the final item price and GST are shown, this markup is never
+                    shown as a separate line.
                   </p>
                 </div>
 

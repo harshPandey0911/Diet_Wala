@@ -7,10 +7,19 @@ const isoDate = z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (expected YYYY-MM-DD)');
 
+const alternatePhone = z
+    .string()
+    .max(30)
+    .refine((v) => {
+        const digits = String(v || '').replace(/[^\d]/g, '');
+        return digits.length === 0 || (digits.length >= 10 && digits.length <= 13);
+    }, 'Alternate number must be a valid phone number');
+
 const schema = z.object({
     name: z.string().max(200).optional(),
     email: z.string().email().max(200).optional(),
     phone: z.string().max(30).optional(),
+    alternatePhone: alternatePhone.optional(),
     profileImage: z.string().max(2000).optional(),
     dateOfBirth: isoDate.optional(),
     anniversary: isoDate.optional(),

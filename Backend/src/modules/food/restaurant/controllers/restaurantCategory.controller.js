@@ -1,13 +1,9 @@
 import {
     listRestaurantCategories,
-    listPublicCategories,
-    createRestaurantCategory,
-    updateRestaurantCategory,
-    deleteRestaurantCategory
+    listPublicCategories
 } from '../services/restaurantCategory.service.js';
 import { sendResponse, sendError } from '../../../../utils/response.js';
 import { FoodRestaurant } from '../models/restaurant.model.js';
-import { invalidateCache } from '../../../../middleware/cache.js';
 
 export const listCategoriesController = async (req, res, next) => {
     try {
@@ -34,38 +30,18 @@ export const listCategoriesController = async (req, res, next) => {
     }
 };
 
-export const createCategoryController = async (req, res, next) => {
-    try {
-        const restaurantId = req.user?.userId;
-        const category = await createRestaurantCategory(restaurantId, req.body || {});
-        await invalidateCache('categories:*');
-        return sendResponse(res, 201, 'Category created successfully', { category });
-    } catch (error) {
-        next(error);
-    }
+// Categories are managed by admin only. Restaurants can list and use them for foods.
+const ADMIN_ONLY_CATEGORY_MESSAGE = 'Only admin can create, edit or delete categories';
+
+export const createCategoryController = async (_req, res) => {
+    return sendError(res, 403, ADMIN_ONLY_CATEGORY_MESSAGE);
 };
 
-export const updateCategoryController = async (req, res, next) => {
-    try {
-        const restaurantId = req.user?.userId;
-        const category = await updateRestaurantCategory(restaurantId, req.params.id, req.body || {});
-        if (!category) return sendError(res, 404, 'Category not found');
-        await invalidateCache('categories:*');
-        return sendResponse(res, 200, 'Category updated successfully', { category });
-    } catch (error) {
-        next(error);
-    }
+export const updateCategoryController = async (_req, res) => {
+    return sendError(res, 403, ADMIN_ONLY_CATEGORY_MESSAGE);
 };
 
-export const deleteCategoryController = async (req, res, next) => {
-    try {
-        const restaurantId = req.user?.userId;
-        const result = await deleteRestaurantCategory(restaurantId, req.params.id);
-        if (!result) return sendError(res, 404, 'Category not found');
-        await invalidateCache('categories:*');
-        return sendResponse(res, 200, 'Category deleted successfully', result);
-    } catch (error) {
-        next(error);
-    }
+export const deleteCategoryController = async (_req, res) => {
+    return sendError(res, 403, ADMIN_ONLY_CATEGORY_MESSAGE);
 };
 

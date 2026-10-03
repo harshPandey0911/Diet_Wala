@@ -17,7 +17,14 @@ const requiredBooleanSchema = z.preprocess((value) => {
     return value;
 }, z.boolean({ required_error: 'Please select whether the restaurant is pure veg' }));
 
-const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const chickenTypeSchema = z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim().toLowerCase() : value),
+    z.enum(['halal', 'jhatka'], {
+        errorMap: () => ({ message: 'Please select chicken type (Halal or Jhatka)' })
+    })
+);
+
+const panRegex =/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 
 const normalizeTimeValue = (value) => {
     const raw = String(value || '').trim();
@@ -60,6 +67,7 @@ const restaurantRegisterSchema = z.object({
     ownerPhone: phoneSchema.optional(),
     primaryContactNumber: phoneSchema.optional(),
     pureVegRestaurant: requiredBooleanSchema,
+    chickenType: chickenTypeSchema,
     addressLine1: z.string().optional(),
     addressLine2: z.string().optional(),
     area: z.string().optional(),

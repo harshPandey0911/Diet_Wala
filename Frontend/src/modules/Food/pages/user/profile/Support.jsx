@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import AnimatedPage from "@food/components/user/AnimatedPage"
 import { Button } from "@food/components/ui/button"
 import { Input } from "@food/components/ui/input"
@@ -10,11 +10,14 @@ import { toast } from "sonner"
 import { ArrowLeft, Building2, HelpCircle, ShoppingBag, ChevronRight } from "lucide-react"
 
 export default function Support() {
-  const [step, setStep] = useState("pick")
-  const [type, setType] = useState("")
+  const [searchParams] = useSearchParams()
+  const presetOrderId = String(searchParams.get("orderId") || "")
+  const hasPresetOrder = /^[a-f\d]{24}$/i.test(presetOrderId)
+  const [step, setStep] = useState(hasPresetOrder ? "order_issue" : "pick")
+  const [type, setType] = useState(hasPresetOrder ? "order" : "")
   const [orders, setOrders] = useState([])
   const [restaurants, setRestaurants] = useState([])
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState(hasPresetOrder ? { _id: presetOrderId } : null)
   const [selectedRestaurant, setSelectedRestaurant] = useState(null)
   const [issueType, setIssueType] = useState("")
   const [subject, setSubject] = useState("")

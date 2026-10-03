@@ -1,5 +1,6 @@
 import { ValidationError } from '../core/auth/errors.js';
 import { sendSuccess } from '../utils/response.js';
+import { finalizeGenericUpload } from '../services/upload.service.js';
 
 export const uploadSingle = async (req, res, next) => {
     try {
@@ -7,7 +8,7 @@ export const uploadSingle = async (req, res, next) => {
             throw new ValidationError('No file provided or invalid file format.');
         }
 
-        const fileUrl = `/uploads/${req.file.filename}`;
+        const fileUrl = await finalizeGenericUpload(req.file);
 
         const fileData = {
             filename: req.file.filename,
@@ -33,8 +34,8 @@ export const uploadMultiple = async (req, res, next) => {
             throw new ValidationError('No files provided or invalid formats.');
         }
 
-        const filesData = req.files.map(file => {
-            const fileUrl = `/uploads/${file.filename}`;
+        const filesData = await Promise.all(req.files.map(async (file) => {
+            const fileUrl = await finalizeGenericUpload(file);
             return {
                 filename: file.filename,
                 originalName: file.originalname,
@@ -43,7 +44,7 @@ export const uploadMultiple = async (req, res, next) => {
                 path: fileUrl,
                 url: fileUrl
             };
-        });
+        }));
 
         return sendSuccess(res, {
             success: true,

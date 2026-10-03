@@ -42,35 +42,45 @@ export async function calculateOrderPricing(userId, dto) {
   if (restaurant.status !== "approved")
     throw new ValidationError("Restaurant not available");
 
+  const feeSettings = await FoodFeeSettings.findOne({ isActive: true })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!feeSettings) {
+    throw new ValidationError("Fee settings are not configured by admin.");
+  }
+
+  const foodMarkupPercent = (feeSettings.foodMarkupPercent != null && Number.isFinite(Number(feeSettings.foodMarkupPercent)))
+    ? Number(feeSettings.foodMarkupPercent)
+    : 0;
+  const foodMarkupMultiplier = 1 + (foodMarkupPercent / 100);
+
   const items = Array.isArray(dto.items) ? dto.items : [];
   let itemDiscountTotal = 0;
   let subtotal = 0;
   let eligibleSubtotalForCoupon = 0;
 
   items.forEach((it) => {
-    let price = Number(it.price) || 0;
+    // Bake the admin's global food markup into the item price server-side so it can never be
+    // bypassed by the client, and so GST below is computed on the marked-up price. This is
+    // intentionally hidden from the user — only the final per-item price (and GST) is shown.
+    let price = (Number(it.price) || 0) * foodMarkupMultiplier;
     const qty = Number(it.quantity) || 1;
     let hasItemDiscount = false;
-    
+
     // The frontend already sends the discounted price in it.price.
     // If we need to calculate itemDiscountTotal, we should rely on originalPrice sent by frontend,
     // but since it's not sent, we skip re-applying the discount to avoid double discounting.
     // In a future secure update, backend should fetch item prices from DB and apply discounts here.
-    
+
     subtotal += price * qty;
     if (!hasItemDiscount) {
       eligibleSubtotalForCoupon += price * qty;
     }
   });
+  subtotal = Math.round(subtotal);
+  eligibleSubtotalForCoupon = Math.round(eligibleSubtotalForCoupon);
   itemDiscountTotal = Math.floor(itemDiscountTotal);
-
-  const feeSettings = await FoodFeeSettings.findOne({ isActive: true })
-    .sort({ createdAt: -1 })
-    .lean();
-  
-  if (!feeSettings) {
-    throw new ValidationError("Fee settings are not configured by admin.");
-  }
 
   const packagingFee = (feeSettings.packagingFee != null && Number.isFinite(Number(feeSettings.packagingFee))) ? Number(feeSettings.packagingFee) : 0;
 

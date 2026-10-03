@@ -169,6 +169,7 @@ const toRestaurantProfile = (doc) => {
         upiId: doc.upiId || '',
         upiQrImage: doc.upiQrImage ? { url: doc.upiQrImage } : null,
         pureVegRestaurant: Boolean(doc.pureVegRestaurant),
+        chickenType: doc.chickenType || null,
         profileImage: doc.profileImage ? { url: doc.profileImage } : null,
         menuImages,
         coverImages,
@@ -267,6 +268,7 @@ export const registerRestaurant = async (payload, files) => {
         ownerPhone,
         primaryContactNumber,
         pureVegRestaurant,
+        chickenType,
         addressLine1,
         addressLine2,
         area,
@@ -403,6 +405,7 @@ export const registerRestaurant = async (payload, files) => {
             ownerPhoneLast10,
             primaryContactNumber,
             pureVegRestaurant: pureVegRestaurant === true,
+            chickenType,
             zoneId: zoneId && mongoose.Types.ObjectId.isValid(String(zoneId).trim())
                 ? new mongoose.Types.ObjectId(String(zoneId).trim())
                 : undefined,
@@ -528,6 +531,7 @@ export const getCurrentRestaurantProfile = async (restaurantId) => {
                 'fssaiExpiry',
                 'fssaiImage',
                 'pureVegRestaurant',
+                'chickenType',
                 'profileImage',
                 'coverImages',
                 'menuImages',
@@ -594,6 +598,7 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
                 'fssaiExpiry',
                 'fssaiImage',
                 'pureVegRestaurant',
+                'chickenType',
                 'profileImage',
                 'coverImages',
                 'menuImages',
@@ -698,6 +703,7 @@ export const updateCurrentRestaurantDiningSettings = async (restaurantId, body =
                 'upiId',
                 'upiQrImage',
                 'pureVegRestaurant',
+                'chickenType',
                 'profileImage',
                 'coverImages',
                 'menuImages',
@@ -811,6 +817,14 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
         } else {
             throw new ValidationError('pureVegRestaurant must be a boolean');
         }
+    }
+
+    if (body.chickenType !== undefined) {
+        const normalizedChickenType = String(body.chickenType || '').trim().toLowerCase();
+        if (!['halal', 'jhatka'].includes(normalizedChickenType)) {
+            throw new ValidationError('chickenType must be either halal or jhatka');
+        }
+        update.chickenType = normalizedChickenType;
     }
 
     if (body.zoneId !== undefined) {
@@ -1048,7 +1062,7 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
         reason = 'Photo/Banner Update';
     } else if (updatedFields.some(f => ['ownerName', 'ownerEmail', 'ownerPhone', 'primaryContactNumber'].includes(f))) {
         reason = 'Owner Details Update';
-    } else if (updatedFields.includes('pureVegRestaurant')) {
+    } else if (updatedFields.some(f => ['pureVegRestaurant', 'chickenType'].includes(f))) {
         reason = 'Dietary Category Update';
     } else if (updatedFields.includes('restaurantName')) {
         reason = 'Restaurant Name Change';
@@ -1086,6 +1100,7 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
                     'ownerPhone',
                     'primaryContactNumber',
                 'pureVegRestaurant',
+                'chickenType',
                 'profileImage',
                 'coverImages',
                 'menuImages',
@@ -1157,7 +1172,7 @@ export const uploadRestaurantProfileImage = async (restaurantId, file) => {
                 rejectionReason: 1
             }
         },
-        { new: true, projection: 'profileImage coverImages restaurantName cuisines location menuImages addressLine1 addressLine2 area city state pincode landmark ownerName ownerEmail ownerPhone primaryContactNumber pureVegRestaurant openingTime closingTime openDays status approvedAt pendingUpdateReason createdAt updatedAt' }
+        { new: true, projection: 'profileImage coverImages restaurantName cuisines location menuImages addressLine1 addressLine2 area city state pincode landmark ownerName ownerEmail ownerPhone primaryContactNumber pureVegRestaurant chickenType openingTime closingTime openDays status approvedAt pendingUpdateReason createdAt updatedAt' }
     ).lean();
 
     if (!doc) throw new ValidationError('Restaurant not found');
@@ -1411,6 +1426,7 @@ export const listApprovedRestaurants = async (query = {}) => {
         isAcceptingOrders: 1,
         status: 1,
         pureVegRestaurant: 1,
+        chickenType: 1,
         createdAt: 1,
         location: 1,
         openingTime: 1,
@@ -1516,6 +1532,8 @@ export const listApprovedRestaurants = async (query = {}) => {
             if (allItemIds.length > 0) {
                 const { FoodItem } = await import('../../admin/models/food.model.js');
                 const { getFoodDisplayPrice } = await import('../../admin/services/foodVariant.service.js');
+                const { getFoodMarkupMultiplier, applyFoodMarkup } = await import('../../admin/services/foodMarkup.service.js');
+                const markupMultiplier = await getFoodMarkupMultiplier();
                 const itemDocs = await FoodItem.find({ _id: { $in: allItemIds } }).select('name price variants priceOnOtherPlatforms').lean();
                 const itemMap = new Map();
                 itemDocs.forEach(item => {
@@ -1528,7 +1546,7 @@ export const listApprovedRestaurants = async (query = {}) => {
                             if (d.itemId && itemMap.has(String(d.itemId))) {
                                 const itemDoc = itemMap.get(String(d.itemId));
                                 d.name = itemDoc.name || 'Special Dish';
-                                d.price = getFoodDisplayPrice(itemDoc);
+                                d.price = applyFoodMarkup(getFoodDisplayPrice(itemDoc), markupMultiplier);
                             }
                         });
                     }
@@ -1638,6 +1656,8 @@ export const listApprovedRestaurants = async (query = {}) => {
         if (allItemIds.length > 0) {
             const { FoodItem } = await import('../../admin/models/food.model.js');
             const { getFoodDisplayPrice } = await import('../../admin/services/foodVariant.service.js');
+            const { getFoodMarkupMultiplier, applyFoodMarkup } = await import('../../admin/services/foodMarkup.service.js');
+            const markupMultiplier = await getFoodMarkupMultiplier();
             const itemDocs = await FoodItem.find({ _id: { $in: allItemIds } }).select('name price variants priceOnOtherPlatforms').lean();
             const itemMap = new Map();
             itemDocs.forEach(item => {
@@ -1650,7 +1670,7 @@ export const listApprovedRestaurants = async (query = {}) => {
                         if (d.itemId && itemMap.has(String(d.itemId))) {
                             const itemDoc = itemMap.get(String(d.itemId));
                             d.name = itemDoc.name || 'Special Dish';
-                            d.price = getFoodDisplayPrice(itemDoc);
+                            d.price = applyFoodMarkup(getFoodDisplayPrice(itemDoc), markupMultiplier);
                         }
                     });
                 }

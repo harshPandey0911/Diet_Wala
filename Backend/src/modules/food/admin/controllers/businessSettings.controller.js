@@ -8,8 +8,8 @@ export async function getBusinessSettings(req, res, next) {
         if (!settings) {
             // Create default settings if none exist
             settings = await FoodBusinessSettings.create({
-                companyName: 'Fudron',
-                email: 'admin@fudron.com'
+                companyName: 'DietVala',
+                email: 'admin@dietvala.com'
             });
         }
         return sendResponse(res, 200, 'Business settings fetched successfully', settings);
@@ -32,9 +32,11 @@ export async function updateBusinessSettings(req, res, next) {
             return res.status(400).json({ success: false, message: 'Invalid data format' });
         }
 
-        const { 
+        const {
             companyName, email, phoneCountryCode, phoneNumber, address, state, pincode, region,
-            supportEmail, supportPhone, supportHours, fssai, gstin, onlinePaymentOnly, maxCodAmount,
+            supportEmail, supportPhone, supportHours,
+            userSupportPhone, restaurantSupportPhone, deliverySupportPhone,
+            fssai, gstin, onlinePaymentOnly, maxCodAmount,
             maintenanceMode, customerRegistration, restaurantRegistration, deliveryRegistration
         } = data;
 
@@ -48,6 +50,9 @@ export async function updateBusinessSettings(req, res, next) {
         const s_supportEmail = String(supportEmail || "").trim();
         const s_supportPhone = String(supportPhone || "").trim();
         const s_supportHours = String(supportHours || "").trim();
+        const s_userSupportPhone = String(userSupportPhone || "").trim();
+        const s_restaurantSupportPhone = String(restaurantSupportPhone || "").trim();
+        const s_deliverySupportPhone = String(deliverySupportPhone || "").trim();
         const s_fssai = String(fssai || "").trim();
         const s_gstin = String(gstin || "").trim();
 
@@ -73,6 +78,15 @@ export async function updateBusinessSettings(req, res, next) {
         if (s_supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s_supportEmail)) {
             return res.status(400).json({ success: false, message: 'Invalid support email address' });
         }
+        for (const [label, value] of [
+            ['User support phone', s_userSupportPhone],
+            ['Restaurant support phone', s_restaurantSupportPhone],
+            ['Delivery support phone', s_deliverySupportPhone],
+        ]) {
+            if (value && !/^\d{7,15}$/.test(value.replace(/[\s+-]/g, ''))) {
+                return res.status(400).json({ success: false, message: `${label} must be a valid phone number (7-15 digits)` });
+            }
+        }
 
         let settings = await FoodBusinessSettings.findOne();
         if (!settings) {
@@ -95,6 +109,9 @@ export async function updateBusinessSettings(req, res, next) {
         if (supportEmail !== undefined) settings.supportEmail = s_supportEmail;
         if (supportPhone !== undefined) settings.supportPhone = s_supportPhone;
         if (supportHours !== undefined) settings.supportHours = s_supportHours;
+        if (userSupportPhone !== undefined) settings.userSupportPhone = s_userSupportPhone;
+        if (restaurantSupportPhone !== undefined) settings.restaurantSupportPhone = s_restaurantSupportPhone;
+        if (deliverySupportPhone !== undefined) settings.deliverySupportPhone = s_deliverySupportPhone;
         if (fssai !== undefined) settings.fssai = s_fssai;
         if (gstin !== undefined) settings.gstin = s_gstin;
         
@@ -166,8 +183,8 @@ export async function updateBusinessToggles(req, res, next) {
         let settings = await FoodBusinessSettings.findOne();
         if (!settings) {
             settings = await FoodBusinessSettings.create({
-                companyName: 'Fudron',
-                email: 'admin@fudron.com',
+                companyName: 'DietVala',
+                email: 'admin@dietvala.com',
             });
         }
 

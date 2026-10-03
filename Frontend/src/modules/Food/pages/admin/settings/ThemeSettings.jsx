@@ -263,93 +263,116 @@ export default function ThemeSettings() {
               </div>
 
               {/* Logo Upload Section */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Main App Logo */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-slate-700">App Logo</h3>
-                    {currentConfig.logoUrl && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveLogo}
-                        className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1 hover:underline cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Remove Logo
-                      </button>
-                    )}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h4 className="text-sm font-semibold text-slate-800">App Logo</h4>
+                    <span className="text-[11px] text-slate-400">Main header & navigation brand logo</span>
                   </div>
-                  
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative bg-white">
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleLogoUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    {currentConfig.logoUrl ? (
-                      <div className="flex flex-col items-center">
-                        <img src={currentConfig.logoUrl} alt="App Logo" className="h-20 max-w-[200px] object-contain mb-2 p-1 bg-slate-50 rounded-lg border border-slate-200" />
-                        <p className="text-xs font-medium text-slate-500">Click to change main logo</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center py-2">
-                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-2">
-                          <Upload className="w-6 h-6" />
+
+                  <div className="flex items-center gap-4 p-3 bg-slate-50/80 border border-slate-200/90 rounded-xl">
+                    {/* Thumbnail Preview Box */}
+                    <div className="w-28 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-2xs">
+                      {currentConfig.logoUrl ? (
+                        <img 
+                          key={currentConfig.logoUrl}
+                          src={currentConfig.logoUrl} 
+                          alt="Logo" 
+                          onLoad={(e) => { e.currentTarget.style.display = ''; }}
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      ) : (
+                        <div className="text-center text-slate-300">
+                          <ImageIcon className="w-5 h-5 mx-auto opacity-50" />
                         </div>
-                        <p className="text-sm font-semibold text-slate-700">Drop main logo here, or browse</p>
-                        <p className="text-xs text-slate-400 mt-0.5">PNG, JPG, SVG or WEBP (max 2MB)</p>
+                      )}
+                    </div>
+
+                    {/* Actions and Meta */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <label className="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer shadow-2xs transition-colors">
+                          <Upload className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+                          <span>{currentConfig.logoUrl ? "Change Logo" : "Upload Logo"}</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleLogoUpload}
+                            className="sr-only"
+                          />
+                        </label>
+                        {currentConfig.logoUrl && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveLogo}
+                            className="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
                 {/* User Sub-Logo (ONLY for User App) */}
                 {selectedApp === 'user_app' && (
-                  <div className="pt-4 border-t border-slate-200">
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-slate-700">Header Sub-Logo</h3>
-                        <span className="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+                        <h4 className="text-sm font-semibold text-slate-800">Header Sub-Logo</h4>
+                        <span className="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">
                           User App Only
                         </span>
                       </div>
-                      {currentConfig.subLogoUrl && (
-                        <button
-                          type="button"
-                          onClick={handleRemoveSubLogo}
-                          className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1 hover:underline cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Remove Sub-Logo
-                        </button>
-                      )}
+                      <span className="text-[11px] text-slate-400">Location ke paas left corner badge</span>
                     </div>
-                    <p className="text-xs text-slate-500 mb-3">
-                      Ye chhota logo User side header me left corner me display hoga (e.g. Sub-brand, tagline badge, ya powered-by).
-                    </p>
 
-                    <div className="border-2 border-dashed border-amber-300/80 bg-amber-50/30 rounded-xl p-5 flex flex-col items-center justify-center text-center hover:bg-amber-50/60 transition-colors relative">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleSubLogoUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      {currentConfig.subLogoUrl ? (
-                        <div className="flex flex-col items-center">
-                          <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-2xs mb-2">
-                            <img src={currentConfig.subLogoUrl} alt="Sub Logo" className="h-10 max-w-[180px] object-contain" />
+                    <div className="flex items-center gap-4 p-3 bg-amber-50/30 border border-amber-200/60 rounded-xl">
+                      {/* Thumbnail Preview Box */}
+                      <div className="w-24 h-12 bg-white rounded-lg border border-amber-200/80 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
+                        {currentConfig.subLogoUrl ? (
+                          <img 
+                            key={currentConfig.subLogoUrl}
+                            src={currentConfig.subLogoUrl} 
+                            alt="Sub Logo" 
+                            onLoad={(e) => { e.currentTarget.style.display = ''; }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center text-amber-300">
+                            <ImageIcon className="w-4 h-4 mx-auto opacity-50" />
                           </div>
-                          <p className="text-xs font-medium text-slate-600">Click to change sub-logo</p>
+                        )}
+                      </div>
+
+                      {/* Actions and Meta */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <label className="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-amber-300/80 rounded-lg hover:bg-amber-50/50 cursor-pointer shadow-2xs transition-colors">
+                            <Upload className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+                            <span>{currentConfig.subLogoUrl ? "Change Sub-Logo" : "Upload Sub-Logo"}</span>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              onChange={handleSubLogoUpload}
+                              className="sr-only"
+                            />
+                          </label>
+                          {currentConfig.subLogoUrl && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveSubLogo}
+                              className="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
-                      ) : (
-                        <div className="flex flex-col items-center py-2">
-                          <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mb-2">
-                            <Upload className="w-6 h-6" />
-                          </div>
-                          <p className="text-sm font-semibold text-slate-700">Upload Small Sub-Logo</p>
-                          <p className="text-xs text-slate-400 mt-0.5">Recommended: Horizontal PNG / SVG (chhota size, max 2MB)</p>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 )}

@@ -13,6 +13,7 @@ import {
   MapPin,
   RotateCcw,
   FileText,
+  HelpCircle,
 } from "lucide-react"
 import { orderAPI, restaurantAPI } from "@food/api"
 import { useCart } from "@food/context/CartContext"
@@ -241,7 +242,7 @@ export default function UserOrderDetails() {
         debugWarn("Could not load business settings", err);
       }
 
-      const companyName = settings.companyName || "fudron Food Delivery"
+      const companyName = settings.companyName || "DietVala"
 
       const primaryColor = [220, 38, 38]; // Red #DC2626
       const secondaryColor = [71, 85, 105]; // Slate 600
@@ -820,6 +821,17 @@ export default function UserOrderDetails() {
           >
             <FileText className="w-4 h-4" />
             Restaurant Complaint
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const supportOrderId = order._id || order.mongoId || orderId
+              navigate(`/user/profile/support?orderId=${encodeURIComponent(String(supportOrderId))}`)
+            }}
+            className="mt-3 w-full bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Help & Support
           </button>
         </div>
       )}

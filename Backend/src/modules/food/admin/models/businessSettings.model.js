@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const businessSettingsSchema = new mongoose.Schema(
     {
-        companyName: { type: String, required: true, default: 'Fudron' },
-        email: { type: String, required: true, default: 'admin@fudron.com' },
+        companyName: { type: String, required: true, default: 'DietVala' },
+        email: { type: String, required: true, default: 'admin@dietvala.com' },
         phone: {
             countryCode: { type: String, default: '+91' },
             number: { type: String, default: '' }
@@ -22,9 +22,14 @@ const businessSettingsSchema = new mongoose.Schema(
             url: { type: String, default: '' },
             publicId: { type: String, default: '' }
         },
-        supportEmail: { type: String, default: 'support@fudron.com' },
+        supportEmail: { type: String, default: 'support@dietvala.com' },
         supportPhone: { type: String, default: '+91 1234567890' },
         supportHours: { type: String, default: '24/7 Availability' },
+        // Help & Support: per-role support numbers used for the "Call Support" buttons.
+        // If a role's number is left blank, its "Call Support" button falls back to supportPhone.
+        userSupportPhone: { type: String, default: '' },
+        restaurantSupportPhone: { type: String, default: '' },
+        deliverySupportPhone: { type: String, default: '' },
         termsAndConditionsPdf: {
             url: { type: String, default: '' },
             publicId: { type: String, default: '' }
