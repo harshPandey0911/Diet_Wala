@@ -14,7 +14,7 @@ export default function ThemeSettings() {
   const [selectedApp, setSelectedApp] = useState('user_app');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   const [configs, setConfigs] = useState({
     user_app: { primaryColor: '#e11d48', secondaryColor: '#be123c', logoUrl: '', subLogoUrl: '', fontFamily: "'Poppins', sans-serif" },
     delivery_app: { primaryColor: '#0ea5e9', secondaryColor: '#0284c7', logoUrl: '', fontFamily: "'Poppins', sans-serif" },
@@ -79,7 +79,7 @@ export default function ThemeSettings() {
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'app-logos');
@@ -101,7 +101,7 @@ export default function ThemeSettings() {
   const handleSubLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'app-logos');
@@ -144,12 +144,12 @@ export default function ThemeSettings() {
         fontFamily: currentConfig.fontFamily
       });
       toast.success(`${apps.find(a => a.id === selectedApp).label} configuration saved!`);
-      
+
       // Update theme instantly (so the user & admin panel reflects updated colors/logos immediately)
       import('../../../utils/themeSettings.js')
         .then(({ applyDynamicTheme }) => applyDynamicTheme())
-        .catch(() => {});
-        
+        .catch(() => { });
+
     } catch (error) {
       toast.error("Failed to save configuration");
     } finally {
@@ -185,11 +185,10 @@ export default function ThemeSettings() {
               <button
                 key={app.id}
                 onClick={() => setSelectedApp(app.id)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                  selectedApp === app.id
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${selectedApp === app.id
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 {app.label}
@@ -208,7 +207,7 @@ export default function ThemeSettings() {
               {/* Theme Colors */}
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-slate-700">Theme Colors</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-2">Primary Color</label>
                   <div className="flex items-center gap-4">
@@ -262,126 +261,38 @@ export default function ThemeSettings() {
                 </div>
               </div>
 
-              {/* Logo Upload Section */}
-              <div className="space-y-4">
-                {/* Main App Logo */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h4 className="text-sm font-semibold text-slate-800">App Logo</h4>
-                    <span className="text-[11px] text-slate-400">Main header & navigation brand logo</span>
-                  </div>
+              {/* Logo Upload */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-slate-700">App Logo</h3>
 
-                  <div className="flex items-center gap-4 p-3 bg-slate-50/80 border border-slate-200/90 rounded-xl">
-                    {/* Thumbnail Preview Box */}
-                    <div className="w-28 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-2xs">
-                      {currentConfig.logoUrl ? (
-                        <img 
-                          key={currentConfig.logoUrl}
-                          src={currentConfig.logoUrl} 
-                          alt="Logo" 
-                          onLoad={(e) => { e.currentTarget.style.display = ''; }}
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      ) : (
-                        <div className="text-center text-slate-300">
-                          <ImageIcon className="w-5 h-5 mx-auto opacity-50" />
-                        </div>
-                      )}
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  {currentConfig.logoUrl ? (
+                    <div className="flex flex-col items-center">
+                      <img src={currentConfig.logoUrl} alt="App Logo" className="h-24 object-contain mb-4" />
+                      <p className="text-sm text-slate-500">Click to change logo</p>
                     </div>
-
-                    {/* Actions and Meta */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <label className="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer shadow-2xs transition-colors">
-                          <Upload className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
-                          <span>{currentConfig.logoUrl ? "Change Logo" : "Upload Logo"}</span>
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleLogoUpload}
-                            className="sr-only"
-                          />
-                        </label>
-                        {currentConfig.logoUrl && (
-                          <button
-                            type="button"
-                            onClick={handleRemoveLogo}
-                            className="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        )}
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                        <Upload className="w-8 h-8" />
                       </div>
+                      <p className="font-medium text-slate-700">Drop your logo here, or click to browse</p>
+                      <p className="text-sm text-slate-500 mt-1">PNG, JPG or SVG (max 2MB)</p>
                     </div>
-                  </div>
+                  )}
                 </div>
-
-                {/* User Sub-Logo (ONLY for User App) */}
-                {selectedApp === 'user_app' && (
-                  <div className="pt-3 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-semibold text-slate-800">Header Sub-Logo</h4>
-                        <span className="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">
-                          User App Only
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400">Location ke paas left corner badge</span>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-3 bg-amber-50/30 border border-amber-200/60 rounded-xl">
-                      {/* Thumbnail Preview Box */}
-                      <div className="w-24 h-12 bg-white rounded-lg border border-amber-200/80 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
-                        {currentConfig.subLogoUrl ? (
-                          <img 
-                            key={currentConfig.subLogoUrl}
-                            src={currentConfig.subLogoUrl} 
-                            alt="Sub Logo" 
-                            onLoad={(e) => { e.currentTarget.style.display = ''; }}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        ) : (
-                          <div className="text-center text-amber-300">
-                            <ImageIcon className="w-4 h-4 mx-auto opacity-50" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Actions and Meta */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <label className="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-amber-300/80 rounded-lg hover:bg-amber-50/50 cursor-pointer shadow-2xs transition-colors">
-                            <Upload className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
-                            <span>{currentConfig.subLogoUrl ? "Change Sub-Logo" : "Upload Sub-Logo"}</span>
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              onChange={handleSubLogoUpload}
-                              className="sr-only"
-                            />
-                          </label>
-                          {currentConfig.subLogoUrl && (
-                            <button
-                              type="button"
-                              onClick={handleRemoveSubLogo}
-                              className="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
             <div className="mt-12 pt-8 border-t border-slate-100">
               <h3 className="text-lg font-semibold text-slate-700 mb-6">Live Preview</h3>
-              <div 
+              <div
                 className="rounded-xl border border-slate-200 overflow-hidden shadow-sm"
                 style={{ backgroundColor: currentConfig.primaryColor, fontFamily: currentConfig.fontFamily || "'Poppins', sans-serif" }}
               >
@@ -431,13 +342,13 @@ export default function ThemeSettings() {
                   <div className="h-4 w-1/3 rounded mb-4" style={{ backgroundColor: currentConfig.secondaryColor }}></div>
                   <div className="h-4 w-2/3 bg-slate-100 rounded mb-2"></div>
                   <div className="h-4 w-1/2 bg-slate-100 rounded"></div>
-                  
+
                   <div className="mt-6 mb-2">
                     <h4 className="text-lg font-bold text-slate-800">Typography Preview</h4>
                     <p className="text-sm text-slate-500">The quick brown fox jumps over the lazy dog.</p>
                   </div>
-                  
-                  <button 
+
+                  <button
                     className="mt-4 px-6 py-2 rounded-lg text-white font-medium w-full"
                     style={{ backgroundColor: currentConfig.primaryColor }}
                   >
@@ -451,7 +362,7 @@ export default function ThemeSettings() {
 
           {/* Action Bar */}
           <div className="bg-slate-50 p-6 border-t border-slate-200 flex justify-end">
-            <button 
+            <button
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm disabled:opacity-70"
