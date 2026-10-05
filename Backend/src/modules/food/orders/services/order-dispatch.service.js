@@ -42,6 +42,10 @@ function isPointInPolygon(lat, lng, polygon) {
   return inside;
 }
 
+// An accepted order untouched for this long is abandoned (never delivered/cancelled);
+// it must not keep its rider "busy" forever and block every new offer.
+const BUSY_ORDER_STALE_MS = 6 * 60 * 60 * 1000;
+
 async function getBusyDeliveryPartnerIds() {
   const busyPartners = await FoodOrder.distinct('dispatch.deliveryPartnerId', {
     'dispatch.status': 'accepted',
@@ -49,6 +53,7 @@ async function getBusyDeliveryPartnerIds() {
     orderStatus: {
       $in: ['confirmed', 'preparing', 'ready_for_pickup', 'picked_up', 'reached_drop'],
     },
+    updatedAt: { $gte: new Date(Date.now() - BUSY_ORDER_STALE_MS) },
   });
 
   return new Set(

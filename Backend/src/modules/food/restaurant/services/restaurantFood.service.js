@@ -348,7 +348,10 @@ export async function updateRestaurantFood(restaurantId, foodId, body = {}) {
         update.categoryName = categoryName || '';
     }
 
-    const shouldResubmitForApproval = Object.keys(update).length > 0;
+    // Availability / prep-time changes don't need re-approval; otherwise an approved
+    // item vanishes from the user menu whenever the restaurant toggles stock.
+    const NO_REAPPROVAL_FIELDS = new Set(['isAvailable', 'preparationTime']);
+    const shouldResubmitForApproval = Object.keys(update).some((key) => !NO_REAPPROVAL_FIELDS.has(key));
 
     if (shouldResubmitForApproval) {
         update.approvalStatus = 'pending';

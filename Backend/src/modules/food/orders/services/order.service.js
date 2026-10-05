@@ -1430,10 +1430,11 @@ export async function updateOrderStatusRestaurant(
   // Real-time: delivery request / ready notifications.
   try {
     const io = getIO();
-    if (io) {
-      // On accept (confirmed or preparing) -> request delivery partners via central logic
+    const riderAccepted = order.dispatch?.status === 'accepted' && Boolean(order.dispatch?.deliveryPartnerId);
+      // On accept (confirmed or preparing) -> request delivery partners via central logic.
+      // Not gated on socket.io: dispatch also goes out via Firebase + FCM.
       if (
-        (String(orderStatus) === "preparing" || String(orderStatus) === "confirmed") && 
+        (String(orderStatus) === "preparing" || String(orderStatus) === "confirmed") &&
         (String(from) !== "preparing" && String(from) !== "confirmed")
       ) {
         console.log(
@@ -1463,7 +1464,18 @@ export async function updateOrderStatusRestaurant(
             if (String(orderStatus) === 'ready_for_pickup' && String(from) !== 'ready_for_pickup') {
                 console.log(`[DEBUG] Order ${order._id.toString()} changed to 'ready_for_pickup'.`);
                 const assignedId = order.dispatch?.deliveryPartnerId?.toString?.() || order.dispatch?.deliveryPartnerId;
-                if (assignedId) {
+                if (!riderAccepted) {
+                    // Nobody has accepted yet (earlier hunt found no riders, or its retry timer was
+                    // lost on a server restart). Restart the hunt so riders get the request now.
+                    logger.info(`[Dispatch] Order ${order._id} ready_for_pickup with no rider — restarting dispatch.`);
+                    try {
+                        await dispatchService.resetDispatchForFreshHunt(order._id);
+                        await dispatchService.tryAutoAssign(order._id, { attempt: 1, blastAll: true });
+                        order = await FoodOrder.findById(order._id);
+                    } catch (err) {
+                        logger.error(`[Dispatch] Re-dispatch on ready failed for ${order._id}: ${err.message}`);
+                    }
+                } else if (assignedId && io) {
                     console.log(`[DEBUG] Notifying assigned partner ${assignedId} that order is ready.`);
                     const restaurant = await FoodRestaurant.findById(order.restaurantId).select('restaurantName location addressLine1 area city state').lean();
                     const payload = buildDeliverySocketPayload(order, restaurant);
@@ -1475,7 +1487,6 @@ export async function updateOrderStatusRestaurant(
                     console.log(`[DEBUG] Order ${order._id.toString()} is ready but no partner assigned.`);
                 }
             }
-        }
     } catch (err) {
         console.error('[DEBUG] Error in delivery notification logic:', err);
     }
