@@ -439,7 +439,7 @@ export default function FoodsList() {
       await fetchAllFoods()
     } catch (error) {
       debugError("Error saving food:", error)
-      toast.error(error?.response?.data?.message || "Failed to save food")
+      toast.error(error?.userMessage || error?.response?.data?.message || "Failed to save food")
     } finally {
       setSubmittingFood(false)
     }
