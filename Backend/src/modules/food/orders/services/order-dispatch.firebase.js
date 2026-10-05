@@ -35,10 +35,10 @@ export async function publishDeliveryOfferToFirebase(partnerId, orderMongoId, pa
 }
 
 export async function removeDeliveryOfferFromFirebase(partnerId, orderMongoId) {
-  const db = getFirebaseDB();
-  if (!db || !partnerId || !orderMongoId) return false;
-
   try {
+    const db = getFirebaseDB();
+    if (!db || !partnerId || !orderMongoId) return false;
+
     await db.ref(getOfferPath(partnerId, orderMongoId)).remove();
     return true;
   } catch (err) {
