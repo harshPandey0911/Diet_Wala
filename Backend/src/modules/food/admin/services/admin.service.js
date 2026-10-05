@@ -15,6 +15,7 @@ import { FoodEarningAddonHistory } from '../models/earningAddonHistory.model.js'
 import { FoodRestaurantCommission } from '../models/restaurantCommission.model.js';
 import { FoodDeliveryCommissionRule } from '../models/deliveryCommissionRule.model.js';
 import { FoodFeeSettings } from '../models/feeSettings.model.js';
+import { clearFoodMarkupCache } from './foodMarkup.service.js';
 import { FeedbackExperience } from '../models/feedbackExperience.model.js';
 import { FoodUser } from '../../../../core/users/user.model.js';
 import { FoodAdmin } from '../../../../core/admin/admin.model.js';
@@ -1945,6 +1946,9 @@ export async function upsertFeeSettings(body) {
         if (body.gstOnPackagingFee === null) $unset.gstOnPackagingFee = 1;
         else if (body.gstOnPackagingFee !== undefined) $set.gstOnPackagingFee = body.gstOnPackagingFee;
 
+        if (body.foodMarkupPercent === null) $unset.foodMarkupPercent = 1;
+        else if (body.foodMarkupPercent !== undefined) $set.foodMarkupPercent = body.foodMarkupPercent;
+
         if (body.deliveryBonusAmount === null) $unset.deliveryBonusAmount = 1;
         else if (body.deliveryBonusAmount !== undefined) $set.deliveryBonusAmount = body.deliveryBonusAmount;
 
@@ -1961,6 +1965,7 @@ export async function upsertFeeSettings(body) {
         if (!Object.keys(update).length) return existing.toObject();
 
         const updated = await FoodFeeSettings.findByIdAndUpdate(existing._id, update, { new: true }).lean();
+        clearFoodMarkupCache();
         return updated;
     }
 
@@ -1977,11 +1982,13 @@ export async function upsertFeeSettings(body) {
     if (body.gstOnDeliveryFee !== undefined && body.gstOnDeliveryFee !== null) payload.gstOnDeliveryFee = body.gstOnDeliveryFee;
     if (body.gstOnPlatformFee !== undefined && body.gstOnPlatformFee !== null) payload.gstOnPlatformFee = body.gstOnPlatformFee;
     if (body.gstOnPackagingFee !== undefined && body.gstOnPackagingFee !== null) payload.gstOnPackagingFee = body.gstOnPackagingFee;
+    if (body.foodMarkupPercent !== undefined && body.foodMarkupPercent !== null) payload.foodMarkupPercent = body.foodMarkupPercent;
     if (body.deliveryBonusAmount !== undefined && body.deliveryBonusAmount !== null) payload.deliveryBonusAmount = body.deliveryBonusAmount;
     if (body.dispatchRadiusExpansionEnabled !== undefined) payload.dispatchRadiusExpansionEnabled = body.dispatchRadiusExpansionEnabled;
     if (body.dispatchRadiusTiers !== undefined && body.dispatchRadiusTiers !== null) payload.dispatchRadiusTiers = body.dispatchRadiusTiers;
 
     const created = await FoodFeeSettings.create(payload);
+    clearFoodMarkupCache();
     return created.toObject();
 }
 

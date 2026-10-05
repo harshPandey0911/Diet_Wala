@@ -645,8 +645,8 @@ export default function SignupStep2() {
           <DocumentUpload docType="aadharBackPhoto" label="Aadhar Card (Back)" required={true} />
           <DocumentUpload docType="panPhoto" label="PAN Card Photo" required={true} />
           
-          <DocumentUpload docType="drivingLicenseFrontPhoto" label="Driving License (Front)" required={false} />
-          <DocumentUpload docType="drivingLicenseBackPhoto" label="Driving License (Back)" required={false} />
+          <DocumentUpload docType="drivingLicenseFrontPhoto" label="Driving License (Front) (Optional)" required={false} />
+          <DocumentUpload docType="drivingLicenseBackPhoto" label="Driving License (Back) (Optional)" required={false} />
           
           <DocumentUpload docType="rcPhoto" label="RC (Registration Certificate)" required={true} />
 

@@ -1406,7 +1406,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
             toast.success("Shift started successfully!");
           } catch (error) {
             console.error("Failed to start shift:", error);
-            toast.error("Failed to start shift. Please try again.");
+            toast.error(error?.response?.data?.message || "Failed to start shift. Please try again.");
           }
         }}
       />

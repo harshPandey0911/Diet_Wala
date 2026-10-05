@@ -104,6 +104,12 @@ const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', fi
     const apiSecret = config.cloudinaryApiSecret || process.env.CLOUDINARY_API_SECRET;
 
     if (!cloudName || !apiKey || !apiSecret) {
+        logger.error(
+            `[Upload] Cloudinary credentials missing (NODE_ENV=${config.nodeEnv}): ` +
+            `CLOUDINARY_CLOUD_NAME=${cloudName ? 'set' : 'MISSING'}, ` +
+            `CLOUDINARY_API_KEY=${apiKey ? 'set' : 'MISSING'}, ` +
+            `CLOUDINARY_API_SECRET=${apiSecret ? 'set' : 'MISSING'}`
+        );
         return null;
     }
 
@@ -126,7 +132,10 @@ const uploadToCloudinaryBuffer = async (buffer, folder = 'diet_wala/uploads', fi
             },
             (error, result) => {
                 if (error) {
-                    console.error('Cloudinary upload warning:', error.message);
+                    logger.error(
+                        `[Upload] Cloudinary rejected upload (NODE_ENV=${config.nodeEnv}, cloud=${cloudName}): ` +
+                        `${error.message}${error.http_code ? ` [http ${error.http_code}]` : ''}`
+                    );
                     return resolve(null);
                 }
                 resolve(result.secure_url);

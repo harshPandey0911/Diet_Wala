@@ -26,6 +26,11 @@ export async function getFoodMarkupMultiplier() {
     return cache.multiplier;
 }
 
+/** Drop the cached multiplier so a just-saved markup applies immediately. */
+export function clearFoodMarkupCache() {
+    cache = { multiplier: 1, expiresAt: 0 };
+}
+
 export function applyFoodMarkup(price, multiplier) {
     const base = Number(price) || 0;
     return Math.round(base * multiplier);
