@@ -759,6 +759,16 @@ export const useDeliveryNotificationsState = () => {
       return undefined;
     }
 
+    // The partner id is resolved asynchronously after restoring the session.
+    // Starting a socket before it is available makes this effect immediately
+    // tear down that half-open connection when the id arrives, which browsers
+    // report as "WebSocket is closed before the connection is established".
+    if (!deliveryPartnerId) {
+      debugLog('Waiting for deliveryPartnerId before connecting delivery socket');
+      setIsConnected(false);
+      return undefined;
+    }
+
     const socketUrl = resolveSocketOrigin();
     
     debugLog('?? Attempting to connect to Delivery Socket.IO:', socketUrl);
