@@ -113,7 +113,7 @@ export default function AddZone() {
 
   useEffect(() => {
     fetchExistingZones()
-    loadGoogleMaps()
+    initGoogleMaps()
     if (isEditMode && id) fetchZone()
   }, [id, isEditMode])
 
@@ -245,16 +245,12 @@ export default function AddZone() {
     }
   }
 
-  const loadGoogleMaps = async () => {
+  // Named initGoogleMaps (not loadGoogleMaps) so it doesn't shadow the shared loader import,
+  // which previously made the call below recurse forever and left the map stuck on "Loading map...".
+  const initGoogleMaps = async () => {
     try {
       const apiKey = await getGoogleMapsApiKey()
       setGoogleMapsApiKey(apiKey || "loaded")
-
-      let retries = 0
-      while (!window.google && retries < 50) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        retries += 1
-      }
 
       if (window.google?.maps) {
         initializeMap(window.google)

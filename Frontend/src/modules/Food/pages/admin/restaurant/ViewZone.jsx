@@ -61,7 +61,7 @@ export default function ViewZone() {
 
   useEffect(() => {
     fetchZone()
-    loadGoogleMaps()
+    initGoogleMaps()
   }, [id])
 
   useEffect(() => {
@@ -91,18 +91,11 @@ export default function ViewZone() {
     }
   }
 
-  const loadGoogleMaps = async () => {
+  // Named initGoogleMaps (not loadGoogleMaps) so it doesn't shadow the shared loader import.
+  const initGoogleMaps = async () => {
     try {
       const apiKey = await getGoogleMapsApiKey()
       setGoogleMapsApiKey(apiKey || "loaded")
-
-      let retries = 0
-      const maxRetries = 50
-
-      while (!window.google && retries < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        retries++
-      }
 
       if (window.google && window.google.maps) {
         setTimeout(() => {

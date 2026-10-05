@@ -516,16 +516,11 @@ export default function DeliveryBoyViewMap() {
     setMapLoading(false)
   }, [])
 
-  const loadGoogleMaps = useCallback(async () => {
+  // Named initGoogleMaps (not loadGoogleMaps) so it doesn't shadow the shared loader import.
+  const initGoogleMaps = useCallback(async () => {
     try {
       const apiKey = await getGoogleMapsApiKey()
       setGoogleMapsApiKey(apiKey || "loaded")
-
-      let retries = 0
-      while (!window.google && retries < 50) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        retries += 1
-      }
 
       if (window.google?.maps) {
         initializeMap(window.google)
@@ -547,7 +542,7 @@ export default function DeliveryBoyViewMap() {
   useEffect(() => {
     fetchZones()
     fetchOnlineRidersFromApi()
-    loadGoogleMaps()
+    initGoogleMaps()
 
     const apiInterval = setInterval(fetchOnlineRidersFromApi, API_REFRESH_MS)
     const unsubscribeRealtime = subscribeAllDeliveryLocations(
@@ -568,7 +563,7 @@ export default function DeliveryBoyViewMap() {
     applyFirebaseLocations,
     fetchOnlineRidersFromApi,
     fetchZones,
-    loadGoogleMaps,
+    initGoogleMaps,
   ])
 
   useEffect(() => {
