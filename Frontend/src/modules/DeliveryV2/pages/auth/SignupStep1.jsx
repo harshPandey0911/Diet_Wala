@@ -9,6 +9,10 @@ const debugWarn = (...args) => { }
 const debugError = (...args) => { }
 
 
+// Standard plates (MH12AB1234, DL9SCX7828 — Delhi uses up to 3 series letters)
+// and Bharat series (22BH1234AB).
+const VEHICLE_NUMBER_REGEX = /^(?:[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}|[0-9]{2}BH[0-9]{4}[A-Z]{1,2})$/
+
 export default function SignupStep1() {
   const navigate = useNavigate()
   const goBack = useDeliveryBackNavigation()
@@ -81,7 +85,7 @@ export default function SignupStep1() {
     }
 
     if (name === "vehicleNumber") {
-      updatedValue = updatedValue.replace(/[^A-Z0-9]/g, "").slice(0, 10)
+      updatedValue = updatedValue.replace(/[^A-Z0-9]/g, "").slice(0, 11)
     }
 
     if (name === "drivingLicenseNumber") {
@@ -157,7 +161,7 @@ export default function SignupStep1() {
 
     if (!isBicycle && !formData.vehicleNumber.trim()) {
       newErrors.vehicleNumber = "Vehicle number is required"
-    } else if (formData.vehicleNumber.trim() && !/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$/.test(formData.vehicleNumber)) {
+    } else if (formData.vehicleNumber.trim() && !VEHICLE_NUMBER_REGEX.test(formData.vehicleNumber)) {
       newErrors.vehicleNumber = "Invalid Indian vehicle number format (e.g., MH12AB1234)"
     }
 
@@ -374,7 +378,7 @@ export default function SignupStep1() {
               name="vehicleNumber"
               value={formData.vehicleNumber}
               onChange={handleChange}
-              maxLength={10}
+              maxLength={11}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.vehicleNumber ? "border-red-500" : "border-gray-300"
                 }`}
               placeholder="e.g., MH12AB1234"
