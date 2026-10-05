@@ -16,6 +16,11 @@ const debugLog = (...args) => console.log(...args)
 const debugWarn = (...args) => console.warn(...args)
 const debugError = (...args) => console.error(...args)
 
+const isProductionBuild = Boolean(import.meta.env.PROD);
+const isProductionDeployment =
+  typeof window !== 'undefined' &&
+  !['localhost', '127.0.0.1'].includes(window.location.hostname);
+
 const resolveAudioSource = (source) => {
   if (!source) return '';
   let url = typeof source === 'object' ? (source.default || source) : source;
