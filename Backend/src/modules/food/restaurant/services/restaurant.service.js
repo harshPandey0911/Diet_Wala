@@ -4,7 +4,6 @@ import { ValidationError } from '../../../../core/auth/errors.js';
 import mongoose from 'mongoose';
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
-import { FoodDiningRestaurant } from '../../dining/models/diningRestaurant.model.js';
 import Promocode from '../../../../models/Promocode.js';
 import { upsertOutletTimingsForRestaurant } from './outletTimings.service.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
@@ -181,11 +180,6 @@ const toRestaurantProfile = (doc) => {
             Number.isFinite(Number(doc.estimatedDeliveryTimeMinutes))
                 ? Number(doc.estimatedDeliveryTimeMinutes)
                 : null,
-        diningSettings: {
-            isEnabled: doc.diningSettings?.isEnabled !== false,
-            maxGuests: Math.max(1, parseInt(doc.diningSettings?.maxGuests, 10) || 6),
-            diningType: String(doc.diningSettings?.diningType || 'family-dining').trim() || 'family-dining'
-        },
         isAcceptingOrders: doc.isAcceptingOrders !== false,
         status: doc.status || null,
         createdAt: doc.createdAt,
@@ -540,7 +534,6 @@ export const getCurrentRestaurantProfile = async (restaurantId) => {
                 'openDays',
                 'estimatedDeliveryTime',
                 'estimatedDeliveryTimeMinutes',
-                'diningSettings',
                 'isAcceptingOrders',
                 'status',
                 'approvedAt',
@@ -605,7 +598,6 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
                 'openingTime',
                 'closingTime',
                 'openDays',
-                'diningSettings',
                 'isAcceptingOrders',
                 'status',
                 'approvedAt',
@@ -615,114 +607,6 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
             ].join(' ')
         }
     ).lean();
-    return toRestaurantProfile(doc);
-};
-
-export const updateCurrentRestaurantDiningSettings = async (restaurantId, body = {}) => {
-    if (!restaurantId) {
-        throw new ValidationError('Invalid restaurant id');
-    }
-
-    const currentRestaurant = await FoodRestaurant.findById(restaurantId)
-        .select('diningSettings status')
-        .lean();
-
-    if (!currentRestaurant) {
-        throw new ValidationError('Restaurant not found');
-    }
-
-    const currentDiningSettings =
-        currentRestaurant.diningSettings && typeof currentRestaurant.diningSettings === 'object'
-            ? currentRestaurant.diningSettings
-            : {};
-
-    const parseBoolean = (value, fallback = false) => {
-        if (value === undefined || value === null) return Boolean(fallback);
-        if (typeof value === 'boolean') return value;
-        const normalized = String(value).trim().toLowerCase();
-        if (normalized === 'true' || normalized === '1' || normalized === 'yes') return true;
-        if (normalized === 'false' || normalized === '0' || normalized === 'no') return false;
-        return Boolean(fallback);
-    };
-
-    const maxGuests = Math.max(
-        1,
-        parseInt(body.maxGuests ?? currentDiningSettings.maxGuests ?? 6, 10) || 6
-    );
-    const diningType =
-        String(body.diningType ?? currentDiningSettings.diningType ?? 'family-dining').trim() ||
-        'family-dining';
-
-    const isEnabled = parseBoolean(body.isEnabled, currentDiningSettings.isEnabled);
-    
-    // First, update the FoodDiningRestaurant collection to keep it synced
-    await FoodDiningRestaurant.findOneAndUpdate(
-        { restaurantId },
-        {
-            $set: {
-                isEnabled,
-                maxGuests,
-            }
-        },
-        { upsert: true }
-    );
-
-    const doc = await FoodRestaurant.findByIdAndUpdate(
-        restaurantId,
-        {
-            $set: {
-                diningSettings: {
-                    isEnabled,
-                    maxGuests,
-                    diningType
-                }
-            }
-        },
-        {
-            new: true,
-            runValidators: true,
-            projection: [
-                'restaurantName',
-                'cuisines',
-                'location',
-                'addressLine1',
-                'addressLine2',
-                'area',
-                'city',
-                'state',
-                'pincode',
-                'landmark',
-                'ownerName',
-                'ownerEmail',
-                'ownerPhone',
-                'primaryContactNumber',
-                'accountNumber',
-                'ifscCode',
-                'accountHolderName',
-                'accountType',
-                'upiId',
-                'upiQrImage',
-                'pureVegRestaurant',
-                'chickenType',
-                'profileImage',
-                'coverImages',
-                'menuImages',
-                'openingTime',
-                'closingTime',
-                'openDays',
-                'estimatedDeliveryTime',
-                'estimatedDeliveryTimeMinutes',
-                'diningSettings',
-                'isAcceptingOrders',
-                'status',
-                'approvedAt',
-                'pendingUpdateReason',
-                'createdAt',
-                'updatedAt'
-            ].join(' ')
-        }
-    ).lean();
-
     return toRestaurantProfile(doc);
 };
 

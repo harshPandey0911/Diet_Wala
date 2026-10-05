@@ -8,24 +8,11 @@ import ProtectedRoute from "@food/components/ProtectedRoute"
 
 // Home & Discovery
 const Home = lazy(() => import("@food/pages/user/Home"))
-const Dining = lazy(() => import("@food/pages/user/Dining"))
-const DiningCategory = lazy(() => import("@food/pages/user/DiningCategory"))
-const DiningExplore50 = lazy(() => import("@food/pages/user/DiningExplore50"))
-const DiningExploreNear = lazy(() => import("@food/pages/user/DiningExploreNear"))
-const Coffee = lazy(() => import("@food/pages/user/Coffee"))
 const Under250 = lazy(() => import("@food/pages/user/Under250"))
 const Categories = lazy(() => import("@food/pages/user/Categories"))
 const CategoryPage = lazy(() => import("@food/pages/user/CategoryPage"))
 const Restaurants = lazy(() => import("@food/pages/user/restaurants/Restaurants"))
 const RestaurantDetails = lazy(() => import("@food/pages/user/restaurants/RestaurantDetails"))
-const DiningRestaurantDetails = lazy(() => import("@food/pages/user/dining/DiningRestaurantDetails"))
-const TableBooking = lazy(() => import("@food/pages/user/dining/TableBooking"))
-const TableBookingConfirmation = lazy(() => import("@food/pages/user/dining/TableBookingConfirmation"))
-const TableBookingSuccess = lazy(() => import("@food/pages/user/dining/TableBookingSuccess"))
-const TableModificationPolicy = lazy(() => import("@food/pages/user/dining/TableModificationPolicy"))
-const TableCancellationPolicy = lazy(() => import("@food/pages/user/dining/TableCancellationPolicy"))
-const TableEditUserPage = lazy(() => import("@food/pages/user/dining/TableEditUserPage"))
-const MyBookings = lazy(() => import("@food/pages/user/dining/MyBookings"))
 const SearchResults = lazy(() => import("@food/pages/user/search/ProfessionalSearch"))
 const ProductDetail = lazy(() => import("@food/pages/user/ProductDetail"))
 
@@ -100,26 +87,9 @@ export default function UserRouter() {
         <Route element={<UserLayout />}>
           {/* Home & Discovery */}
           <Route path="" element={<Home />} />
-          <Route path="dining" element={<Dining />} />
-          <Route path="dining/:category" element={<DiningCategory />} />
-          <Route path="dining/explore/upto50" element={<DiningExplore50 />} />
-          <Route path="dining/explore/near-rated" element={<DiningExploreNear />} />
-          <Route path="dining/coffee" element={<Coffee />} />
-          <Route path="dining/:diningType/:slug" element={<DiningRestaurantDetails />} />
-          <Route path="dining/book/:slug" element={<TableBooking />} />
-          <Route path="dining/book-confirmation" element={<TableBookingConfirmation />} />
-          <Route path="dining/book-success" element={<TableBookingSuccess />} />
-          <Route path="dining/modification-policy" element={<TableModificationPolicy />} />
-          <Route path="dining/cancellation-policy" element={<TableCancellationPolicy />} />
-          <Route path="dining/edit-user" element={<TableEditUserPage />} />
-          <Route
-            path="bookings"
-            element={
-              <ProtectedRoute requiredRole="user" loginPath="/user/auth/login">
-                <MyBookings />
-              </ProtectedRoute>
-            }
-          />
+          {/* Dining was removed: send old dining/bookings links to home */}
+          <Route path="dining/*" element={<Navigate to="/food/user" replace />} />
+          <Route path="bookings" element={<Navigate to="/food/user" replace />} />
           <Route path="under-250" element={<Under250 />} />
           <Route path="categories" element={<Categories />} />
           <Route path="category/:category" element={<CategoryPage />} />
@@ -284,14 +254,6 @@ export default function UserRouter() {
             element={
               <ProtectedRoute requiredRole="user" loginPath="/user/auth/login">
                 <ReferEarn />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="profile/dining-bookings"
-            element={
-              <ProtectedRoute requiredRole="user" loginPath="/user/auth/login">
-                <MyBookings />
               </ProtectedRoute>
             }
           />

@@ -9,14 +9,11 @@ import {
     getCurrentRestaurantController,
     updateRestaurantProfileController,
     updateRestaurantAcceptingOrdersController,
-    updateCurrentRestaurantDiningSettingsController,
     uploadRestaurantProfileImageController,
     uploadRestaurantMenuImageController,
     uploadRestaurantCoverImagesController,
     uploadRestaurantMenuImagesController,
-    getRestaurantComplaintsController,
-    createDiningRequestController,
-    getPendingDiningRequestController
+    getRestaurantComplaintsController
 } from '../controllers/restaurant.controller.js';
 import {
     createRestaurantSupportTicketController,
@@ -59,6 +56,7 @@ import { sendError } from '../../../../utils/response.js';
 import { getRestaurantFinanceController } from '../controllers/restaurantFinance.controller.js';
 import { getRestaurantDashboardStatsController } from '../controllers/restaurantDashboard.controller.js';
 import { deleteRestaurantAccountController } from '../controllers/deleteAccount.controller.js';
+import { getMySubscriptionController } from '../../subscription/controllers/subscription.controller.js';
 
 import { cacheResponse, invalidateCache } from '../../../../middleware/cache.js';
 
@@ -106,13 +104,11 @@ router.patch('/availability', authMiddleware, requireRestaurant, async (req, res
 }, updateRestaurantAcceptingOrdersController);
 router.patch('/profile', authMiddleware, requireRestaurant, updateRestaurantProfileController);
 router.patch('/availability', authMiddleware, requireRestaurant, updateRestaurantAcceptingOrdersController);
-router.patch('/dining-settings', authMiddleware, requireRestaurant, updateCurrentRestaurantDiningSettingsController);
-router.post('/dining-settings/request', authMiddleware, requireRestaurant, createDiningRequestController);
-router.get('/dining-settings/pending', authMiddleware, requireRestaurant, getPendingDiningRequestController);
 router.get('/outlet-timings', authMiddleware, requireRestaurant, getCurrentRestaurantOutletTimingsController);
 router.put('/outlet-timings', authMiddleware, requireRestaurant, upsertCurrentRestaurantOutletTimingsController);
 router.get('/finance', authMiddleware, requireRestaurant, getRestaurantFinanceController);
 router.get('/dashboard-stats', authMiddleware, requireRestaurant, getRestaurantDashboardStatsController);
+router.get('/subscription', authMiddleware, requireRestaurant, getMySubscriptionController);
 router.post('/withdraw', authMiddleware, requireRestaurant, createWithdrawalRequestController);
 router.get('/withdrawals', authMiddleware, requireRestaurant, listMyWithdrawalsController);
 router.post(

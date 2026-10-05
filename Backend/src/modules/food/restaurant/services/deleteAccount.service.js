@@ -125,9 +125,7 @@ export async function deleteRestaurantAccount(userId) {
             { col: 'food_addons', field: 'restaurantId' },
             { col: 'food_restaurant_menus', field: 'restaurantId' },
             { col: 'food_restaurant_outlet_timings', field: 'restaurantId' },
-            { col: 'food_restaurant_commissions', field: 'restaurantId' },
-            { col: 'food_dining_restaurants', field: 'restaurantId' },
-            { col: 'food_dining_requests', field: 'restaurantId' }
+            { col: 'food_restaurant_commissions', field: 'restaurantId' }
         ];
 
         for (const { col, field } of collectionsToClean) {

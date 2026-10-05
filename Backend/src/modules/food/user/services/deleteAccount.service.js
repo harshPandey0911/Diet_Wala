@@ -98,7 +98,6 @@ export async function deleteUserAccount(userId) {
             'food_user_wallets',
             'food_support_tickets',
             'food_safety_emergency_reports',
-            'food_dining_requests',
             'food_offer_usages',
             'food_referral_logs'
         ];

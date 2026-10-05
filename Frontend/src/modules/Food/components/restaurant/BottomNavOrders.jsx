@@ -61,7 +61,7 @@ export default function BottomNavOrders() {
     : "/food/restaurant"
 
   const { unreadCount } = useNotificationInbox("restaurant", { limit: 20, pollMs: 60 * 1000 })
-  const { newOrder, newReservation } = useRestaurantNotifications();
+  const { newOrder } = useRestaurantNotifications();
 
   const tabs = useMemo(() => getOrdersTabs(basePath), [basePath])
 
@@ -126,7 +126,7 @@ export default function BottomNavOrders() {
                       />
                     </motion.div>
                     {/* Notification Dot */}
-                    {((tab.id === 'orders' && (newOrder || newReservation)) || 
+                    {((tab.id === 'orders' && newOrder) || 
                       (tab.id === 'feedback' && unreadCount > 0)) && (
                       <span className="absolute top-2 right-2">
                         <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-75" />

@@ -6,7 +6,6 @@ import {
     getCurrentRestaurantProfile,
     updateRestaurantProfile,
     updateRestaurantAcceptingOrders,
-    updateCurrentRestaurantDiningSettings,
     uploadRestaurantProfileImage,
     uploadRestaurantMenuImage,
     uploadRestaurantCoverImages,
@@ -14,10 +13,6 @@ import {
     listPublicOffers,
     getRestaurantComplaints
 } from '../services/restaurant.service.js';
-import {
-    createDiningRequest,
-    getPendingDiningRequest
-} from '../../dining/services/dining.service.js';
 import { validateRestaurantRegisterDto } from '../validators/restaurant.validator.js';
 import { sendResponse } from '../../../../utils/response.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
@@ -115,16 +110,6 @@ export const updateRestaurantAcceptingOrdersController = async (req, res, next) 
     }
 };
 
-export const updateCurrentRestaurantDiningSettingsController = async (req, res, next) => {
-    try {
-        const restaurantId = req.user?.userId;
-        const restaurant = await updateCurrentRestaurantDiningSettings(restaurantId, req.body || {});
-        return sendResponse(res, 200, 'Dining settings updated successfully', { restaurant });
-    } catch (error) {
-        next(error);
-    }
-};
-
 export const uploadRestaurantProfileImageController = async (req, res, next) => {
     try {
         const restaurantId = req.user?.userId;
@@ -183,23 +168,4 @@ export const getRestaurantComplaintsController = async (req, res, next) => {
     }
 };
 
-export const createDiningRequestController = async (req, res, next) => {
-    try {
-        const restaurantId = req.user?.userId;
-        const request = await createDiningRequest(restaurantId, req.body || {});
-        return sendResponse(res, 201, 'Dining update request submitted successfully', request);
-    } catch (error) {
-        next(error);
-    }
-};
-
-export const getPendingDiningRequestController = async (req, res, next) => {
-    try {
-        const restaurantId = req.user?.userId;
-        const request = await getPendingDiningRequest(restaurantId);
-        return sendResponse(res, 200, 'Pending request fetched successfully', request);
-    } catch (error) {
-        next(error);
-    }
-};
 

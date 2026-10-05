@@ -13,6 +13,7 @@ import { cn } from "@food/utils/utils"
 import { RESTAURANT_SIDEBAR_SECTIONS } from "@food/utils/restaurantLayoutConfig"
 import { getCachedSettings, loadBusinessSettings } from "@food/utils/businessSettings"
 import { clearModuleAuth } from "@food/utils/auth"
+import { restaurantAPI } from "@food/api"
 import DietValaLogo from "@/shared/components/DietValaLogo"
 import { useState, useEffect } from "react"
 
@@ -33,7 +34,8 @@ export default function RestaurantSidebar({
   const { pathname } = useLocation()
   const [companyName, setCompanyName] = useState("Restaurant Panel")
   const [logoUrl, setLogoUrl] = useState(null)
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  // "My Subscription" is shown only when subscriptions are turned on for this restaurant's zone
+  const [showSubscriptionMenu, setShowSubscriptionMenu] = useState(false)
 
   const handleLogout = () => {
     try {
@@ -63,23 +65,18 @@ export default function RestaurantSidebar({
   }, [])
 
   useEffect(() => {
-    const checkActiveSub = () => {
-      try {
-        const storedSubs = localStorage.getItem("dietvala_restaurant_subscriptions")
-        if (storedSubs) {
-          const map = JSON.parse(storedSubs)
-          const active = Object.values(map).some((sub) => sub?.status === "active")
-          if (active) {
-            setHasActiveSubscription(true)
-            return
-          }
-        }
-      } catch {}
-      setHasActiveSubscription(false)
+    let cancelled = false
+    restaurantAPI
+      .getMySubscription()
+      .then((res) => {
+        if (!cancelled) setShowSubscriptionMenu(res?.data?.data?.enabled === true)
+      })
+      .catch(() => {
+        if (!cancelled) setShowSubscriptionMenu(false)
+      })
+    return () => {
+      cancelled = true
     }
-    checkActiveSub()
-    window.addEventListener("storage", checkActiveSub)
-    return () => window.removeEventListener("storage", checkActiveSub)
   }, [])
 
   const isActive = (route) => {
@@ -130,7 +127,7 @@ export default function RestaurantSidebar({
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {RESTAURANT_SIDEBAR_SECTIONS.map((section) => {
             const filteredItems = section.items.filter((item) => {
-              if (item.route.endsWith("/subscription") && !hasActiveSubscription) {
+              if (item.route.endsWith("/subscription") && !showSubscriptionMenu) {
                 return false
               }
               return true

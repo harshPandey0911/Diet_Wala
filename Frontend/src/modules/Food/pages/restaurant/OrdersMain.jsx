@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import notificationSound from "@food/assets/audio/alert.mp3";
-import { restaurantAPI, diningAPI } from "@food/api";
+import { restaurantAPI } from "@food/api";
 import { useAuthStore } from "@/core/auth/auth.store";
 import { useRestaurantNotifications } from "@food/hooks/useRestaurantNotifications";
 import useRestaurantLenis from "@food/hooks/useRestaurantLenis";
@@ -626,185 +626,6 @@ function DeadOrders({ onSelectOrder, refreshToken = 0 }) {
   );
 }
 
-// Table Bookings List Component
-function TableBookings() {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const handleStatusUpdate = async (bookingId, newStatus) => {
-    try {
-      const response = await diningAPI.updateBookingStatusRestaurant(bookingId, newStatus);
-      if (response.data.success) {
-        setBookings(prev => prev.map(b =>
-          b._id === bookingId ? { ...b, status: newStatus } : b
-        ));
-        toast.success(`Booking ${newStatus === 'accepted' ? 'accepted' : 'declined'}`);
-      }
-    } catch (error) {
-      debugError("Error updating booking status:", error);
-      toast.error("Failed to update booking status");
-    }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchBookings = async () => {
-      try {
-        const res = await restaurantAPI.getCurrentRestaurant();
-        const restaurant =
-          res.data?.data?.restaurant || res.data?.restaurant || res.data?.data;
-        const restaurantId = restaurant?._id || restaurant?.id;
-
-        if (restaurantId) {
-          const response = await diningAPI.getRestaurantBookings(restaurant);
-          if (isMounted && response.data.success) {
-            setBookings(response.data.data);
-          }
-        }
-      } catch (error) {
-        debugError("Error fetching table bookings:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchBookings();
-    const interval = setInterval(fetchBookings, 8000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      const res = await restaurantAPI.getCurrentRestaurant();
-      const restaurant = res.data?.data?.restaurant || res.data?.restaurant || res.data?.data;
-      const response = await diningAPI.getRestaurantBookings(restaurant);
-      if (response.data.success) {
-        setBookings(response.data.data);
-        toast.success("Bookings refreshed");
-      }
-    } catch {
-      toast.error("Refresh failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading)
-    return (
-      <div className="text-center py-10 text-gray-400">Loading bookings...</div>
-    );
-
-  return (
-    <div className="pt-1 pb-6 px-1">
-      <div className="flex items-baseline justify-between mb-4 px-1">
-        <h2 className="text-base font-semibold text-black">Table Bookings</h2>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleRefresh}
-            className="text-[10px] font-black text-primary uppercase tracking-widest hover:opacity-80 transition-opacity"
-          >
-            Refresh
-          </button>
-          <span className="text-xs text-gray-500 font-medium">({bookings.length})</span>
-        </div>
-      </div>
-
-      {bookings.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-          <p className="text-gray-400 text-sm">No table bookings yet</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {bookings.map((booking) => (
-            <div
-              key={booking._id}
-              className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm transition-all hover:border-gray-300">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-gray-900">
-                    {booking.user?.name}
-                  </h3>
-                  <p className="text-[11px] text-gray-500">
-                    {booking.user?.phone || "No phone"}
-                  </p>
-                </div>
-                <span
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase shadow-sm ${String(booking.status || '').toLowerCase() === "pending"
-                      ? "bg-amber-50 text-amber-600 border border-amber-100"
-                      : ["accepted", "confirmed"].includes(String(booking.status || '').toLowerCase())
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                        : String(booking.status || '').toLowerCase() === "checked-in"
-                          ? "bg-orange-100 text-orange-700"
-                          : String(booking.status || '').toLowerCase() === "completed"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-rose-100 text-rose-700"
-                    }`}>
-                  {String(booking.status || '').toLowerCase() === "pending" ? "APPROVAL REQD" :
-                    ["accepted", "confirmed"].includes(String(booking.status || '').toLowerCase()) ? "CONFIRMED" :
-                      booking.status}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4 text-[11px] text-gray-600 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                  <span>
-                    {new Date(booking.date).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-gray-400" />
-                  <span>{booking.timeSlot}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-gray-400" />
-                  <span>{booking.guests} Guests</span>
-                </div>
-              </div>
-
-              {booking.specialRequest && (
-                <div className="mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
-                  <p className="text-[10px] text-blue-700 italic flex items-start gap-1">
-                    <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
-                    <span className="line-clamp-2">
-                      {booking.specialRequest}
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {String(booking.status || '').toLowerCase() === 'pending' && (
-                <div className="mt-4 flex gap-2">
-                  <button
-                    onClick={() => handleStatusUpdate(booking._id, 'accepted')}
-                    className="flex-1 py-2 bg-emerald-600 text-white text-[11px] font-black rounded-xl hover:bg-emerald-700 transition-colors uppercase tracking-widest shadow-sm"
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleStatusUpdate(booking._id, 'cancelled')}
-                    className="flex-1 py-2 bg-white border border-rose-200 text-slate-600 text-[11px] font-black rounded-xl hover:bg-slate-50 transition-colors uppercase tracking-widest"
-                  >
-                    Decline
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // New Orders List Component
 function NewOrders({ onSelectOrder }) {
   const pollMs =
@@ -1224,47 +1045,14 @@ export default function OrdersMain() {
   const cancelDismissRef = useRef(null);
 
   // Pending counts for tabs
-  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [pendingDiningRequest, setPendingDiningRequest] = useState(null);
 
   // Fetch pending counts and settings
   useEffect(() => {
     if (!isAuthenticated) return;
     const fetchCounts = async () => {
       try {
-        // Fetch current restaurant data
-        const resRes = await restaurantAPI.getCurrentRestaurant();
-        const restaurantData = resRes.data?.data?.restaurant || resRes.data?.restaurant || resRes.data?.data;
-
-        if (restaurantData?._id || restaurantData?.id) {
-          // 1. Fetch bookings
-          const res = await diningAPI.getRestaurantBookings(restaurantData);
-          if (res.data.success) {
-            const bookings = Array.isArray(res.data.data) ? res.data.data : [];
-            const pending = bookings.filter(b => String(b.status).toLowerCase() === 'pending').length;
-
-            // If new pending booking found, maybe show toast
-            if (pending > pendingBookingsCount) {
-              toast.info(`New table booking request! Check the "Table Booking" tab.`);
-              // Optional: Play sound
-              if (audioRef.current && !isMutedRef.current) {
-                audioRef.current.play().catch(() => { });
-              }
-            }
-            setPendingBookingsCount(pending);
-          }
-
-          // 2. Fetch pending dining request (for restaurant's own request to enable/update dining)
-          const requestRes = await restaurantAPI.getPendingDiningRequest();
-          if (requestRes.data.success && requestRes.data.data) {
-            setPendingDiningRequest(requestRes.data.data);
-          } else {
-            setPendingDiningRequest(null);
-          }
-        }
-
-        // 3. Fetch pending orders
+        // Fetch pending orders
         const ordersRes = await restaurantAPI.getOrders({ page: 1, limit: 100 });
         if (ordersRes.data.success) {
           const orders = Array.isArray(ordersRes.data.data?.orders) ? ordersRes.data.data.orders : [];
@@ -2577,19 +2365,13 @@ export default function OrdersMain() {
                 <div className="flex items-center gap-2 relative z-10">
                   <span className="flex items-center gap-1.5">
                     {tab.label}
-                    {tab.id === 'table-booking' && pendingBookingsCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-black animate-bounce">
-                        {pendingBookingsCount}
-                      </span>
-                    )}
                     {tab.id === 'all' && pendingOrdersCount > 0 && (
                       <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-black">
                         {pendingOrdersCount}
                       </span>
                     )}
                   </span>
-                  {((tab.id === 'table-booking' && pendingBookingsCount > 0) ||
-                    (tab.id === 'all' && pendingOrdersCount > 0)) && (
+                  {(tab.id === 'all' && pendingOrdersCount > 0) && (
                       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
                     )}
                 </div>
@@ -2755,33 +2537,6 @@ export default function OrdersMain() {
               )}
             </motion.div>
           )}
-
-        {/* Dining Approval Pending Card */}
-        {pendingDiningRequest && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 mb-4 rounded-2xl shadow-sm px-6 py-4 bg-white border border-blue-200">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-full bg-blue-100">
-                <Clock className="w-4 h-4 text-blue-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900">
-                Dining Activation Request Pending
-              </h3>
-            </div>
-            <p className="text-sm text-gray-600">
-              Your request to {pendingDiningRequest.requestedSettings?.isEnabled ? "enable" : "update"} dining services is being reviewed by our team. You'll be notified via SMS/Dashboard once it's approved.
-            </p>
-            <div className="mt-3 flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-widest">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-              </span>
-              Under Review
-            </div>
-          </motion.div>
-        )}
 
         <AnimatePresence mode="wait">
           <motion.div

@@ -32,13 +32,8 @@ export default function Collections() {
     { id: "bookmarks", name: "Bookmarks", dishes: 0, restaurants: 0, isDefault: true }
   ])
 
-  // Dining collections
-  const [diningCollections, setDiningCollections] = useState([
-    { id: "bookmarks", name: "Bookmarks", dishes: 0, restaurants: 0, isDefault: true }
-  ])
-
-  const currentCollections = activeTab === "delivery" ? deliveryCollections : diningCollections
-  const setCurrentCollections = activeTab === "delivery" ? setDeliveryCollections : setDiningCollections
+  const currentCollections = deliveryCollections
+  const setCurrentCollections = setDeliveryCollections
 
   const handleCreateCollection = () => {
     if (newCollectionName.trim()) {
@@ -90,16 +85,6 @@ export default function Collections() {
           >
             Delivery
             {activeTab === "delivery" && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-primary rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("dining")}
-            className={`flex-1 py-4 text-center font-semibold transition-colors relative ${activeTab === "dining" ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"
-              }`}
-          >
-            Dining
-            {activeTab === "dining" && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-primary rounded-full" />
             )}
           </button>

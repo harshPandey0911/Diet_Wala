@@ -241,15 +241,6 @@ export const adminSidebarMenu = [
   },
   {
     type: "section",
-    label: "DINING MANAGEMENT",
-    items: [
-      { type: "link", label: "Dining Management", path: "/admin/food/dining-management", icon: "UtensilsCrossed" },
-      { type: "link", label: "Dining List", path: "/admin/food/dining-list", icon: "FileText" },
-      { type: "link", label: "Dining Requests", path: "/admin/food/dining-requests", icon: "CheckCircle2" },
-    ],
-  },
-  {
-    type: "section",
     label: "EMPLOYEE MANAGEMENT",
     items: [
       { type: "link", label: "Sub Admins", path: "/admin/food/sub-admins", icon: "Users" },

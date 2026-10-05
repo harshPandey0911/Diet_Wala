@@ -100,7 +100,6 @@ export {
 export const useRestaurantNotificationsState = () => {
   const socketRef = useRef(null);
   const [orderQueue, setOrderQueue] = useState([]); // Queue of pending orders
-  const [newReservation, setNewReservation] = useState(null);
   const [pickupOtpReveal, setPickupOtpRevealState] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -304,14 +303,6 @@ export const useRestaurantNotificationsState = () => {
 
     if (isTabHidden) {
       showBackgroundOrderNotification(orderData);
-    }
-  };
-
-  const handleIncomingReservationAlert = (bookingData) => {
-    // Basic alert logic for reservations
-    playNotificationSound(bookingData);
-    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-       // Optional: show background notification for reservation
     }
   };
 
@@ -788,13 +779,6 @@ export const useRestaurantNotificationsState = () => {
       handleIncomingOrderAlert(normalizedOrder, 'socket');
     });
     
-    // Listen for new dining booking notifications
-    socketRef.current.on('new_dining_booking', (bookingData) => {
-      debugLog('?? New dining booking received:', bookingData);
-      setNewReservation(bookingData);
-      handleIncomingReservationAlert(bookingData);
-    });
-
     // Listen for sound notification event
     socketRef.current.on('play_notification_sound', (data) => {
       debugLog('?? Sound notification:', data);
@@ -966,13 +950,9 @@ export const useRestaurantNotificationsState = () => {
   return {
     newOrder,
     orderQueue,
-    newReservation,
     pickupOtpReveal,
     clearPickupOtpReveal: () => setPickupOtpReveal(null),
     clearNewOrder,
-    clearNewReservation: () => {
-      setNewReservation(null);
-    },
     isConnected,
     playNotificationSound
   };

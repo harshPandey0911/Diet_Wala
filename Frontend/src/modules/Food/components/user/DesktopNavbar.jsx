@@ -35,7 +35,6 @@ export default function DesktopNavbar({ showLogo = true }) {
     const [companyName, setCompanyName] = useState(null)
     const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false)
     const [under250PriceLimit, setUnder250PriceLimit] = useState(250)
-    const [showDining, setShowDining] = useState(true)
     const navRef = useRef(null)
     const cartCount = getCartCount()
 
@@ -77,10 +76,9 @@ export default function DesktopNavbar({ showLogo = true }) {
     }
 
     // Check active routes - support both /user/* and /* paths
-    const isDining = location.pathname === "/food/user/dining" || location.pathname === "/food/dining"
     const isUnder250 = location.pathname === "/food/user/under-250" || location.pathname === "/food/under-250"
     const isProfile = location.pathname.startsWith("/food/user/profile") || location.pathname.startsWith("/food/profile")
-    const isDelivery = !isDining && !isUnder250 && !isProfile && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/dining") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
+    const isDelivery = !isUnder250 && !isProfile && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
     const isBannerRoute =
         location.pathname === "/food/user" ||
         location.pathname === "/food" ||
@@ -161,14 +159,10 @@ export default function DesktopNavbar({ showLogo = true }) {
                 if (typeof settings.under250PriceLimit === 'number') {
                     setUnder250PriceLimit(settings.under250PriceLimit)
                 }
-                if (typeof settings.showDining === 'boolean') {
-                    setShowDining(settings.showDining)
-                }
             })
             .catch(() => {
                 if (!cancelled) {
                     setUnder250PriceLimit(250)
-                    setShowDining(true)
                 }
             })
         return () => { cancelled = true }
@@ -367,28 +361,6 @@ export default function DesktopNavbar({ showLogo = true }) {
                                     />
                                 )}
                             </Link>
-
-                            {/* Dining Tab */}
-                            {showDining && (
-                                <Link
-                                    to="/food/user/dining"
-                                    className={`flex flex-col items-center gap-1 px-3 py-1 transition-all relative group ${isDining
-                                        ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
-                                        : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 font-bold"
-                                        }`}
-                                >
-                                    <span className="text-xs tracking-wider uppercase">Dining</span>
-                                    {isDining && (
-                                        <motion.div
-                                            layoutId="navIndicator"
-                                            className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ duration: 0.3 }}
-                                        />
-                                    )}
-                                </Link>
-                            )}
 
                             {/* Profile Tab */}
                             <Link

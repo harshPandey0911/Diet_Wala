@@ -6,7 +6,6 @@ import * as addonsApprovalController from '../controllers/addonsApproval.control
 import * as businessSettingsController from '../controllers/businessSettings.controller.js';
 import * as feedbackExperienceController from '../controllers/feedbackExperience.controller.js';
 import * as notificationBroadcastController from '../controllers/notificationBroadcast.controller.js';
-import * as diningAdminController from '../../dining/controllers/diningAdmin.controller.js';
 import * as orderController from '../../orders/controllers/order.controller.js';
 import { getAdminPageController, upsertAdminPageController } from '../controllers/pageContent.controller.js';
 import * as liveMonitorController from '../controllers/liveMonitor.controller.js';
@@ -14,6 +13,7 @@ import * as appIntroAdController from '../controllers/appIntroAd.controller.js';
 import * as loyaltyController from '../../loyalty/controllers/loyalty.controller.js';
 import { upload } from '../../../../middleware/upload.js';
 import menuBulkRoutes from './menuBulk.routes.js';
+import subscriptionAdminRoutes from '../../subscription/routes/subscriptionAdmin.routes.js';
 
 const router = express.Router();
 
@@ -28,6 +28,9 @@ router.get('/fee-settings/public', adminController.getFeeSettings);
 import { requireAdmin, requireSuperAdmin } from '../../../../core/auth/auth.middleware.js';
 
 router.use(requireAdmin);
+
+// ----- Restaurant Subscriptions (zone-wise) -----
+router.use('/subscriptions', subscriptionAdminRoutes);
 
 // ----- Sub Admins -----
 router.get('/sub-admins', requireSuperAdmin, adminController.getSubAdmins);
@@ -217,16 +220,6 @@ router.post('/zones', adminController.createZone);
 router.patch('/zones/:id', adminController.updateZone);
 router.delete('/zones/:id', adminController.deleteZone);
 
-// ----- Dining -----
-router.get('/dining/categories', diningAdminController.getDiningCategories);
-router.post('/dining/categories', diningAdminController.createDiningCategory);
-router.patch('/dining/categories/:id', diningAdminController.updateDiningCategory);
-router.delete('/dining/categories/:id', diningAdminController.deleteDiningCategory);
-router.get('/dining/restaurants', diningAdminController.getDiningRestaurants);
-router.patch('/dining/restaurants/:restaurantId', diningAdminController.updateDiningRestaurant);
-router.get('/dining/requests', diningAdminController.listAllDiningRequests);
-router.patch('/dining/requests/:id/approve', diningAdminController.approveDiningRequest);
-router.patch('/dining/requests/:id/reject', diningAdminController.rejectDiningRequest);
 
 // ----- Orders -----
 router.get('/orders', orderController.listOrdersAdminController);

@@ -391,28 +391,30 @@ export const adminAPI = {
     adminClient.get("/food/admin/restaurants/reviews", {
       params: { page: 1, limit: 1000, ...params }
     }),
+  /** Restaurant subscriptions (zone-wise) */
+  getSubscriptionZones: () =>
+    adminClient.get("/food/admin/subscriptions/zones"),
+  setSubscriptionZoneEnabled: (zoneId, enabled) =>
+    adminClient.patch(`/food/admin/subscriptions/zones/${String(zoneId)}`, { enabled: Boolean(enabled) }),
+  getSubscriptionPackages: () =>
+    adminClient.get("/food/admin/subscriptions/packages"),
+  createSubscriptionPackage: (body) =>
+    adminClient.post("/food/admin/subscriptions/packages", body ?? {}),
+  updateSubscriptionPackage: (id, body) =>
+    adminClient.patch(`/food/admin/subscriptions/packages/${String(id)}`, body ?? {}),
+  deleteSubscriptionPackage: (id) =>
+    adminClient.delete(`/food/admin/subscriptions/packages/${String(id)}`),
+  getRestaurantSubscriptions: (params = {}) =>
+    adminClient.get("/food/admin/subscriptions/restaurants", { params }),
+  assignRestaurantSubscription: (restaurantId, body) =>
+    adminClient.post(`/food/admin/subscriptions/restaurants/${String(restaurantId)}/assign`, body ?? {}),
+  setRestaurantSubscriptionStatus: (restaurantId, status) =>
+    adminClient.patch(`/food/admin/subscriptions/restaurants/${String(restaurantId)}/status`, { status }),
+  getRestaurantSubscriptionHistory: (restaurantId) =>
+    adminClient.get(`/food/admin/subscriptions/restaurants/${String(restaurantId)}/history`),
   /** Categories (admin) */
   getCategories: (params = {}) =>
     adminClient.get("/food/admin/categories", { params }),
-  /** Dining categories (admin) */
-  getDiningCategories: (params = {}) =>
-    adminClient.get("/food/admin/dining/categories", { params }),
-  createDiningCategory: (body) =>
-    adminClient.post("/food/admin/dining/categories", body ?? {}),
-  updateDiningCategory: (id, body) =>
-    adminClient.patch(`/food/admin/dining/categories/${String(id)}`, body ?? {}),
-  deleteDiningCategory: (id) =>
-    adminClient.delete(`/food/admin/dining/categories/${String(id)}`),
-  getDiningRestaurants: (params = {}) =>
-    adminClient.get("/food/admin/dining/restaurants", { params }),
-  updateRestaurantDiningSettings: (restaurantId, body) =>
-    adminClient.patch(`/food/admin/dining/restaurants/${String(restaurantId)}`, body ?? {}),
-  getDiningRequests: (params = {}) =>
-    adminClient.get("/food/admin/dining/requests", { params }),
-  approveDiningRequest: (id) =>
-    adminClient.patch(`/food/admin/dining/requests/${String(id)}/approve`, {}),
-  rejectDiningRequest: (id, reason) =>
-    adminClient.patch(`/food/admin/dining/requests/${String(id)}/reject`, { reason }),
   createCategory: (body) =>
     adminClient.post("/food/admin/categories", body ?? {}),
   updateCategory: (id, body) =>
@@ -791,18 +793,6 @@ export const restaurantAPI = {
         restaurantCurrentCacheTime = Date.now();
         return res;
       }),
-  updateDiningSettings: (body) =>
-    restaurantClient
-      .patch("/food/restaurant/dining-settings", body ?? {})
-      .then((res) => {
-        restaurantCurrentCached = res;
-        restaurantCurrentCacheTime = Date.now();
-        return res;
-      }),
-  requestDiningUpdate: (body) =>
-    restaurantClient.post("/food/restaurant/dining-settings/request", body ?? {}),
-  getPendingDiningRequest: () =>
-    restaurantClient.get("/food/restaurant/dining-settings/pending"),
   /** PATCH /food/restaurant/availability. Body: { isAcceptingOrders: boolean } */
   updateAcceptingOrders: (isAcceptingOrders) =>
     restaurantClient
@@ -888,6 +878,9 @@ export const restaurantAPI = {
         });
       return { data: { success: true, data: { coupons } } };
     }),
+  /** Current subscription + plans for this restaurant's zone */
+  getMySubscription: () =>
+    restaurantClient.get("/food/restaurant/subscription"),
   /** Categories (restaurant dashboard) */
   getCategories: (params = {}) =>
     // Compact payload for item creation forms (id + name only).
@@ -2147,73 +2140,6 @@ export const orderAPI = {
     ),
 };
 
-// Dining bookings now handled by backend
-
-
-export const diningAPI = {
-  getCategories: (params = {}) =>
-    userClient.get("/food/dining/categories/public", { params }),
-  getRestaurants: (params = {}) =>
-    userClient.get("/food/dining/restaurants/public", { params }),
-  getOccupiedSeatsPublic: (restaurantId) =>
-    userClient.get(`/food/dining/restaurants/${String(restaurantId)}/occupied-seats/public`),
-  getHeroBanners: () => userClient.get("/food/hero-banners/ads/public"),
-  getRestaurantBySlug: (slug, config = {}) =>
-    userClient.get(`/food/restaurant/restaurants/${String(slug)}`, config),
-  getOfferBanners: () => Promise.resolve({ data: { success: true, data: [] } }),
-  getStories: () => Promise.resolve({ data: { success: true, data: [] } }),
-  getBankOffers: () => Promise.resolve({ data: { success: true, data: [] } }),
-  
-  // Real API calls for Bookings
-  getBookings: () => 
-    userClient.get("/food/dining/bookings/my"),
-  
-  getRestaurantBookings: (candidate) => {
-    const id = candidate?._id || candidate?.id || candidate;
-    return restaurantClient.get(`/food/dining/bookings/restaurant/${String(id)}`);
-  },
-  
-  updateBookingStatusRestaurant: (bookingId, status) => 
-    restaurantClient.patch(`/food/dining/bookings/${String(bookingId)}/status`, { status }),
-  
-  createReview: (payload = {}) => 
-    userClient.post(`/food/dining/bookings/${String(payload?.bookingId)}/review`, payload),
-  
-  createBooking: (payload = {}) => 
-    userClient.post("/food/dining/bookings", payload),
-
-  cancelBooking: (bookingId) =>
-    userClient.patch(`/food/dining/bookings/${String(bookingId)}/cancel`),
-
-  // Public endpoint - no auth required, fetches occupied seats for a specific date+timeSlot
-  getSlotAvailability: (restaurantId, date, timeSlot) => {
-    const dateStr = (date instanceof Date ? date : new Date(date)).toISOString();
-    return apiClient.get(`/food/dining/restaurants/${String(restaurantId)}/slot-availability/public`, {
-      params: { date: dateStr, timeSlot: String(timeSlot) }
-    });
-  },
-
-  // ─── Table Management (Restaurant Auth) ──────────────────────────────────
-  addDiningTable: (payload) =>
-    restaurantClient.post('/food/dining/tables', payload),
-
-  getMyDiningTables: () =>
-    restaurantClient.get('/food/dining/tables/my'),
-
-  updateDiningTable: (id, payload) =>
-    restaurantClient.patch(`/food/dining/tables/${String(id)}`, payload),
-
-  deleteDiningTable: (id) =>
-    restaurantClient.delete(`/food/dining/tables/${String(id)}`),
-
-  // ─── Public: Available tables for user booking ────────────────────────────
-  getAvailableTables: (restaurantId, date, timeSlot) => {
-    const dateStr = (date instanceof Date ? date : new Date(date)).toISOString();
-    return apiClient.get(`/food/dining/restaurants/${String(restaurantId)}/tables/public`, {
-      params: { date: dateStr, timeSlot: String(timeSlot) }
-    });
-  },
-};
 export const heroBannerAPI = createStubAPI();
 export const publicAPI = {
   getPrivacy: (key = "privacy") => userClient.get(`/food/pages/${key}`),

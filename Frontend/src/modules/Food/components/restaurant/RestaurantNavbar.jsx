@@ -39,7 +39,7 @@ export default function RestaurantNavbar({
   const [logoUrl, setLogoUrl] = useState(null)
   const searchTimeoutRef = useRef(null)
   const { unreadCount } = useNotificationInbox("restaurant", { limit: 20, pollMs: 5 * 60 * 1000 })
-  const { newReservation, clearNewReservation } = useRestaurantNotifications();
+  useRestaurantNotifications();
 
   // Global search effect
   useEffect(() => {
@@ -485,48 +485,6 @@ export default function RestaurantNavbar({
           <LogOut className="w-5 h-5 text-white" />
         </button>
       </div>
-      
-      {/* Real-time Dining Booking Popup */}
-      {newReservation && (
-        <div className="fixed top-20 left-4 right-4 z-[100] animate-in slide-in-from-top duration-300">
-          <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-primary/10 overflow-hidden">
-            <div className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0">
-                <Utensils className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-black text-slate-900 text-sm">New Table Request!</h4>
-                <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
-                  {newReservation.user?.name || "A Guest"} has requested a table for {newReservation.guests} people.
-                </p>
-              </div>
-              <button 
-                onClick={clearNewReservation}
-                className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="bg-slate-50 p-3 flex gap-2">
-              <button 
-                onClick={() => {
-                  clearNewReservation();
-                  navigate("/food/restaurant/explore");
-                }}
-                className="flex-1 h-10 bg-primary text-white text-xs font-bold rounded-xl uppercase tracking-widest shadow-lg shadow-purple-200"
-              >
-                View Request
-              </button>
-              <button 
-                onClick={clearNewReservation}
-                className="px-4 h-10 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-xl uppercase tracking-widest"
-              >
-                Later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
