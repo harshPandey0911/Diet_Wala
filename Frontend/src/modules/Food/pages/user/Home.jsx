@@ -2228,16 +2228,12 @@ export default function Home() {
 
                   {/* Dynamic Popular Items / Restaurants Carousel */}
                   <div className="flex overflow-x-auto gap-3 pb-1.5 scrollbar-hide -mx-4 px-4">
-                    {(filteredRestaurants && filteredRestaurants.length > 0
-                      ? filteredRestaurants
-                      : restaurantsData && restaurantsData.length > 0
-                      ? restaurantsData
-                      : [
-                          { id: "m1", name: "Chicken & Rice", cuisines: ["High Protein"], minOrderAmount: 150, image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80" },
-                          { id: "m2", name: "Paneer Rice Bowl", cuisines: ["High Protein"], minOrderAmount: 160, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=500&q=80" },
-                          { id: "m3", name: "Soya Chunks Bowl", cuisines: ["High Protein"], minOrderAmount: 120, image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80" }
-                        ]
-                    ).slice(0, 8).map((restaurant, idx) => {
+                    {!(filteredRestaurants?.length || restaurantsData?.length) && (
+                      <div className="w-full rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 px-4 py-6 text-center text-xs font-semibold text-gray-500">
+                        No restaurants are delivering to this location yet.
+                      </div>
+                    )}
+                    {(filteredRestaurants?.length ? filteredRestaurants : restaurantsData || []).slice(0, 8).map((restaurant, idx) => {
                       const restaurantSlug = restaurant.slug || (restaurant.name ? restaurant.name.toLowerCase().replace(/\s+/g, "-") : `res-${idx}`);
                       const bgBadge = idx % 2 === 0 ? "Bestseller" : (idx % 3 === 0 ? "Popular" : null);
 

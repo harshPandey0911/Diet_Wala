@@ -9,6 +9,7 @@ import * as notificationBroadcastController from '../controllers/notificationBro
 import * as orderController from '../../orders/controllers/order.controller.js';
 import { getAdminPageController, upsertAdminPageController } from '../controllers/pageContent.controller.js';
 import * as liveMonitorController from '../controllers/liveMonitor.controller.js';
+import * as devDataController from '../controllers/devData.controller.js';
 import * as appIntroAdController from '../controllers/appIntroAd.controller.js';
 import * as loyaltyController from '../../loyalty/controllers/loyalty.controller.js';
 import { upload } from '../../../../middleware/upload.js';
@@ -37,6 +38,10 @@ router.get('/sub-admins', requireSuperAdmin, adminController.getSubAdmins);
 router.post('/sub-admins', requireSuperAdmin, adminController.createSubAdmin);
 router.put('/sub-admins/:id', requireSuperAdmin, adminController.updateSubAdmin);
 router.delete('/sub-admins/:id', requireSuperAdmin, adminController.deleteSubAdmin);
+
+// ----- Dev Settings: bulk data cleanup (super admin only) -----
+router.get('/dev-data/sections', requireSuperAdmin, devDataController.getDevDataSections);
+router.delete('/dev-data/:section', requireSuperAdmin, devDataController.deleteDevData);
 
 // ----- Broadcast Notifications -----
 router.post('/notifications/broadcast', notificationBroadcastController.createBroadcastNotificationController);

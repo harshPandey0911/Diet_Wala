@@ -42,15 +42,22 @@ export function useAppLogo(appType = 'user_app') {
       void syncLogo();
     };
 
+    // Cross-tab storage changes only re-read the cache. Fetching here made tabs
+    // ping-pong forever: each fetch writes localStorage, which fires `storage`
+    // in every other open tab, which fetched and wrote again.
+    const handleStorageChange = () => {
+      if (!cancelled) setLogo(readDynamicLogo(appType));
+    };
+
     window.addEventListener('themeLoaded', handleLogoUpdate);
     window.addEventListener('businessSettingsUpdated', handleLogoUpdate);
-    window.addEventListener('storage', handleLogoUpdate);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener('themeLoaded', handleLogoUpdate);
       window.removeEventListener('businessSettingsUpdated', handleLogoUpdate);
-      window.removeEventListener('storage', handleLogoUpdate);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [appType]);
 

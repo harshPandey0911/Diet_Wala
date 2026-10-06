@@ -81,40 +81,56 @@ if (cachedSettings) {
 }
 
 let inFlightSettingsPromise = null;
+// ~30 components/hooks call loadBusinessSettings on mount; reuse one network fetch
+// per session window instead of hitting the API on every mount.
+const SETTINGS_FRESH_MS = 5 * 60 * 1000;
+// After a failed fetch (backend down/offline) wait before retrying, otherwise every
+// mounting component fires its own failing request.
+const SETTINGS_RETRY_MS = 30 * 1000;
+let lastFetchedAt = 0;
+let lastFailedAt = 0;
 
-export const loadBusinessSettings = async () => {
-  try {
-    const endpoint = API_ENDPOINTS.ADMIN.BUSINESS_SETTINGS_PUBLIC;
-    if (!endpoint || (typeof endpoint === 'string' && !endpoint.trim())) {
-      return cachedSettings;
-    }
-
-    if (inFlightSettingsPromise) {
-      return await inFlightSettingsPromise;
-    }
-
-    inFlightSettingsPromise = (async () => {
-      const response = await publicGetOnce(endpoint, { noCache: true });
-      const rawSettings = response?.data?.data || response?.data;
-
-      if (rawSettings) {
-        const settings = normalizeSettingsUrls(rawSettings);
-        cachedSettings = settings;
-        writeScopedCachedValue(SETTINGS_SCOPE, SETTINGS_KEY, settings, { ttlMs: SETTINGS_TTL_MS });
-
-        updateFavicon(settings.favicon?.url);
-        updateTitle(settings.companyName);
-        return settings;
-      }
-      return cachedSettings;
-    })();
-
-    return await inFlightSettingsPromise;
-  } catch (_) {
+export const loadBusinessSettings = async ({ force = false } = {}) => {
+  const endpoint = API_ENDPOINTS.ADMIN.BUSINESS_SETTINGS_PUBLIC;
+  if (!endpoint || (typeof endpoint === 'string' && !endpoint.trim())) {
     return cachedSettings;
-  } finally {
-    inFlightSettingsPromise = null;
   }
+
+  const now = Date.now();
+  if (!force && cachedSettings && now - lastFetchedAt < SETTINGS_FRESH_MS) {
+    return cachedSettings;
+  }
+  if (!force && now - lastFailedAt < SETTINGS_RETRY_MS) {
+    return cachedSettings;
+  }
+
+  if (!inFlightSettingsPromise) {
+    inFlightSettingsPromise = (async () => {
+      try {
+        const response = await publicGetOnce(endpoint, { noCache: true });
+        const rawSettings = response?.data?.data || response?.data;
+
+        if (rawSettings) {
+          const settings = normalizeSettingsUrls(rawSettings);
+          cachedSettings = settings;
+          lastFetchedAt = Date.now();
+          writeScopedCachedValue(SETTINGS_SCOPE, SETTINGS_KEY, settings, { ttlMs: SETTINGS_TTL_MS });
+
+          updateFavicon(settings.favicon?.url);
+          updateTitle(settings.companyName);
+          return settings;
+        }
+        return cachedSettings;
+      } catch (_) {
+        lastFailedAt = Date.now();
+        return cachedSettings;
+      } finally {
+        inFlightSettingsPromise = null;
+      }
+    })();
+  }
+
+  return inFlightSettingsPromise;
 };
 
 export const updateFavicon = (url) => {
@@ -149,6 +165,7 @@ export const setCachedSettings = (settings) => {
   if (settings) {
     const normalizedSettings = normalizeSettingsUrls(settings);
     cachedSettings = normalizedSettings;
+    lastFetchedAt = Date.now();
     writeScopedCachedValue(SETTINGS_SCOPE, SETTINGS_KEY, normalizedSettings, { ttlMs: SETTINGS_TTL_MS });
 
     updateFavicon(normalizedSettings.favicon?.url);
@@ -158,6 +175,7 @@ export const setCachedSettings = (settings) => {
 
 export const clearCache = () => {
   cachedSettings = null;
+  lastFetchedAt = 0;
   removeScopedValue(SETTINGS_SCOPE, SETTINGS_KEY);
 };
 
