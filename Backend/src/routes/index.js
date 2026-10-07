@@ -48,6 +48,7 @@ router.use('/v1/food/promocodes', promocodeRoutes);
 
 
 router.use('/v1/uploads', uploadRoutes);
+router.use('/uploads', uploadRoutes);
 
 // Mark business-settings/public as truly public
 router.get('/v1/food/admin/business-settings/public', businessSettingsController.getBusinessSettings);

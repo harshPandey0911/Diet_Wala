@@ -1,11 +1,32 @@
 import express from 'express';
 import { upload } from '../../../middleware/upload.js';
-import { uploadFileBuffer, uploadGenericImage, uploadVideoBuffer } from '../../../services/upload.service.js';
+import { getUploadDirectory, uploadFileBuffer, uploadGenericImage, uploadVideoBuffer } from '../../../services/upload.service.js';
 
 const router = express.Router();
 
-// POST /v1/uploads/image
-router.post('/image', upload.single('file'), async (req, res, next) => {
+const uploadStaticOptions = {
+    maxAge: '7d',
+    setHeaders: (res) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+};
+let uploadStaticRoot = '';
+let uploadStaticHandler = null;
+const serveStaticUploads = (req, res, next) => {
+    const currentRoot = getUploadDirectory();
+    if (!uploadStaticHandler || uploadStaticRoot !== currentRoot) {
+        uploadStaticRoot = currentRoot;
+        uploadStaticHandler = express.static(currentRoot, uploadStaticOptions);
+    }
+    return uploadStaticHandler(req, res, next);
+};
+
+// Public media delivery through the API prefix.
+// Supports both /api/v1/uploads/files/:filename and /api/v1/uploads/:filename
+router.use('/files', serveStaticUploads);
+
+const handleImageUpload = async (req, res, next) => {
     try {
         if (!req.file || !req.file.buffer) {
             return res.status(400).json({
@@ -25,13 +46,21 @@ router.post('/image', upload.single('file'), async (req, res, next) => {
             message: 'Image uploaded successfully',
             data: {
                 url,
+                file: {
+                    url,
+                    path: url
+                },
                 publicId: null
             }
         });
     } catch (error) {
         next(error);
     }
-});
+};
+
+// POST /v1/uploads/image and POST /v1/uploads/single
+router.post('/image', upload.single('file'), handleImageUpload);
+router.post('/single', upload.single('file'), handleImageUpload);
 
 // POST /v1/uploads/file
 router.post('/file', upload.single('file'), async (req, res, next) => {
@@ -111,5 +140,8 @@ router.post('/video', upload.single('file'), async (req, res, next) => {
         next(error);
     }
 });
+
+// Also serve direct file requests under /v1/uploads/:filename
+router.use('/', serveStaticUploads);
 
 export default router;

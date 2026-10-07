@@ -17,18 +17,22 @@ const uploadStaticOptions = {
 };
 let uploadStaticRoot = '';
 let uploadStaticHandler = null;
-router.use('/files', (req, res, next) => {
+const serveStaticUploads = (req, res, next) => {
     const currentRoot = getUploadDirectory();
     if (!uploadStaticHandler || uploadStaticRoot !== currentRoot) {
         uploadStaticRoot = currentRoot;
         uploadStaticHandler = express.static(currentRoot, uploadStaticOptions);
     }
     return uploadStaticHandler(req, res, next);
-});
+};
+
+router.use('/files', serveStaticUploads);
 
 // Routes for generic file uploads
 router.post('/image', authMiddleware, genericUpload.single('file'), uploadSingle);
 router.post('/single', authMiddleware, genericUpload.single('file'), uploadSingle);
 router.post('/multiple', authMiddleware, genericUpload.array('files', 20), uploadMultiple);
+
+router.use('/', serveStaticUploads);
 
 export default router;
