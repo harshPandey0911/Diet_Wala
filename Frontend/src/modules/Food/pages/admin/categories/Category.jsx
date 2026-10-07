@@ -330,7 +330,11 @@ export default function Category() {
       if (selectedImageFile) {
         const uploadRes = await uploadAPI.uploadMedia(selectedImageFile, { folder: "tuggo/categories" })
         const payload = uploadRes?.data?.data || uploadRes?.data
-        imageUrl = payload?.url || imageUrl
+        // The generic upload endpoint historically returned the uploaded file
+        // under `data.file`, while newer deployments return it directly under
+        // `data`. Accept both shapes so an uploaded image is actually persisted
+        // on the category instead of silently keeping the previous URL.
+        imageUrl = payload?.url || payload?.file?.url || payload?.file?.path || imageUrl
       }
 
       const payload = {

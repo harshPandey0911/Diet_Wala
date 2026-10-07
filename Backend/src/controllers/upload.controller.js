@@ -1,5 +1,5 @@
 import { ValidationError } from '../core/auth/errors.js';
-import { sendSuccess } from '../utils/response.js';
+import { sendResponse } from '../utils/response.js';
 import { finalizeGenericUpload } from '../services/upload.service.js';
 
 export const uploadSingle = async (req, res, next) => {
@@ -19,10 +19,7 @@ export const uploadSingle = async (req, res, next) => {
             url: fileUrl
         };
 
-        return sendSuccess(res, {
-            success: true,
-            file: fileData
-        });
+        return sendResponse(res, 200, 'File uploaded successfully', fileData);
     } catch (error) {
         next(error);
     }
@@ -46,10 +43,7 @@ export const uploadMultiple = async (req, res, next) => {
             };
         }));
 
-        return sendSuccess(res, {
-            success: true,
-            files: filesData
-        });
+        return sendResponse(res, 200, 'Files uploaded successfully', { files: filesData });
     } catch (error) {
         next(error);
     }

@@ -6,6 +6,7 @@ import authMiddleware from '../middleware/auth.js';
 const router = Router();
 
 // Routes for generic file uploads
+router.post('/image', authMiddleware, genericUpload.single('file'), uploadSingle);
 router.post('/single', authMiddleware, genericUpload.single('file'), uploadSingle);
 router.post('/multiple', authMiddleware, genericUpload.array('files', 20), uploadMultiple);
 
