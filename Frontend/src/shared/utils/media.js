@@ -29,18 +29,18 @@ export const getPlaceholderImage = ({ width = 40, height = 40, text = 'Image' } 
 
 export const PLACEHOLDER_URL = getPlaceholderImage();
 
-const getBackendOrigin = () => {
-  try {
-    if (API_BASE_URL && API_BASE_URL.startsWith('http')) {
-      return new URL(API_BASE_URL).origin;
-    }
-  } catch {}
+const getApiUploadUrl = (uploadsPath) => {
+  const normalizedPath = String(uploadsPath || '').replace(/^\/uploads\//i, '');
+  if (!normalizedPath) return '';
 
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://localhost:5000';
+  const configuredApiBase = String(API_BASE_URL || '').replace(/\/$/, '');
+  if (configuredApiBase) {
+    return `${configuredApiBase}/uploads/files/${normalizedPath}`;
   }
 
-  return '';
+  // Vite proxies /api during local development, and the same prefix is routed
+  // to Express by production Nginx.
+  return `/api/v1/uploads/files/${normalizedPath}`;
 };
 
 const isFileLikePath = (value) => {
@@ -121,7 +121,6 @@ export const getMediaUrl = (path) => {
     }
   }
 
-  const backendOrigin = getBackendOrigin();
-  return backendOrigin ? `${backendOrigin}${normalizedUploadsPath}` : normalizedUploadsPath;
+  return getApiUploadUrl(normalizedUploadsPath) || normalizedUploadsPath;
 };
 
