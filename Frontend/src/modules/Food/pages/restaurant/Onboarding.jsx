@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { Input } from "@food/components/ui/input"
 import { Button } from "@food/components/ui/button"
 import { Label } from "@food/components/ui/label"
-import { Image as ImageIcon, Upload, Clock, Calendar as CalendarIcon, Sparkles, X, LogOut, FileText } from "lucide-react"
+import { Image as ImageIcon, Upload, Clock, Calendar as CalendarIcon, Sparkles, X, LogOut, FileText, LocateFixed, Loader2 } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@food/components/ui/popover"
 import { Calendar } from "@food/components/ui/calendar"
 import {
@@ -749,6 +749,7 @@ export default function RestaurantOnboarding() {
   const [locationSearchValue, setLocationSearchValue] = useState("")
   const [locationSuggestions, setLocationSuggestions] = useState([])
   const [isSearchingLocation, setIsSearchingLocation] = useState(false)
+  const [isFetchingCurrentLocation, setIsFetchingCurrentLocation] = useState(false)
   const justSelectedRef = useRef(false)
   const googleMapsReadyRef = useRef(false)
 
@@ -779,6 +780,108 @@ export default function RestaurantOnboarding() {
     
     setLocationSearchValue(parsed.formattedAddress)
     setLocationSuggestions([])
+  }
+
+  const handleUseCurrentLocation = () => {
+    if (!isEditing || isFetchingCurrentLocation) return
+
+    if (!window.isSecureContext) {
+      toast.error("Current location requires a secure HTTPS connection.")
+      return
+    }
+
+    if (!navigator.geolocation) {
+      toast.error("Current location is not supported by this browser.")
+      return
+    }
+
+    setIsFetchingCurrentLocation(true)
+    setLocationSuggestions([])
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = Number(position.coords.latitude.toFixed(6))
+        const longitude = Number(position.coords.longitude.toFixed(6))
+
+        const applyLocation = (parsed) => {
+          justSelectedRef.current = true
+          handleLocationSelect({
+            ...parsed,
+            latitude,
+            longitude,
+          })
+          window.setTimeout(() => {
+            justSelectedRef.current = false
+          }, 600)
+        }
+
+        try {
+          if (window.google?.maps?.Geocoder) {
+            try {
+              const geocoder = new window.google.maps.Geocoder()
+              const result = await new Promise((resolve, reject) => {
+                geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+                  if (status === "OK" && results?.[0]) resolve(results[0])
+                  else reject(new Error(`Google reverse geocoding failed: ${status}`))
+                })
+              })
+
+              const components = Array.isArray(result.address_components) ? result.address_components : []
+              const getPart = (types) =>
+                components.find((component) => types.some((type) => component.types?.includes(type)))?.long_name || ""
+
+              applyLocation({
+                formattedAddress: result.formatted_address || `${latitude}, ${longitude}`,
+                area:
+                  getPart(["sublocality_level_1", "sublocality", "neighborhood"]) ||
+                  getPart(["locality"]),
+                city: getPart(["locality"]) || getPart(["administrative_area_level_2"]),
+                state: getPart(["administrative_area_level_1"]),
+                pincode: getPart(["postal_code"]),
+              })
+              toast.success("Current location added successfully.")
+              return
+            } catch (googleError) {
+              debugWarn("Google reverse geocoding failed; using OpenStreetMap fallback:", googleError)
+            }
+          }
+
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${latitude}&lon=${longitude}`,
+            { headers: { Accept: "application/json" } },
+          )
+          if (!response.ok) throw new Error("Reverse geocoding failed")
+
+          const result = await response.json()
+          const address = result?.address || {}
+          applyLocation({
+            formattedAddress: result?.display_name || `${latitude}, ${longitude}`,
+            area: address.suburb || address.neighbourhood || address.city_district || address.locality || "",
+            city: address.city || address.town || address.village || address.county || "",
+            state: address.state || "",
+            pincode: address.postcode || "",
+          })
+          toast.success("Current location added successfully.")
+        } catch (error) {
+          debugError("Reverse geocoding current location failed:", error)
+          applyLocation({ formattedAddress: `${latitude}, ${longitude}` })
+          toast.warning("Coordinates added. Please complete the address details manually.")
+        } finally {
+          setIsFetchingCurrentLocation(false)
+        }
+      },
+      (error) => {
+        const message =
+          error?.code === 1
+            ? "Location permission denied. Please allow location access in browser settings."
+            : error?.code === 2
+              ? "Current location is unavailable. Please turn on GPS and try again."
+              : "Location request timed out. Please try again."
+        toast.error(message)
+        setIsFetchingCurrentLocation(false)
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    )
   }
 
   const getPreviewImageUrl = (value) => {
@@ -1899,7 +2002,22 @@ export default function RestaurantOnboarding() {
             Add your restaurant's location for order pick-up.
           </p>
           <div className="relative">
-            <Label className="text-xs text-gray-700">Search location</Label>
+            <div className="flex items-center justify-between gap-3">
+              <Label className="text-xs text-gray-700">Search location</Label>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                disabled={!isEditing || isFetchingCurrentLocation}
+                className="inline-flex items-center gap-1.5 rounded-md border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isFetchingCurrentLocation ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <LocateFixed className="h-3.5 w-3.5" />
+                )}
+                {isFetchingCurrentLocation ? "Fetching..." : "Use Current Location"}
+              </button>
+            </div>
             <div className="relative">
               <Input
                 ref={locationSearchInputRef}
@@ -1908,9 +2026,9 @@ export default function RestaurantOnboarding() {
                 className="mt-1 bg-white text-sm text-black! dark:text-white! placeholder:text-gray-500 dark:placeholder:text-gray-400 caret-black dark:caret-white"
                 style={{ color: "#000", WebkitTextFillColor: "#000" }}
                 placeholder="Start typing your restaurant address..."
-                disabled={!isEditing}
+                disabled={!isEditing || isFetchingCurrentLocation}
               />
-              {isSearchingLocation && (
+              {(isSearchingLocation || isFetchingCurrentLocation) && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent" />
                 </div>

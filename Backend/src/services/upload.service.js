@@ -422,29 +422,28 @@ export const genericUpload = multer({
 
 
 /**
- * Generic multer upload writes to disk first. Production keeps the file in the upload
- * folder; local/dev moves it to Cloudinary and removes the temporary local copy so
- * local machines never create `/uploads/...` paths that live cannot serve.
- * Returns the public URL to store in the DB.
+ * Generic multer writes a temporary file to disk, then moves it to Cloudinary.
+ * Returning a durable URL is important in production because release directories,
+ * containers and multiple API instances do not share a reliable local filesystem.
  */
 export const finalizeGenericUpload = async (file) => {
-    if (isProduction()) {
-        return `/uploads/${file.filename}`;
-    }
-
     const mimeType = String(file.mimetype || '').toLowerCase();
     const resourceType = mimeType.startsWith('video/') ? 'video' : mimeType === 'application/pdf' ? 'raw' : 'image';
     const buffer = fs.readFileSync(file.path);
     const cloudinaryUrl = await uploadToCloudinaryBuffer(buffer, 'diet_wala/uploads', file.filename, resourceType);
+
+    // The disk copy is only a staging file. Never leave category media tied to
+    // one deployment or API instance.
+    try {
+        fs.unlinkSync(file.path);
+    } catch {
+        // Ignore temporary-file cleanup errors.
+    }
+
     if (!cloudinaryUrl) {
         logger.error(`[Upload] Cloudinary upload failed for "${file.filename}" in ${config.nodeEnv} mode.`);
         throw new Error('Cloudinary upload failed. Check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.');
     }
 
-    try {
-        fs.unlinkSync(file.path);
-    } catch {
-        // Temporary local copy; ignore cleanup errors.
-    }
     return cloudinaryUrl;
 };
