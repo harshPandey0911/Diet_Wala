@@ -5,9 +5,9 @@
   "description": "Diet Wala Master Product Backend",
   "main": "server.js",
   "scripts": {
-    "build": "echo 'No build step required for Node backend'",
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "build": "node api.js && echo 'No build step required for Node backend'",
+    "start": "node api.js && node server.js",
+    "dev": "node api.js && nodemon server.js",
     "dev:socket": "nodemon socket-server.js",
     "worker:otp": "node src/queues/workers/otp.worker.js",
     "worker:notification": "node src/queues/workers/notification.worker.js",
