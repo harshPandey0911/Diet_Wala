@@ -135,14 +135,13 @@ export default function DeliverySignIn() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden border-4 border-white"
+              className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full bg-white shadow-[0_10px_35px_rgba(0,0,0,0.08)] overflow-hidden border-4 border-white flex items-center justify-center p-3.5 sm:p-4"
               style={{ borderRadius: '50%', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
             >
               <img 
                 src={logoToDisplay} 
                 alt="Delivery Partner Logo" 
-                className="w-full h-full object-contain p-5"
-                style={{ borderRadius: '50%' }}
+                className="w-full h-full object-contain"
                 onError={(e) => {
                   e.currentTarget.src = logoNew
                 }}
