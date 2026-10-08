@@ -57,17 +57,23 @@ const uniqueById = (items = []) => {
 const joinMeta = (...parts) => parts.filter(Boolean).join(" • ");
 
 const mapPendingRestaurants = (rows = []) =>
-  (Array.isArray(rows) ? rows : []).map((item) => ({
-    id: `approval-restaurant-${String(item?._id || item?.id || "")}`,
-    title: "Restaurant Approval Pending",
-    message: `${item?.restaurantName || "Restaurant"} submitted a restaurant approval request. Owner: ${item?.ownerName || "N/A"}. Contact: ${item?.ownerPhone || "N/A"}.`,
-    type: "approval",
-    category: "restaurant_approval",
-    path: "/admin/food/restaurants/joining-request",
-    createdAt: item?.createdAt || item?.updatedAt,
-    timeLabel: toDateLabel(item?.createdAt || item?.updatedAt),
-    metaLabel: joinMeta(item?.restaurantName, item?.ownerName, item?.ownerPhone),
-  }));
+  (Array.isArray(rows) ? rows : []).map((item) => {
+    const phoneRequest = item?.pendingPhoneChange?.status === "pending" ? item.pendingPhoneChange : null
+    const isPhoneOnly = Boolean(phoneRequest) && item?.status !== "pending"
+    return {
+      id: `approval-restaurant-${isPhoneOnly ? "phone-" : ""}${String(item?._id || item?.id || "")}`,
+      title: isPhoneOnly ? "Phone Number Change Request" : "Restaurant Approval Pending",
+      message: isPhoneOnly
+        ? `${item?.restaurantName || "Restaurant"} wants to change its phone number from ${item?.ownerPhone || "N/A"} to ${phoneRequest.phone}.`
+        : `${item?.restaurantName || "Restaurant"} submitted a restaurant approval request. Owner: ${item?.ownerName || "N/A"}. Contact: ${item?.ownerPhone || "N/A"}.`,
+      type: "approval",
+      category: "restaurant_approval",
+      path: "/admin/food/restaurants/joining-request",
+      createdAt: (isPhoneOnly && phoneRequest.requestedAt) || item?.createdAt || item?.updatedAt,
+      timeLabel: toDateLabel((isPhoneOnly && phoneRequest.requestedAt) || item?.createdAt || item?.updatedAt),
+      metaLabel: joinMeta(item?.restaurantName, item?.ownerName, item?.ownerPhone),
+    }
+  });
 
 const mapDeliveryJoinRequests = (response) => {
   const payload = response?.data?.data;

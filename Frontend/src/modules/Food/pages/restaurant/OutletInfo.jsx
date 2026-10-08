@@ -186,7 +186,10 @@ export default function OutletInfo() {
 
   const handleEditClick = (section) => {
     setEditSection(section)
-    setEditFormData({...restaurantData})
+    setEditFormData({
+      ...restaurantData,
+      primaryContactNumber: restaurantData?.primaryContactNumber || restaurantData?.ownerPhone || '',
+    })
     setEditModalOpen(true)
   }
 
@@ -556,7 +559,7 @@ export default function OutletInfo() {
                 </div>
                 <div>
                   <label className="text-[13px] font-bold text-gray-700 mb-1.5 block tracking-wide">Primary Contact</label>
-                  <input className="w-full h-12 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E91E63]/20 focus:border-[#E91E63] transition-all text-[15px] text-gray-900 px-4 placeholder:text-gray-400" value={editFormData.primaryContactNumber || editFormData.ownerPhone || ''} onChange={e => setEditFormData({...editFormData, primaryContactNumber: e.target.value})} placeholder="Enter contact number" inputMode="numeric" maxLength={10} />
+                  <input className="w-full h-12 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E91E63]/20 focus:border-[#E91E63] transition-all text-[15px] text-gray-900 px-4 placeholder:text-gray-400" value={editFormData.primaryContactNumber ?? ''} onChange={e => setEditFormData({...editFormData, primaryContactNumber: e.target.value.replace(/\D/g, '').slice(0, 10)})} placeholder="Enter contact number" inputMode="numeric" maxLength={10} />
                   <p className="text-[11px] text-gray-500 mt-1">Changing the number needs admin approval. Your current number stays active until then.</p>
                 </div>
                 <div>

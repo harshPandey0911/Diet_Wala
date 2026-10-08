@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
   Search,
@@ -121,20 +121,64 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
     return () => window.removeEventListener('adminAuthChanged', loadAdminUser)
   }, [])
 
+  // Everything that waits for an admin decision. When this total goes up, play a sound.
+  const previousApprovalTotalRef = useRef(null)
+  const approvalSoundRef = useRef(null)
+
   useEffect(() => {
+    const unlockAudio = () => {
+      // Browsers only allow sound after a user gesture; create the audio on the first click/tap.
+      if (!approvalSoundRef.current) {
+        const audio = new Audio("/alert.mp3")
+        audio.preload = "auto"
+        approvalSoundRef.current = audio
+      }
+    }
+    window.addEventListener("pointerdown", unlockAudio, { once: true })
+    window.addEventListener("keydown", unlockAudio, { once: true })
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio)
+      window.removeEventListener("keydown", unlockAudio)
+    }
+  }, [])
+
+  useEffect(() => {
+    const getApprovalTotal = (counts = {}) =>
+      ["restaurants", "deliveryPartners", "foods", "restaurantWithdrawals", "deliveryWithdrawals", "earningAddons"]
+        .reduce((sum, key) => sum + (Number(counts[key]) || 0), 0)
+
     const fetchBadges = async () => {
       try {
         const res = await adminAPI.getSidebarBadges()
         if (res?.data?.success) {
-          setBadges(res.data.counts || {})
+          const counts = res.data.counts || {}
+          setBadges(counts)
+
+          const total = getApprovalTotal(counts)
+          const previous = previousApprovalTotalRef.current
+          previousApprovalTotalRef.current = total
+          if (previous !== null && total > previous) {
+            try {
+              const audio = approvalSoundRef.current || new Audio("/alert.mp3")
+              audio.currentTime = 0
+              void audio.play().catch(() => {})
+            } catch {
+              // sound is best-effort
+            }
+          }
         }
       } catch (error) {
         debugError("Error fetching sidebar badges:", error)
       }
     }
     fetchBadges()
-    const timer = setInterval(fetchBadges, 60000)
-    return () => clearInterval(timer)
+    const timer = setInterval(fetchBadges, 20000)
+    // Pages can ask for an immediate refresh after approving/rejecting something.
+    window.addEventListener("adminBadgesRefresh", fetchBadges)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener("adminBadgesRefresh", fetchBadges)
+    }
   }, [])
 
   const getBadgeCount = (label = "", path = "") => {

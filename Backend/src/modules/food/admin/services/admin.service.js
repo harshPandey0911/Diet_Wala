@@ -2490,9 +2490,15 @@ export async function updateRestaurantMenuById(id, menu) {
 }
 
 export async function getPendingRestaurants() {
-    const restaurants = await FoodRestaurant.find({ 
-        status: { $in: ['pending', 'rejected'] },
-        rejectionReason: { $ne: 'Disabled by admin' }
+    const restaurants = await FoodRestaurant.find({
+        $or: [
+            {
+                status: { $in: ['pending', 'rejected'] },
+                rejectionReason: { $ne: 'Disabled by admin' }
+            },
+            // Approved restaurants that asked to change their phone number also need admin review.
+            { 'pendingPhoneChange.status': 'pending' }
+        ]
     })
         .populate('zoneId', 'name zoneName')
         .populate('previousZoneId', 'name zoneName')
@@ -5447,7 +5453,8 @@ export async function getSidebarBadges() {
             pendingEmergencyHelp,
             pendingRestaurantComplaints
         ] = await Promise.all([
-            FoodRestaurant.countDocuments({ status: 'pending' }),
+            // New/updated restaurants awaiting approval, plus approved ones asking to change their phone.
+            FoodRestaurant.countDocuments({ $or: [{ status: 'pending' }, { 'pendingPhoneChange.status': 'pending' }] }),
             FoodDeliveryPartner.countDocuments({ status: 'pending' }),
             FoodItem.countDocuments({ status: 'pending' }),
             FoodAddon.countDocuments({ status: 'pending' }),

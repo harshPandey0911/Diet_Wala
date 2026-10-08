@@ -67,9 +67,10 @@ export default function JoiningRequest() {
       setError(null)
 
       const response = await adminAPI.getPendingRestaurants()
+      window.dispatchEvent(new Event("adminBadgesRefresh"))
       const list = response?.data?.data || []
       if (activeTab === "pending") {
-        setPendingRequests(list.filter((r) => r.status === "pending"))
+        setPendingRequests(list.filter((r) => r.status === "pending" || r.pendingPhoneChange?.status === "pending"))
       } else {
         setRejectedRequests(list.filter((r) => r.status === "rejected"))
       }
@@ -203,7 +204,27 @@ export default function JoiningRequest() {
 
   const hasActiveFilters = filters.zone || filters.dateFrom || filters.dateTo
 
+  // A row is a "phone change" row when the restaurant itself is approved and only its phone
+  // number is waiting for review.
+  const isPhoneChangeRow = (request) =>
+    request?.status !== "pending" && request?.pendingPhoneChange?.status === "pending"
+
   const handleApprove = async (request) => {
+    if (isPhoneChangeRow(request)) {
+      if (!window.confirm(`Change ${request.restaurantName}'s phone number from ${request.ownerPhone || "N/A"} to ${request.pendingPhoneChange.phone}? This also becomes their login number.`)) return
+      try {
+        setProcessing(true)
+        await adminAPI.approveRestaurantPhoneChange(request._id)
+        await fetchRequests()
+        alert(`Phone number updated for ${request.restaurantName}.`)
+      } catch (err) {
+        debugError("Error approving phone change:", err)
+        alert(err.response?.data?.message || "Failed to approve phone change. Please try again.")
+      } finally {
+        setProcessing(false)
+      }
+      return
+    }
     if (window.confirm(`Are you sure you want to approve "${request.restaurantName}" restaurant request?`)) {
       try {
         setProcessing(true)
@@ -236,7 +257,11 @@ export default function JoiningRequest() {
 
     try {
       setProcessing(true)
-      await adminAPI.rejectRestaurant(selectedRequest._id, rejectionReason)
+      if (isPhoneChangeRow(selectedRequest)) {
+        await adminAPI.rejectRestaurantPhoneChange(selectedRequest._id, rejectionReason)
+      } else {
+        await adminAPI.rejectRestaurant(selectedRequest._id, rejectionReason)
+      }
       
       // Refresh the list
       await fetchRequests()
@@ -506,6 +531,11 @@ export default function JoiningRequest() {
                         <div className="flex flex-col">
                           <span className="text-sm font-medium text-slate-900">{request.ownerName}</span>
                           <span className="text-xs text-slate-500">{formatPhone(request.ownerPhone)}</span>
+                          {isPhoneChangeRow(request) && (
+                            <span className="text-xs font-semibold text-amber-700">
+                              Requested: {request.pendingPhoneChange.phone}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -514,12 +544,17 @@ export default function JoiningRequest() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1 items-start">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            request.status === "pending" || request.status === "Pending"
+                            request.status === "pending" || request.status === "Pending" || isPhoneChangeRow(request)
                               ? "bg-blue-100 text-blue-700"
                               : "bg-red-100 text-red-700"
                           }`}>
-                            {request.status}
+                            {isPhoneChangeRow(request) ? "phone change" : request.status}
                           </span>
+                          {isPhoneChangeRow(request) && (
+                            <span className="text-[10px] font-semibold text-slate-500 italic ml-1">
+                              • Phone number change request
+                            </span>
+                          )}
                           {request.status?.toLowerCase() === "pending" && request.pendingUpdateReason && (
                             <span className="text-[10px] font-semibold text-slate-500 italic ml-1">
                               • {request.pendingUpdateReason}
