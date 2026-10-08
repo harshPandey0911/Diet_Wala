@@ -339,6 +339,9 @@ export async function calculateOrderPricing(userId, dto) {
 
   return {
     pricing: {
+      // Marker so a deploy can be verified from the browser Network tab: the checkout subtotal is
+      // the sum of cart prices as-is (the food markup is NOT applied again here).
+      pricingVersion: 'checkout-no-markup-v2',
       subtotal,
       tax,
       taxBreakdown: {
