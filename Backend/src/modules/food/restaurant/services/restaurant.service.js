@@ -186,6 +186,15 @@ const toRestaurantProfile = (doc) => {
         updatedAt: doc.updatedAt,
         approvedAt: doc.approvedAt,
         pendingUpdateReason: doc.pendingUpdateReason,
+        pendingPhoneChange: doc.pendingPhoneChange?.phone
+            ? {
+                phone: doc.pendingPhoneChange.phone,
+                status: doc.pendingPhoneChange.status || 'pending',
+                requestedAt: doc.pendingPhoneChange.requestedAt || null,
+                reviewedAt: doc.pendingPhoneChange.reviewedAt || null,
+                rejectionReason: doc.pendingPhoneChange.rejectionReason || '',
+            }
+            : null,
         rating: normalizeRatingValue(doc.rating),
         totalRatings: normalizeTotalRatingsValue(doc.totalRatings)
     };
@@ -237,12 +246,12 @@ const buildZoneRestaurantMatch = (_zoneDoc, zoneIdRaw) => {
     };
 };
 
-const notifyAdminsAboutRestaurantProfileReview = async (restaurantId, restaurantName) => {
+const notifyAdminsAboutRestaurantProfileReview = async (restaurantId, restaurantName, { title, body } = {}) => {
     try {
         const { notifyAdminsSafely } = await import('../../../../core/notifications/firebase.service.js');
         void notifyAdminsSafely({
-            title: 'Restaurant Profile Updated',
-            body: `Restaurant "${restaurantName || 'Unknown Restaurant'}" updated its profile and is pending approval again.`,
+            title: title || 'Restaurant Profile Updated',
+            body: body || `Restaurant "${restaurantName || 'Unknown Restaurant'}" updated its profile and is pending approval again.`,
             data: {
                 type: 'restaurant_profile_updated',
                 subType: 'restaurant',
@@ -538,6 +547,7 @@ export const getCurrentRestaurantProfile = async (restaurantId) => {
                 'status',
                 'approvedAt',
                 'pendingUpdateReason',
+                'pendingPhoneChange',
                 'createdAt',
                 'updatedAt'
             ].join(' ')
@@ -653,37 +663,39 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
         }
     }
 
-    // Note: UI keeps phone read-only, but we accept it safely and normalize if sent.
-    if (body.ownerPhone !== undefined) {
-        const { digits, last10 } = normalizePhone(body.ownerPhone);
-        if (!digits || digits.length < 8) {
-            throw new ValidationError('Owner phone is invalid');
-        }
-
-        const currentOwnerPhoneDigits =
-            currentRestaurant.ownerPhoneDigits ||
-            normalizePhone(currentRestaurant.ownerPhone).digits ||
-            '';
-
-        if (digits !== currentOwnerPhoneDigits) {
-            update.ownerPhone = digits;
-            update.ownerPhoneDigits = digits;
-            update.ownerPhoneLast10 = last10 || undefined;
-        }
+    // Phone changes never apply directly: they become a pending request that an admin must
+    // approve (see approveRestaurantPhoneChange in admin.service.js). Until then the old number
+    // keeps working for login and everywhere else.
+    let phoneChangeRequest = null;
+    const currentPrimaryDigits = normalizePhone(currentRestaurant.primaryContactNumber).digits;
+    const currentOwnerDigits =
+        currentRestaurant.ownerPhoneDigits || normalizePhone(currentRestaurant.ownerPhone).digits;
+    let requestedPhoneRaw = null;
+    if (
+        body.primaryContactNumber != null &&
+        normalizePhone(body.primaryContactNumber).digits !== currentPrimaryDigits
+    ) {
+        requestedPhoneRaw = body.primaryContactNumber;
+    } else if (
+        body.ownerPhone != null &&
+        normalizePhone(body.ownerPhone).digits !== currentOwnerDigits
+    ) {
+        requestedPhoneRaw = body.ownerPhone;
     }
 
-    if (body.primaryContactNumber !== undefined) {
-        const { digits } = normalizePhone(body.primaryContactNumber);
-        const normalizedPrimaryContact =
-            digits || String(body.primaryContactNumber || '').trim();
-        const currentPrimaryContact =
-            currentRestaurant.primaryContactNumber != null
-                ? String(currentRestaurant.primaryContactNumber).trim()
-                : '';
-
-        if (normalizedPrimaryContact !== currentPrimaryContact) {
-            update.primaryContactNumber = normalizedPrimaryContact;
+    if (requestedPhoneRaw !== null) {
+        const { digits, last10 } = normalizePhone(requestedPhoneRaw);
+        if (!digits || last10.length !== 10) {
+            throw new ValidationError('Please enter a valid 10-digit phone number');
         }
+        const inUse = await FoodRestaurant.exists({
+            _id: { $ne: restaurantId },
+            $or: [{ ownerPhoneLast10: last10 }, { ownerPhoneDigits: digits }],
+        });
+        if (inUse) {
+            throw new ValidationError('This phone number is already used by another restaurant');
+        }
+        phoneChangeRequest = { phone: digits, status: 'pending', requestedAt: new Date() };
     }
 
     if (body.pureVegRestaurant !== undefined) {
@@ -922,6 +934,22 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
         update.fssaiImage = toUrl(body.fssaiImage) || '';
     }
 
+    if (phoneChangeRequest) {
+        // A phone request alone must not take the restaurant offline (status stays as is).
+        if (!Object.keys(update).length) {
+            await FoodRestaurant.updateOne(
+                { _id: restaurantId },
+                { $set: { pendingPhoneChange: phoneChangeRequest } }
+            );
+            void notifyAdminsAboutRestaurantProfileReview(restaurantId, currentRestaurant.restaurantName, {
+                title: 'Phone Number Change Request',
+                body: `Restaurant "${currentRestaurant.restaurantName || 'Unknown Restaurant'}" asked to change its phone number. Please review.`,
+            });
+            return getCurrentRestaurantProfile(restaurantId);
+        }
+        update.pendingPhoneChange = phoneChangeRequest;
+    }
+
     if (!Object.keys(update).length) {
         return getCurrentRestaurantProfile(restaurantId);
     }
@@ -1014,7 +1042,8 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
                     'estimatedDeliveryTime',
                     'estimatedDeliveryTimeMinutes',
                     'zoneId',
-                    'previousZoneId'
+                    'previousZoneId',
+                    'pendingPhoneChange'
                 ].join(' ')
             }
         ).lean();

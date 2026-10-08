@@ -194,13 +194,24 @@ export default function OutletInfo() {
     try {
       setSavingEdit(true)
       const payload = {}
+      let requestedPhone = false
       if (editSection === 'restaurantName') {
         payload.restaurantName = editFormData.restaurantName || editFormData.name
       } else if (editSection === 'basic') {
-        payload.ownerName = editFormData.ownerName
-        payload.primaryContactNumber = editFormData.primaryContactNumber
-        payload.ownerEmail = editFormData.ownerEmail || editFormData.email
-        payload.pureVegRestaurant = editFormData.pureVegRestaurant
+        // Send only what changed, so changing just the phone doesn't re-submit the whole profile.
+        const nextName = editFormData.ownerName
+        const nextEmail = editFormData.ownerEmail || editFormData.email
+        if (nextName !== restaurantData?.ownerName) payload.ownerName = nextName
+        if (nextEmail !== (restaurantData?.email || restaurantData?.ownerEmail)) payload.ownerEmail = nextEmail
+        if (!!editFormData.pureVegRestaurant !== !!restaurantData?.pureVegRestaurant) {
+          payload.pureVegRestaurant = editFormData.pureVegRestaurant
+        }
+        const currentContact = restaurantData?.primaryContactNumber || restaurantData?.ownerPhone || ''
+        const nextContact = String(editFormData.primaryContactNumber || '').replace(/\D/g, '')
+        if (nextContact && nextContact !== String(currentContact).replace(/\D/g, '')) {
+          payload.primaryContactNumber = nextContact
+          requestedPhone = true
+        }
       } else if (editSection === 'compliance') {
         payload.panNumber = editFormData.panNumber
         payload.gstNumber = editFormData.gstNumber
@@ -213,8 +224,17 @@ export default function OutletInfo() {
         payload.upiId = editFormData.upiId
       }
       
+      if (Object.keys(payload).length === 0) {
+        setEditModalOpen(false)
+        return
+      }
+
       await restaurantAPI.updateProfile(payload)
-      toast.success('Details updated successfully!')
+      toast.success(
+        requestedPhone
+          ? 'Phone number change sent for admin approval. Your current number stays active until then.'
+          : 'Details updated successfully!'
+      )
       
       // refresh data
       const response = await restaurantAPI.getCurrentRestaurant()
@@ -227,7 +247,7 @@ export default function OutletInfo() {
       setEditModalOpen(false)
       window.dispatchEvent(new Event('ownerDataUpdated'))
     } catch (error) {
-      toast.error('Failed to update details.')
+      toast.error(error?.response?.data?.message || 'Failed to update details.')
     } finally {
       setSavingEdit(false)
     }
@@ -403,6 +423,17 @@ export default function OutletInfo() {
               <div>
                 <p className="text-[13px] text-gray-500 font-medium mb-0.5">Primary contact</p>
                 <p className="text-[15px] font-bold text-gray-900">{restaurantData?.primaryContactNumber || restaurantData?.ownerPhone || "N/A"}</p>
+                {restaurantData?.pendingPhoneChange?.status === 'pending' && (
+                  <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-[12px] font-semibold text-amber-700">
+                    Approval pending for {restaurantData.pendingPhoneChange.phone}
+                  </p>
+                )}
+                {restaurantData?.pendingPhoneChange?.status === 'rejected' && (
+                  <p className="mt-1 text-[12px] font-semibold text-red-600">
+                    Request for {restaurantData.pendingPhoneChange.phone} was rejected
+                    {restaurantData.pendingPhoneChange.rejectionReason ? `: ${restaurantData.pendingPhoneChange.rejectionReason}` : ''}. Your old number is still active.
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-[13px] text-gray-500 font-medium mb-0.5">Email</p>
@@ -525,7 +556,8 @@ export default function OutletInfo() {
                 </div>
                 <div>
                   <label className="text-[13px] font-bold text-gray-700 mb-1.5 block tracking-wide">Primary Contact</label>
-                  <input className="w-full h-12 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E91E63]/20 focus:border-[#E91E63] transition-all text-[15px] text-gray-900 px-4 placeholder:text-gray-400" value={editFormData.primaryContactNumber || editFormData.ownerPhone || ''} onChange={e => setEditFormData({...editFormData, primaryContactNumber: e.target.value})} placeholder="Enter contact number" />
+                  <input className="w-full h-12 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E91E63]/20 focus:border-[#E91E63] transition-all text-[15px] text-gray-900 px-4 placeholder:text-gray-400" value={editFormData.primaryContactNumber || editFormData.ownerPhone || ''} onChange={e => setEditFormData({...editFormData, primaryContactNumber: e.target.value})} placeholder="Enter contact number" inputMode="numeric" maxLength={10} />
+                  <p className="text-[11px] text-gray-500 mt-1">Changing the number needs admin approval. Your current number stays active until then.</p>
                 </div>
                 <div>
                   <label className="text-[13px] font-bold text-gray-700 mb-1.5 block tracking-wide">Email</label>

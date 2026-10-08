@@ -50,21 +50,15 @@ export async function calculateOrderPricing(userId, dto) {
     throw new ValidationError("Fee settings are not configured by admin.");
   }
 
-  const foodMarkupPercent = (feeSettings.foodMarkupPercent != null && Number.isFinite(Number(feeSettings.foodMarkupPercent)))
-    ? Number(feeSettings.foodMarkupPercent)
-    : 0;
-  const foodMarkupMultiplier = 1 + (foodMarkupPercent / 100);
-
   const items = Array.isArray(dto.items) ? dto.items : [];
   let itemDiscountTotal = 0;
   let subtotal = 0;
   let eligibleSubtotalForCoupon = 0;
 
   items.forEach((it) => {
-    // Bake the admin's global food markup into the item price server-side so it can never be
-    // bypassed by the client, and so GST below is computed on the marked-up price. This is
-    // intentionally hidden from the user — only the final per-item price (and GST) is shown.
-    let price = (Number(it.price) || 0) * foodMarkupMultiplier;
+    // it.price is already the customer-facing price: the menu APIs apply the admin's food
+    // markup once when listing items, so it must not be applied again here.
+    let price = Number(it.price) || 0;
     const qty = Number(it.quantity) || 1;
     let hasItemDiscount = false;
 

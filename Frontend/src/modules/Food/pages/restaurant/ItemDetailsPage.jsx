@@ -984,7 +984,7 @@ export default function ItemDetailsPage() {
                 onChange={(e) => setItemDescription(e.target.value)}
                 maxLength={maxDescriptionLength}
                 rows={4}
-                placeholder="Eg: Yummy veg paneer burger with a soft patty, veggies, cheese, and special sauce"
+                placeholder="Please provide nutritional information per meal: Calories, Protein, Carbs, Fats, Fibre, Vitamins & Minerals."
                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
               <button className="absolute right-3 top-3 p-1 rounded-full hover:bg-gray-100">

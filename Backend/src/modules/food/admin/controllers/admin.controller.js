@@ -1208,6 +1208,41 @@ export async function approveRestaurant(req, res, next) {
     }
 }
 
+export async function approveRestaurantPhoneChange(req, res, next) {
+    try {
+        const { id } = req.params;
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid restaurant id' });
+        }
+        const restaurant = await adminService.approveRestaurantPhoneChange(id);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurant not found' });
+        }
+        await invalidateCache('restaurants:*');
+        await invalidateCache('restaurant_detail:*');
+        await invalidateCache('restaurant:*');
+        res.status(200).json({ success: true, message: 'Phone number change approved', data: restaurant });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function rejectRestaurantPhoneChange(req, res, next) {
+    try {
+        const { id } = req.params;
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid restaurant id' });
+        }
+        const restaurant = await adminService.rejectRestaurantPhoneChange(id, req.body?.reason);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurant not found' });
+        }
+        res.status(200).json({ success: true, message: 'Phone number change rejected', data: restaurant });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function createRestaurant(req, res, next) {
     try {
         const restaurant = await adminService.createRestaurantByAdmin(req.body || {});

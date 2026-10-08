@@ -91,7 +91,7 @@ import {
 import { useAppLocation } from "@food/hooks/useAppLocation";
 import { useCompanyName } from "@food/hooks/useCompanyName";
 import offerImage from "@food/assets/offerimage.png";
-import api, { publicGetOnce, restaurantAPI, getPublicLandingSettings, getPublicExploreIcons, getPublicCategories } from "@food/api";
+import api, { publicGetOnce, restaurantAPI, getPublicLandingSettings, getPublicExploreIcons, getPublicCategories, getPublicFoods } from "@food/api";
 import { API_BASE_URL } from "@food/api/config";
 import OptimizedImage, { ShopPlaceholder } from "@food/components/OptimizedImage";
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability";
@@ -238,6 +238,9 @@ export default function Home() {
   ] = useState(() => homePageCache.recommendedRestaurantsFromSettings || []);
   const [loadingLandingConfig, setLoadingLandingConfig] = useState(() => !homePageCache.landingExploreFetched);
   const [restaurantsData, setRestaurantsData] = useState(() => homePageCache.restaurantsData || []);
+  // Cheapest dish price per restaurant, taken from the public foods API (admin markup included)
+  // so the home card shows the same price as the menu and the cart.
+  const [startingPriceByRestaurant, setStartingPriceByRestaurant] = useState({});
   const [loadingRestaurants, setLoadingRestaurants] = useState(() => !homePageCache.restaurantsData);
   const [realCategories, setRealCategories] = useState([]);
   const [loadingRealCategories, setLoadingRealCategories] = useState(true);
@@ -651,6 +654,28 @@ export default function Home() {
   const { addToCart, cart } = useCart();
   const { location, loading: effectiveZoneLoading, requestLocation, zoneId: effectiveZoneId, zoneStatus: effectiveZoneStatus, isOutOfService: isEffectiveLocationOutOfService, isOutOfZone: isEffectiveLocationOutOfZone, isOutOfRadius: isEffectiveLocationOutOfRadius, serviceUnavailableMessage: effectiveServiceUnavailableMessage } = useAppLocation();
   const companyName = useCompanyName();
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = { limit: 500 };
+    if (effectiveZoneId) params.zoneId = effectiveZoneId;
+    getPublicFoods(params, { noCache: true })
+      .then((data) => {
+        if (cancelled) return;
+        const lowest = {};
+        (data?.foods || []).forEach((food) => {
+          const price = Number(food?.price);
+          const rid = String(food?.restaurantId || "");
+          if (!rid || !Number.isFinite(price) || price <= 0 || food?.isAvailable === false) return;
+          if (lowest[rid] === undefined || price < lowest[rid]) lowest[rid] = price;
+        });
+        setStartingPriceByRestaurant(lowest);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveZoneId]);
   const [showToast, setShowToast] = useState(false);
   const [showManageCollections, setShowManageCollections] = useState(false);
   const [selectedRestaurantSlug, setSelectedRestaurantSlug] = useState(null);
@@ -2269,7 +2294,9 @@ export default function Home() {
 
                           <div className="p-2 pt-0 flex items-center justify-between">
                             <span className="text-[15px] sm:text-base font-black text-gray-900 dark:text-white tracking-tight">
-                              ₹{restaurant.minOrderAmount || restaurant.price || 150}
+                              {startingPriceByRestaurant[String(restaurant.mongoId || restaurant.id)] !== undefined
+                                ? `₹${startingPriceByRestaurant[String(restaurant.mongoId || restaurant.id)]}`
+                                : ""}
                             </span>
                             <Link 
                               to={`/user/restaurants/${restaurantSlug}`}

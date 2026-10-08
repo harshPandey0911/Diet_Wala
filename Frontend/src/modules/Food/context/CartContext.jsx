@@ -1,6 +1,7 @@
 // src/context/cart-context.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { buildCartLineId } from "@food/utils/foodVariants"
+import { restaurantAPI } from "@food/api"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -495,6 +496,69 @@ export function CartProvider({ children }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount to clean up localStorage data
+
+  // Keep cart prices equal to the price the customer sees on the menu. A price is saved when an
+  // item is added, so it goes stale when the admin changes the food markup or the restaurant edits
+  // the item. Re-read the public menu (which already includes the markup) and update the cart.
+  const cartRestaurantId = cart[0]?.restaurantId || ""
+  useEffect(() => {
+    if (!cartRestaurantId) return undefined
+    let cancelled = false
+
+    const syncPrices = async () => {
+      try {
+        const res = await restaurantAPI.getMenuByRestaurantId(cartRestaurantId, { noCache: true })
+        const sections = res?.data?.data?.menu?.sections || []
+        const menuItems = new Map()
+        sections.forEach((section) => {
+          ;(section?.items || []).forEach((menuItem) => menuItems.set(String(menuItem.id), menuItem))
+        })
+        if (cancelled || menuItems.size === 0) return
+
+        setCart((prev) => {
+          let changed = false
+          const next = normalizeCartData(prev).map((item) => {
+            const menuItem = menuItems.get(String(item.itemId))
+            if (!menuItem) return item
+            let livePrice = Number(menuItem.price)
+            if (item.variantId) {
+              const variant = (menuItem.variants || []).find((v) => String(v.id || v._id) === String(item.variantId))
+              if (!variant) return item
+              livePrice = Number(variant.price)
+            }
+            if (!Number.isFinite(livePrice) || livePrice <= 0) return item
+            // originalPrice is the menu price; price is that minus any item discount. Keep the
+            // discount ratio and only move the menu price to the live value.
+            const savedOriginal = Number(item.originalPrice)
+            const hasOriginal = Number.isFinite(savedOriginal) && savedOriginal > 0
+            const ratio = hasOriginal ? (Number(item.price) || savedOriginal) / savedOriginal : 1
+            const nextPrice = hasOriginal ? Math.round(livePrice * ratio) : livePrice
+            const nextOriginal = hasOriginal ? livePrice : item.originalPrice
+            if (item.price === nextPrice && item.variantPrice === nextPrice && item.originalPrice === nextOriginal) {
+              return item
+            }
+            changed = true
+            return {
+              ...item,
+              price: nextPrice,
+              variantPrice: nextPrice,
+              ...(hasOriginal ? { originalPrice: nextOriginal } : {}),
+            }
+          })
+          return changed ? next : prev
+        })
+      } catch {
+        // keep the saved prices if the menu can't be fetched
+      }
+    }
+
+    syncPrices()
+    window.addEventListener("focus", syncPrices)
+    return () => {
+      cancelled = true
+      window.removeEventListener("focus", syncPrices)
+    }
+  }, [cartRestaurantId])
 
   // Transform cart to match AddToCartAnimation expected structure
   const cartForAnimation = useMemo(() => {

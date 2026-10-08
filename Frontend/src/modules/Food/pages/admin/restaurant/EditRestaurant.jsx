@@ -133,6 +133,8 @@ export default function EditRestaurant() {
   const [error, setError] = useState("")
 
   const [restaurant, setRestaurant] = useState(null)
+  const [phoneChangeBusy, setPhoneChangeBusy] = useState(false)
+  const [phoneChangeMessage, setPhoneChangeMessage] = useState("")
   const [zones, setZones] = useState([])
   const [zonesLoading, setZonesLoading] = useState(false)
 
@@ -147,6 +149,37 @@ export default function EditRestaurant() {
     if (id) return id
     return normalizeRestaurantId(restaurant)
   }, [id, restaurant])
+
+  const handlePhoneChangeDecision = async (decision) => {
+    if (!restaurantId || phoneChangeBusy) return
+    let reason = ""
+    if (decision === "reject") {
+      reason = window.prompt("Reason for rejecting (optional):") ?? null
+      if (reason === null) return
+    }
+    try {
+      setPhoneChangeBusy(true)
+      setPhoneChangeMessage("")
+      const res =
+        decision === "approve"
+          ? await adminAPI.approveRestaurantPhoneChange(restaurantId)
+          : await adminAPI.rejectRestaurantPhoneChange(restaurantId, reason)
+      const updated = res?.data?.data || {}
+      setRestaurant((prev) => ({ ...(prev || {}), ...updated }))
+      if (decision === "approve") {
+        setDetailsForm((prev) => ({
+          ...prev,
+          ownerPhone: updated.ownerPhone || prev.ownerPhone,
+          primaryContactNumber: updated.primaryContactNumber || prev.primaryContactNumber,
+        }))
+      }
+      setPhoneChangeMessage(decision === "approve" ? "Phone number change approved." : "Phone number change rejected.")
+    } catch (e) {
+      setPhoneChangeMessage(e?.response?.data?.message || "Could not update the phone change request.")
+    } finally {
+      setPhoneChangeBusy(false)
+    }
+  }
 
   useEffect(() => {
     let mounted = true
@@ -495,6 +528,27 @@ export default function EditRestaurant() {
                   <Label>Owner Email</Label>
                   <Input value={detailsForm.ownerEmail} onChange={(e) => setDetailsForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
                 </div>
+                {restaurant?.pendingPhoneChange?.phone && restaurant.pendingPhoneChange.status === "pending" && (
+                  <div className="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    <p className="font-semibold">Phone number change requested</p>
+                    <p className="mt-1">
+                      Current: <span className="font-mono">{restaurant.ownerPhone || "-"}</span> &rarr; Requested:{" "}
+                      <span className="font-mono font-semibold">{restaurant.pendingPhoneChange.phone}</span>
+                    </p>
+                    <p className="mt-1 text-xs">On approval this becomes the restaurant's login and contact number.</p>
+                    <div className="mt-2 flex gap-2">
+                      <Button type="button" size="sm" disabled={phoneChangeBusy} onClick={() => handlePhoneChangeDecision("approve")}>
+                        Approve
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" disabled={phoneChangeBusy} onClick={() => handlePhoneChangeDecision("reject")}>
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {phoneChangeMessage && (
+                  <p className="md:col-span-2 text-sm text-slate-600">{phoneChangeMessage}</p>
+                )}
                 <div>
                   <Label>Owner Phone</Label>
                   <Input value={detailsForm.ownerPhone} onChange={(e) => setDetailsForm((p) => ({ ...p, ownerPhone: e.target.value }))} />

@@ -3578,6 +3578,91 @@ export async function approveRestaurant(id) {
     return updated;
 }
 
+export async function approveRestaurantPhoneChange(id) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+    const current = await FoodRestaurant.findById(id).select('pendingPhoneChange restaurantName').lean();
+    if (!current) return null;
+    const requested = current.pendingPhoneChange;
+    if (!requested?.phone || requested.status !== 'pending') {
+        throw new ValidationError('No pending phone change request for this restaurant');
+    }
+
+    const digits = String(requested.phone).replace(/\D/g, '').slice(-15);
+    const last10 = digits.slice(-10);
+    const inUse = await FoodRestaurant.exists({
+        _id: { $ne: id },
+        $or: [{ ownerPhoneLast10: last10 }, { ownerPhoneDigits: digits }],
+    });
+    if (inUse) {
+        throw new ValidationError('This phone number is now used by another restaurant');
+    }
+
+    // The requested number becomes both the login number and the contact number.
+    const updated = await FoodRestaurant.findByIdAndUpdate(
+        id,
+        {
+            $set: {
+                ownerPhone: digits,
+                ownerPhoneDigits: digits,
+                ownerPhoneLast10: last10,
+                primaryContactNumber: digits,
+            },
+            $unset: { pendingPhoneChange: '' },
+        },
+        { new: true, runValidators: false }
+    ).lean();
+
+    try {
+        const { notifyOwnersSafely } = await import('../../../../core/notifications/firebase.service.js');
+        await notifyOwnersSafely(
+            [{ ownerType: 'RESTAURANT', ownerId: id }],
+            {
+                title: 'Phone number updated',
+                body: `Your new phone number ${digits} has been approved. Use it to log in from now on.`,
+                data: { type: 'restaurant_phone_change_approved', restaurantId: String(id) },
+            }
+        );
+    } catch (e) {
+        console.error('Failed to send phone change approval notification:', e);
+    }
+    return updated;
+}
+
+export async function rejectRestaurantPhoneChange(id, reason) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+    const current = await FoodRestaurant.findById(id).select('pendingPhoneChange').lean();
+    if (!current) return null;
+    if (!current.pendingPhoneChange?.phone || current.pendingPhoneChange.status !== 'pending') {
+        throw new ValidationError('No pending phone change request for this restaurant');
+    }
+    const updated = await FoodRestaurant.findByIdAndUpdate(
+        id,
+        {
+            $set: {
+                'pendingPhoneChange.status': 'rejected',
+                'pendingPhoneChange.reviewedAt': new Date(),
+                'pendingPhoneChange.rejectionReason': typeof reason === 'string' ? reason.trim() : '',
+            },
+        },
+        { new: true, runValidators: false }
+    ).lean();
+
+    try {
+        const { notifyOwnersSafely } = await import('../../../../core/notifications/firebase.service.js');
+        await notifyOwnersSafely(
+            [{ ownerType: 'RESTAURANT', ownerId: id }],
+            {
+                title: 'Phone number change rejected',
+                body: 'Your request to change the phone number was rejected. Your old number stays active.',
+                data: { type: 'restaurant_phone_change_rejected', restaurantId: String(id) },
+            }
+        );
+    } catch (e) {
+        console.error('Failed to send phone change rejection notification:', e);
+    }
+    return updated;
+}
+
 export async function rejectRestaurant(id, reason) {
     if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
     const updated = await FoodRestaurant.findByIdAndUpdate(

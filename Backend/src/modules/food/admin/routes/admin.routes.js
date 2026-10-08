@@ -94,6 +94,8 @@ router.patch('/restaurants/:id/location', adminController.updateRestaurantLocati
 router.patch('/restaurants/:id/outlet-timings', adminController.updateRestaurantOutletTimings);
 router.patch('/restaurants/:id/menu', adminController.updateRestaurantMenuById);
 router.patch('/restaurants/:id/approve', adminController.approveRestaurant);
+router.patch('/restaurants/:id/phone-change/approve', adminController.approveRestaurantPhoneChange);
+router.patch('/restaurants/:id/phone-change/reject', adminController.rejectRestaurantPhoneChange);
 router.patch('/restaurants/:id/reject', adminController.rejectRestaurant);
 router.patch('/restaurants/:id/zone-rank', adminController.updateRestaurantZoneRank);
 router.delete('/restaurants/:id', adminController.deleteRestaurant);

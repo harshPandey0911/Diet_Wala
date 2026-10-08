@@ -123,13 +123,13 @@ export default function RestaurantLogin() {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="relative w-32 h-32 md:w-36 md:h-36 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden border-4 border-white mx-auto mb-4 bg-white"
+              className="relative w-36 h-36 md:w-44 md:h-44 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden mx-auto mb-4 bg-white"
               style={{ borderRadius: '50%', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
             >
               <img
                 src={logoToDisplay}
                 alt="Restaurant Partner Logo"
-                className="w-full h-full object-contain p-5"
+                className="w-full h-full object-contain p-1"
                 style={{ borderRadius: '50%' }}
                 onError={(e) => {
                   e.currentTarget.src = logoNew

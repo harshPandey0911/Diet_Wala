@@ -311,6 +311,10 @@ export const adminAPI = {
     adminClient.patch(`/food/admin/restaurants/${id}/approve`, {}),
   rejectRestaurant: (id, reason) =>
     adminClient.patch(`/food/admin/restaurants/${id}/reject`, { reason }),
+  approveRestaurantPhoneChange: (id) =>
+    adminClient.patch(`/food/admin/restaurants/${id}/phone-change/approve`, {}),
+  rejectRestaurantPhoneChange: (id, reason) =>
+    adminClient.patch(`/food/admin/restaurants/${id}/phone-change/reject`, { reason }),
   /** Delivery partner join requests - uses /food/admin/delivery/* (new backend API) */
   getDeliveryPartnerJoinRequests: (params) =>
     adminClient.get("/food/admin/delivery/join-requests", { params }),

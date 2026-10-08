@@ -296,6 +296,15 @@ const restaurantSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Phone change requested by the restaurant. The live number (ownerPhone/primaryContactNumber)
+    // only changes once an admin approves; until then this holds the requested number.
+    pendingPhoneChange: {
+      phone: { type: String, trim: true },
+      status: { type: String, enum: ['pending', 'rejected'] },
+      requestedAt: { type: Date },
+      reviewedAt: { type: Date },
+      rejectionReason: { type: String, trim: true },
+    },
     zoneRank: {
       type: Number,
       min: 1,
