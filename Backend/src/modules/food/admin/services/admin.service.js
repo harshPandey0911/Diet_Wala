@@ -2843,7 +2843,10 @@ export async function createCategory(body) {
                 })()
                 : undefined,
         isActive: body.isActive !== false,
-        sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0,
+        // No order given: put the new category at the end of the sequence.
+        sortOrder: Number.isFinite(Number(body.sortOrder))
+            ? Number(body.sortOrder)
+            : ((await FoodCategory.findOne().sort({ sortOrder: -1 }).select('sortOrder').lean())?.sortOrder || 0) + 1,
         // Admin-created categories are globally available immediately.
         approvalStatus: 'approved',
         isApproved: true,
@@ -2958,6 +2961,32 @@ export async function updateCategory(id, body) {
     }
     await doc.save();
     return doc.toObject();
+}
+
+/**
+ * Move a category one step up/down in the display sequence.
+ * Categories are first renumbered 1..N in the order they are currently shown (sortOrder asc,
+ * newest first for ties), so it also works while many categories still share sortOrder 0.
+ */
+export async function moveCategory(id, direction) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+    if (!['up', 'down'].includes(direction)) throw new ValidationError('direction must be "up" or "down"');
+
+    const all = await FoodCategory.find({}).sort({ sortOrder: 1, createdAt: -1 }).select('_id sortOrder').lean();
+    const index = all.findIndex((c) => String(c._id) === String(id));
+    if (index === -1) return null;
+
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target >= 0 && target < all.length) {
+        [all[index], all[target]] = [all[target], all[index]];
+    }
+
+    await FoodCategory.bulkWrite(
+        all.map((c, i) => ({
+            updateOne: { filter: { _id: c._id }, update: { $set: { sortOrder: i + 1 } } }
+        }))
+    );
+    return { id: String(id), position: Math.min(Math.max(target, 0), all.length - 1) + 1, total: all.length };
 }
 
 export async function deleteCategory(id) {

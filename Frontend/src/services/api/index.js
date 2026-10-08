@@ -433,6 +433,9 @@ export const adminAPI = {
     adminClient.patch(`/food/admin/categories/${String(id)}/make-global`, {}),
   toggleCategoryStatus: (id) =>
     adminClient.patch(`/food/admin/categories/${id}/toggle`, {}),
+  /** Move a category one step in the home display sequence. direction: "up" | "down" */
+  moveCategory: (id, direction) =>
+    adminClient.patch(`/food/admin/categories/${id}/move`, { direction }),
   /** Get single restaurant by id (full details for View Details modal). */
   getRestaurantById: (id) =>
     adminClient.get(`/food/admin/restaurants/${id}`),

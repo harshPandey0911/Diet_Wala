@@ -30,6 +30,7 @@ const defaultFormData = {
   type: "",
   zoneId: "global",
   foodTypeScope: "Both",
+  sortOrder: "",
 }
 
 const approvalBadgeClass = (status) => {
@@ -181,6 +182,7 @@ export default function Category() {
       type: category?.type || "",
       zoneId: zoneIdValue || "global",
       foodTypeScope: category?.foodTypeScope || "Both",
+      sortOrder: category?.sortOrder ?? "",
     })
     setSelectedImageFile(null)
     setImagePreview(category?.image || null)
@@ -203,6 +205,15 @@ export default function Category() {
       setImagePreview(reader.result)
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleMove = async (category, direction) => {
+    try {
+      await adminAPI.moveCategory(category.id, direction)
+      await fetchCategories()
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to change category order")
+    }
   }
 
   const handleToggleStatus = async (id) => {
@@ -344,6 +355,8 @@ export default function Category() {
         image: imageUrl || undefined,
         zoneId: formData.zoneId || "global",
         foodTypeScope: formData.foodTypeScope,
+        // Empty = keep the current position (edit) or go to the end (new).
+        ...(String(formData.sortOrder).trim() !== "" ? { sortOrder: Number(formData.sortOrder) } : {}),
       }
 
       if (editingCategory) {
@@ -472,6 +485,27 @@ export default function Category() {
                     <tr key={category.id} className="align-top hover:bg-slate-50/80">
                       <td className="px-5 py-5">
                         <div className="flex items-start gap-3">
+                          <div className="flex shrink-0 flex-col items-center text-slate-500" title="Display order on the home page">
+                            <button
+                              type="button"
+                              onClick={() => handleMove(category, "up")}
+                              disabled={Boolean(searchQuery) || showPendingOnly}
+                              className="px-1 leading-none hover:text-slate-900 disabled:opacity-30"
+                              aria-label="Move up"
+                            >
+                              ▲
+                            </button>
+                            <span className="text-xs font-bold text-slate-700">{category?.sortOrder || "-"}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleMove(category, "down")}
+                              disabled={Boolean(searchQuery) || showPendingOnly}
+                              className="px-1 leading-none hover:text-slate-900 disabled:opacity-30"
+                              aria-label="Move down"
+                            >
+                              ▼
+                            </button>
+                          </div>
                           <div className="h-11 w-11 overflow-hidden rounded-2xl bg-slate-100">
                             {category?.image ? (
                               <img src={getMediaUrl(category.image)} alt={category.name} className="h-full w-full object-cover" />
@@ -732,6 +766,19 @@ export default function Category() {
                             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
                             placeholder="Enter category name"
                           />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-slate-700">Display Order</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={formData.sortOrder}
+                            onChange={(event) => setFormData((prev) => ({ ...prev, sortOrder: event.target.value }))}
+                            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+                            placeholder="Leave empty to add at the end"
+                          />
+                          <p className="mt-1 text-xs text-slate-500">1 shows first on the home page, 2 second, and so on.</p>
                         </div>
 
                         <div>
