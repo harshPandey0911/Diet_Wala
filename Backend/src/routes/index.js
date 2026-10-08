@@ -21,6 +21,7 @@ import promocodeRoutes from './promocodeRoutes.js';
 import { requireZone } from '../middlewares/zone.middleware.js';
 import envSettingRoutes from './admin/envSettingRoutes.js';
 
+const processStartedAt = new Date().toISOString();
 const router = express.Router();
 
 // Apply Global Zone Interceptor (Reads X-Zone-Id from Frontend Axios)
@@ -28,6 +29,15 @@ router.use(requireZone);
 
 router.get('/v1/health', (req, res) => {
     res.status(200).json({ status: 'UP', message: 'Server is healthy' });
+});
+
+// Public deploy marker: lets you confirm which backend code is live (no login needed).
+router.get('/v1/food/build-info', (req, res) => {
+    res.status(200).json({
+        pricingVersion: 'checkout-no-markup-v2',
+        startedAt: processStartedAt,
+        pid: process.pid,
+    });
 });
 
 // App Config Route
