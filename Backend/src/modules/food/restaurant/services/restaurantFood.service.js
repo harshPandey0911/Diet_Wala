@@ -500,14 +500,13 @@ export async function listPublicApprovedFoods(query = {}) {
         isAvailable: { $ne: false }
     };
 
+    // Only dishes of approved restaurants that are online right now (toggle on).
+    const restaurantFilter = { status: 'approved', isAcceptingOrders: { $ne: false } };
     const zoneIdRaw = String(query.zoneId || '').trim();
     if (zoneIdRaw && mongoose.Types.ObjectId.isValid(zoneIdRaw)) {
-        const zoneRestaurants = await FoodRestaurant.distinct('_id', {
-            zoneId: new mongoose.Types.ObjectId(zoneIdRaw),
-            status: 'approved'
-        });
-        filter.restaurantId = { $in: zoneRestaurants };
+        restaurantFilter.zoneId = new mongoose.Types.ObjectId(zoneIdRaw);
     }
+    filter.restaurantId = { $in: await FoodRestaurant.distinct('_id', restaurantFilter) };
 
     const [list, total] = await Promise.all([
         FoodItem.find(filter)

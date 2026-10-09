@@ -181,6 +181,7 @@ const toRestaurantProfile = (doc) => {
                 ? Number(doc.estimatedDeliveryTimeMinutes)
                 : null,
         isAcceptingOrders: doc.isAcceptingOrders !== false,
+        acceptingOrdersUpdatedAt: doc.acceptingOrdersUpdatedAt || null,
         status: doc.status || null,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
@@ -244,6 +245,26 @@ const buildZoneRestaurantMatch = (_zoneDoc, zoneIdRaw) => {
             { zoneId: { $exists: false } }
         ]
     };
+};
+
+// Informational only (no approval needed): tell admins a restaurant went offline/online.
+const notifyAdminsAboutRestaurantAvailability = async (restaurantId, restaurantName, isAcceptingOrders) => {
+    try {
+        const { notifyAdminsSafely } = await import('../../../../core/notifications/firebase.service.js');
+        void notifyAdminsSafely({
+            title: isAcceptingOrders ? 'Restaurant Back Online' : 'Restaurant Offline',
+            body: isAcceptingOrders
+                ? `Restaurant "${restaurantName || 'Unknown Restaurant'}" is online again and accepting orders.`
+                : `Restaurant "${restaurantName || 'Unknown Restaurant'}" is offline right now and not accepting orders.`,
+            data: {
+                type: isAcceptingOrders ? 'restaurant_online' : 'restaurant_offline',
+                subType: 'restaurant',
+                id: String(restaurantId)
+            }
+        });
+    } catch (e) {
+        console.error('Failed to notify admins of restaurant availability change:', e);
+    }
 };
 
 const notifyAdminsAboutRestaurantProfileReview = async (restaurantId, restaurantName, { title, body } = {}) => {
@@ -544,6 +565,7 @@ export const getCurrentRestaurantProfile = async (restaurantId) => {
                 'estimatedDeliveryTime',
                 'estimatedDeliveryTimeMinutes',
                 'isAcceptingOrders',
+                'acceptingOrdersUpdatedAt',
                 'status',
                 'approvedAt',
                 'pendingUpdateReason',
@@ -560,10 +582,26 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
     if (!restaurantId) {
         throw new ValidationError('Invalid restaurant id');
     }
-    const value = Boolean(isAcceptingOrders);
+    // Accept real booleans and "true"/"false" strings; Boolean("false") would wrongly be true.
+    let value;
+    if (typeof isAcceptingOrders === 'boolean') value = isAcceptingOrders;
+    else if (String(isAcceptingOrders).toLowerCase() === 'true') value = true;
+    else if (String(isAcceptingOrders).toLowerCase() === 'false') value = false;
+    else throw new ValidationError('isAcceptingOrders must be true or false');
+
+    const before = await FoodRestaurant.findById(restaurantId).select('isAcceptingOrders restaurantName').lean();
+    if (!before) throw new ValidationError('Restaurant not found');
+    const wasAccepting = before.isAcceptingOrders !== false;
+
+    // Only availability changes here: this never touches `status`, so it needs no admin approval.
     const doc = await FoodRestaurant.findByIdAndUpdate(
         restaurantId,
-        { $set: { isAcceptingOrders: value } },
+        {
+            $set: {
+                isAcceptingOrders: value,
+                ...(wasAccepting !== value ? { acceptingOrdersUpdatedAt: new Date() } : {})
+            }
+        },
         {
             new: true,
             runValidators: true,
@@ -609,6 +647,7 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
                 'closingTime',
                 'openDays',
                 'isAcceptingOrders',
+                'acceptingOrdersUpdatedAt',
                 'status',
                 'approvedAt',
                 'pendingUpdateReason',
@@ -617,6 +656,10 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
             ].join(' ')
         }
     ).lean();
+    if (wasAccepting !== value) {
+        void notifyAdminsAboutRestaurantAvailability(restaurantId, before.restaurantName, value);
+    }
+
     return toRestaurantProfile(doc);
 };
 
@@ -1220,7 +1263,8 @@ export const listApprovedRestaurants = async (query = {}) => {
     const page = parseQueryPage(query.page, 1);
     const skip = (page - 1) * limit;
 
-    const filter = { status: 'approved' };
+    // Offline restaurants (toggle off) are hidden from customers until they switch back on.
+    const filter = { status: 'approved', isAcceptingOrders: { $ne: false } };
 
     const locOr = [];
     if (query.city && String(query.city).trim()) {
@@ -1756,10 +1800,13 @@ export const listPublicOffers = async () => {
 
     const list = await FoodOffer.find(filter)
         .sort({ createdAt: -1 })
-        .populate({ path: 'restaurantId', select: 'restaurantName restaurantNameNormalized profileImage estimatedDeliveryTime rating' })
+        .populate({ path: 'restaurantId', select: 'restaurantName restaurantNameNormalized profileImage estimatedDeliveryTime rating isAcceptingOrders' })
         .lean();
 
-    const allOffers = list.map((o) => {
+    const allOffers = list
+        // Hide offers that belong to a restaurant that is offline right now.
+        .filter((o) => !(o.restaurantId && typeof o.restaurantId === 'object' && o.restaurantId.isAcceptingOrders === false))
+        .map((o) => {
         const restaurant = o.restaurantId && typeof o.restaurantId === 'object' ? o.restaurantId : null;
         const restaurantSlug = restaurant?.restaurantNameNormalized || undefined;
         const restaurantName =

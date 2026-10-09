@@ -57,7 +57,8 @@ export default function DeliverySettings() {
           response?.data?.data?.restaurant ||
           response?.data?.restaurant ||
           null
-        const nextStatus = restaurant?.isAcceptingOrders === true
+        // Missing field means online, same as the backend default.
+        const nextStatus = restaurant?.isAcceptingOrders !== false
         if (!cancelled) {
           setDeliveryStatus(nextStatus)
           syncStatusLocally(nextStatus)

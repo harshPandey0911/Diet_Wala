@@ -153,7 +153,7 @@ export async function createOrder(userId, dto) {
   if (restaurant.status !== "approved")
     throw new ValidationError("Restaurant not accepting orders");
   if (restaurant.isAcceptingOrders === false)
-    throw new ValidationError("Restaurant not accepting orders");
+    throw new ValidationError("This restaurant is offline right now and not accepting orders. Please try again later.");
 
 
   const settings = await getDispatchSettings();

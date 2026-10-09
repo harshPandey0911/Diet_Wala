@@ -8,12 +8,15 @@ export const getPublicGourmetRestaurants = async () => {
 
     const restaurantIds = docs.map((d) => d.restaurantId);
     const restaurants = await FoodRestaurant.find({ _id: { $in: restaurantIds } })
-        .select('restaurantName area city profileImage rating cuisines slug pureVegRestaurant location estimatedDeliveryTime zoneId')
+        .select('restaurantName area city profileImage rating cuisines slug pureVegRestaurant location estimatedDeliveryTime zoneId isAcceptingOrders')
         .lean();
 
     const restaurantMap = new Map(restaurants.map((r) => [r._id.toString(), r]));
 
-    return docs.map((item) => {
+    // Skip restaurants that are offline right now (toggle off).
+    const offlineIds = new Set(restaurants.filter((r) => r.isAcceptingOrders === false).map((r) => r._id.toString()));
+
+    return docs.filter((item) => !offlineIds.has(item.restaurantId.toString())).map((item) => {
         const r = restaurantMap.get(item.restaurantId.toString());
         return {
             ...item,

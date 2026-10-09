@@ -1575,8 +1575,14 @@ export default function Cart() {
   }
 
 
-  const handlePlaceOrder = async () => {
+  // Restaurant switched itself offline: it takes no new orders until it is back online.
+  const isRestaurantOfflineNow = restaurantData?.isAcceptingOrders === false
 
+  const handlePlaceOrder = async () => {
+    if (isRestaurantOfflineNow) {
+      toast.error("This restaurant is offline right now and not accepting orders. Please try again later.")
+      return
+    }
 
     if (!hasSavedAddress) {
       toast.error("Please choose a delivery location to continue")
@@ -3081,10 +3087,16 @@ export default function Cart() {
               </div>
             </div>
 
+            {isRestaurantOfflineNow && (
+              <p className="rounded-xl bg-red-50 dark:bg-red-900/20 px-3 py-2 text-center text-xs font-semibold text-red-600 dark:text-red-400">
+                {restaurantData?.name || restaurantData?.restaurantName || "This restaurant"} is offline right now and not accepting orders.
+              </p>
+            )}
+
             {/* Place Order Button */}
             <button
               onClick={handlePlaceOrder}
-              disabled={isPlacingOrder || (selectedPaymentMethod === "wallet" && walletBalance < total)}
+              disabled={isPlacingOrder || isRestaurantOfflineNow || (selectedPaymentMethod === "wallet" && walletBalance < total)}
               className="w-full bg-primary hover:bg-primary/90 text-white px-6 h-12 md:h-14 rounded-2xl font-bold shadow-lg shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-transform active:scale-[0.98]"
             >
               {(selectedPaymentMethod === "razorpay" || selectedPaymentMethod === "wallet" || selectedPaymentMethod === "cash") && (
@@ -3096,7 +3108,9 @@ export default function Cart() {
               <div className="flex items-center gap-1 mx-auto text-sm md:text-lg tracking-wide">
                 {isPlacingOrder
                   ? "Processing..."
-                  : !hasSavedAddress
+                  : isRestaurantOfflineNow
+                    ? "Restaurant offline"
+                    : !hasSavedAddress
                     ? "Select Address"
                     : "Place Order"}
                 <div className="flex align-center h-full">

@@ -75,6 +75,23 @@ const mapPendingRestaurants = (rows = []) =>
     }
   });
 
+// Restaurants that switched themselves offline. Informational only: no approval needed.
+const mapOfflineRestaurants = (response) => {
+  const rows = response?.data?.data || [];
+  return (Array.isArray(rows) ? rows : []).map((item) => ({
+    // Include the time so a restaurant going offline again shows a fresh notification.
+    id: `restaurant-offline-${String(item?._id || item?.id || "")}-${item?.offlineSince || ""}`,
+    title: "Restaurant Offline",
+    message: `${item?.restaurantName || "Restaurant"} is offline right now and not accepting orders.`,
+    type: "info",
+    category: "restaurant_offline",
+    path: "/admin/food/restaurants",
+    createdAt: item?.offlineSince,
+    timeLabel: toDateLabel(item?.offlineSince),
+    metaLabel: joinMeta(item?.restaurantName, item?.ownerName, item?.ownerPhone),
+  }));
+};
+
 const mapDeliveryJoinRequests = (response) => {
   const payload = response?.data?.data;
   const rows =
@@ -214,6 +231,7 @@ export default function useAdminNotifications(options = {}) {
         supportRes,
         deliverySupportRes,
         fssaiExpiredRes,
+        offlineRestaurantsRes,
       ] = await Promise.all([
         adminAPI.getPendingRestaurants(),
         adminAPI.getDeliveryPartnerJoinRequests({ page: 1, limit: 50 }),
@@ -221,6 +239,7 @@ export default function useAdminNotifications(options = {}) {
         adminAPI.getSupportTicketsAdmin({ page: 1, limit: 50, source: "all" }),
         adminAPI.getDeliverySupportTickets({ page: 1, limit: 50 }),
         adminAPI.getExpiredFssaiNotifications(),
+        adminAPI.getOfflineRestaurants().catch(() => null),
       ]);
 
       const restaurantRows =
@@ -235,6 +254,7 @@ export default function useAdminNotifications(options = {}) {
         ...mapUserRestaurantSupport(supportRes),
         ...mapDeliverySupport(deliverySupportRes),
         ...mapExpiredFssai(fssaiExpiredRes),
+        ...mapOfflineRestaurants(offlineRestaurantsRes),
       ])
         .filter((item) => !dismissed.has(item.id))
         .sort((a, b) => toDateValue(b.createdAt) - toDateValue(a.createdAt));

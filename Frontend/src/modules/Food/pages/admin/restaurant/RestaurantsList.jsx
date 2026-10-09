@@ -1502,6 +1502,14 @@ export default function RestaurantsList() {
                             <span className="text-[11px] text-slate-500">
                               Outlet: {restaurant.isActive ? "Active" : "Inactive"}
                             </span>
+                            {restaurant.approvalStatus === "approved" && (
+                              <span
+                                className={`text-[11px] font-semibold ${restaurant.originalData?.isAcceptingOrders === false ? "text-red-600" : "text-emerald-600"}`}
+                                title="Set by the restaurant from its app (no approval needed)"
+                              >
+                                {restaurant.originalData?.isAcceptingOrders === false ? "Offline (not taking orders)" : "Online"}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">

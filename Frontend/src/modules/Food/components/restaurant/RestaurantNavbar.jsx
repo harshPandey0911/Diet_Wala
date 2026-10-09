@@ -297,20 +297,24 @@ export default function RestaurantNavbar({
   // Load status from localStorage on mount and listen for changes
   useEffect(() => {
     const updateStatus = () => {
+      // The backend value is the truth; localStorage is only a fallback until it loads
+      // (it can be stale, e.g. after toggling from another device).
+      if (restaurantData) {
+        const isOnline = restaurantData.isAcceptingOrders !== false
+        setStatus(isOnline ? "Online" : "Offline")
+        try {
+          localStorage.setItem('restaurant_online_status', JSON.stringify(isOnline))
+          localStorage.setItem('restaurant_delivery_status', JSON.stringify(isOnline))
+        } catch (_) {}
+        return
+      }
       try {
         const savedStatus = localStorage.getItem('restaurant_online_status')
         if (savedStatus !== null) {
-          const isOnline = JSON.parse(savedStatus)
-          setStatus(isOnline ? "Online" : "Offline")
-        } else {
-          // If not stored yet, fallback to backend value (when available).
-          const isOnline = Boolean(restaurantData?.isAcceptingOrders)
-          setStatus(isOnline ? "Online" : "Offline")
+          setStatus(JSON.parse(savedStatus) ? "Online" : "Offline")
         }
       } catch (error) {
         debugError("Error loading restaurant status:", error)
-        const isOnline = Boolean(restaurantData?.isAcceptingOrders)
-        setStatus(isOnline ? "Online" : "Offline")
       }
     }
 
@@ -331,6 +335,33 @@ export default function RestaurantNavbar({
   }, [restaurantData])
 
 
+
+  // Restaurant switches itself online/offline (no admin approval). Offline hides it and its
+  // dishes from customers and blocks new orders; orders already placed are not affected.
+  const [savingStatus, setSavingStatus] = useState(false)
+  const handleStatusToggle = async () => {
+    if (savingStatus) return
+    const goOnline = status !== "Online"
+    if (!goOnline && !window.confirm("Go offline? Customers will not see your restaurant or be able to order until you go online again.")) {
+      return
+    }
+    try {
+      setSavingStatus(true)
+      await restaurantAPI.updateAcceptingOrders(goOnline)
+      setStatus(goOnline ? "Online" : "Offline")
+      setRestaurantData((prev) => (prev ? { ...prev, isAcceptingOrders: goOnline } : prev))
+      try {
+        localStorage.setItem('restaurant_online_status', JSON.stringify(goOnline))
+        localStorage.setItem('restaurant_delivery_status', JSON.stringify(goOnline))
+      } catch (_) {}
+      window.dispatchEvent(new CustomEvent("restaurantStatusChanged", { detail: { isOnline: goOnline } }))
+    } catch (error) {
+      debugError("Error updating restaurant status:", error)
+      window.alert(error?.response?.data?.message || "Could not change status. Please try again.")
+    } finally {
+      setSavingStatus(false)
+    }
+  }
 
   const handleSearchClick = () => {
     setIsSearchActive(true)
@@ -434,19 +465,28 @@ export default function RestaurantNavbar({
       <div className="flex shrink-0 items-center">
         {/* Offline/Online Status Tag */}
         {showOfflineOnlineTag && (
-          <div
-            className={`flex items-center gap-1 px-2 py-1 sm:gap-1.5 sm:px-3 sm:py-1.5 rounded-full shadow-sm ${
-              status === "Online" 
-                ? "bg-white/20 border border-white/20" 
-                : "bg-white/10 border border-white/10"
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full shrink-0 ${
-              status === "Online" ? "bg-[#00e676]" : "bg-gray-400"
-            }`}></span>
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-sm bg-white/20 border border-white/20">
             <span className="text-[11px] sm:text-sm font-bold text-white tracking-wide">
-              {status}
+              {savingStatus ? "..." : status}
             </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={status === "Online"}
+              aria-label={status === "Online" ? "Go offline" : "Go online"}
+              title={status === "Online" ? "Tap to go offline" : "Tap to go online"}
+              onClick={handleStatusToggle}
+              disabled={savingStatus}
+              className={`relative h-5 w-9 sm:h-6 sm:w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                status === "Online" ? "bg-[#00e676]" : "bg-gray-400"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-white shadow transition-transform ${
+                  status === "Online" ? "translate-x-4 sm:translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
           </div>
         )}
 

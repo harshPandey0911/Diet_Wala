@@ -15,6 +15,7 @@ import {
 } from '../services/restaurant.service.js';
 import { validateRestaurantRegisterDto } from '../validators/restaurant.validator.js';
 import { sendResponse } from '../../../../utils/response.js';
+import { invalidateCache } from '../../../../middleware/cache.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
 import { sendRestaurantOnboardingEmail } from '../../../../utils/email.js';
 
@@ -104,6 +105,12 @@ export const updateRestaurantAcceptingOrdersController = async (req, res, next) 
     try {
         const restaurantId = req.user?.userId;
         const restaurant = await updateRestaurantAcceptingOrders(restaurantId, req.body?.isAcceptingOrders);
+        // Clear cached customer-facing lists after the change so the restaurant and its dishes
+        // disappear (offline) or come back (online) right away.
+        await Promise.all(
+            ['restaurants', 'restaurant_detail', 'restaurant_menu', 'restaurant', 'foods', 'offers']
+                .map((prefix) => invalidateCache(prefix + ':*'))
+        );
         return sendResponse(res, 200, 'Restaurant availability updated successfully', { restaurant });
     } catch (error) {
         next(error);

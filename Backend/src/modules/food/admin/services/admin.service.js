@@ -298,7 +298,7 @@ export async function getRestaurants(query) {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status ownerName ownerPhone zoneId zoneRank rating discount itemDiscounts discountRules openingTime closingTime deliveryTimings onboarding openDays estimatedDeliveryTime isActive')
+            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status ownerName ownerPhone zoneId zoneRank rating discount itemDiscounts discountRules openingTime closingTime deliveryTimings onboarding openDays estimatedDeliveryTime isActive isAcceptingOrders acceptingOrdersUpdatedAt')
             .populate('zoneId', 'name zoneName')
             .lean(),
         FoodRestaurant.countDocuments(filter)
@@ -2487,6 +2487,20 @@ export async function updateRestaurantMenuById(id, menu) {
     doc.menu = { sections };
     await doc.save();
     return doc.menu || { sections: [] };
+}
+
+/** Approved restaurants that switched themselves offline (informational, no approval needed). */
+export async function getOfflineRestaurants() {
+    const restaurants = await FoodRestaurant.find({ status: 'approved', isAcceptingOrders: false })
+        .select('restaurantName ownerName ownerPhone zoneId acceptingOrdersUpdatedAt updatedAt profileImage')
+        .populate('zoneId', 'name zoneName')
+        .sort({ acceptingOrdersUpdatedAt: -1, updatedAt: -1 })
+        .lean();
+    return restaurants.map((r) => ({
+        ...r,
+        zone: r.zoneId?.zoneName || r.zoneId?.name || null,
+        offlineSince: r.acceptingOrdersUpdatedAt || r.updatedAt || null,
+    }));
 }
 
 export async function getPendingRestaurants() {

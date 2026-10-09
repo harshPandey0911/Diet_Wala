@@ -57,6 +57,82 @@ const sendSmsViaMsg91 = async (phone, otp) => {
     }
 };
 
+/**
+ * Sends the OTP SMS via SMSIndiaHub (POST https://cloud.smsindiahub.in/api/mt/SendSMS, JSON).
+ * The message must match the DLT-approved template text exactly, otherwise the operator drops it.
+ * @param {string} phone - 10-digit mobile number
+ * @param {string} otp
+ */
+const sendSmsViaSmsIndiaHub = async (phone, otp) => {
+    try {
+        const { smsIndiaHubApiKey, smsIndiaHubSenderId, smsIndiaHubChannel, smsIndiaHubRoute,
+            smsIndiaHubEntityId, smsIndiaHubTemplateId, smsIndiaHubOtpText } = config;
+
+        const missing = [
+            ['SMSINDIAHUB_API_KEY', smsIndiaHubApiKey],
+            ['SMSINDIAHUB_SENDER_ID', smsIndiaHubSenderId],
+            ['SMSINDIAHUB_ROUTE', smsIndiaHubRoute],
+            ['SMSINDIAHUB_TEMPLATE_ID', smsIndiaHubTemplateId],
+            ['SMSINDIAHUB_OTP_TEXT', smsIndiaHubOtpText],
+        ].filter(([, value]) => !value).map(([name]) => name);
+        if (missing.length) {
+            logger.error(`[SMS] SMSIndiaHub is not configured, missing: ${missing.join(', ')}`);
+            return;
+        }
+
+        const digits = String(phone || '').replace(/\D/g, '');
+        const msisdn = digits.length === 10 ? `91${digits}` : (digits.startsWith('91') ? digits : `91${digits}`);
+        const text = String(smsIndiaHubOtpText).replace(/\{#var#\}|\{otp\}/gi, otp);
+
+        const body = {
+            Account: {
+                APIKey: smsIndiaHubApiKey,
+                SenderId: smsIndiaHubSenderId,
+                Channel: String(smsIndiaHubChannel),
+                DCS: 0,
+                FlashMessage: 0,
+                Route: Number(smsIndiaHubRoute),
+                ...(smsIndiaHubEntityId ? { EntityId: smsIndiaHubEntityId } : {}),
+            },
+            Messages: [
+                {
+                    Number: msisdn,
+                    Text: text,
+                    DLTTemplateId: smsIndiaHubTemplateId,
+                },
+            ],
+        };
+
+        logger.info(`[SMS] Sending OTP to ${msisdn} via SMSIndiaHub...`);
+        const response = await fetch('https://cloud.smsindiahub.in/api/mt/SendSMS', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const resultText = await response.text();
+
+        let parsed = null;
+        try { parsed = JSON.parse(resultText); } catch (_) { }
+
+        // ErrorCode "000" means accepted; anything else is an error (message in ErrorMessage).
+        if (!response.ok || !parsed || String(parsed.ErrorCode) !== '000') {
+            logger.error(`[SMS] SMSIndiaHub failed for ${msisdn}: HTTP ${response.status} - ${resultText}`);
+            // eslint-disable-next-line no-console
+            console.error(`❌ [SMS ERROR] SMSIndiaHub failed for ${msisdn}: ${parsed?.ErrorMessage || resultText}`);
+        } else {
+            logger.info(`✅ SMS accepted by SMSIndiaHub for ${msisdn} (JobId: ${parsed.JobId})`);
+        }
+    } catch (error) {
+        logger.error(`Error sending SMS to ${phone} via SMSIndiaHub: ${error.message}`);
+        // Do NOT throw - OTP is already stored in DB; SMS failure should not block the flow
+    }
+};
+
+const sendOtpSms = (phone, otp) =>
+    config.smsProvider === 'smsindiahub'
+        ? sendSmsViaSmsIndiaHub(phone, otp)
+        : sendSmsViaMsg91(phone, otp);
+
 export const createOrUpdateOtp = async (phone) => {
     const existing = await FoodOtp.findOne({ phone });
     const now = new Date();
@@ -115,7 +191,7 @@ export const createOrUpdateOtp = async (phone) => {
 
     // Only send SMS if not in default OTP mode
     if (!config.useDefaultOtp && !phone.endsWith('9755633147') && !phone.endsWith('8624862400')) {
-        await sendSmsViaMsg91(phone, otp);
+        await sendOtpSms(phone, otp);
     }
 
     return otp;

@@ -293,6 +293,9 @@ export const adminAPI = {
   // Restaurant approvals and join requests
   getPendingRestaurants: () =>
     adminClient.get("/food/admin/restaurants/pending"),
+  /** Approved restaurants that are offline right now (toggle off). Informational only. */
+  getOfflineRestaurants: () =>
+    adminClient.get("/food/admin/restaurants/offline"),
   /** List restaurant complaints (admin). */
   getRestaurantComplaints: (params = {}) =>
     adminClient.get("/food/admin/restaurants/complaints", { params }),
@@ -1223,10 +1226,12 @@ function createInFlightCache({ ttlMs }) {
 // Public user-app endpoints can be called by multiple components/effects on refresh (and React StrictMode in dev).
 // A small in-flight + short TTL cache collapses duplicate requests without changing functionality.
 const publicRestaurantsCache = createInFlightCache({ ttlMs: 1000 }); // 1 second for fast updates
-const publicRestaurantMenuCache = createInFlightCache({ ttlMs: 300000 });
+// Short TTL so a newly approved dish shows up quickly.
+const publicRestaurantMenuCache = createInFlightCache({ ttlMs: 30000 });
 const publicRestaurantOutletTimingsCache = createInFlightCache({ ttlMs: 300000 });
 const publicCategoriesCache = createInFlightCache({ ttlMs: 300000 });
-const publicFoodsCache = createInFlightCache({ ttlMs: 300000 });
+// Short TTL: dishes of a restaurant that just went offline must disappear quickly.
+const publicFoodsCache = createInFlightCache({ ttlMs: 30000 });
 const publicGenericGetCache = createInFlightCache({ ttlMs: 300000 });
 
 export const publicGetOnce = (url, config = {}) => {

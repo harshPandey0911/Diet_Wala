@@ -133,6 +133,10 @@ const restaurantSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    // When the restaurant last switched itself online/offline (shown to admin as "offline since").
+    acceptingOrdersUpdatedAt: {
+      type: Date,
+    },
     panNumber: {
       type: String,
     },

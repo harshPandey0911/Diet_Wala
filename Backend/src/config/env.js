@@ -38,6 +38,19 @@ export const config = {
     msg91AuthKey: process.env.MSG91_AUTH_KEY,
     msg91TemplateId: process.env.MSG91_TEMPLATE_ID,
 
+    // SMS provider for OTPs: 'msg91' (default) or 'smsindiahub'
+    smsProvider: (process.env.SMS_PROVIDER || 'msg91').toLowerCase(),
+
+    // SMSIndiaHub (cloud.smsindiahub.in)
+    smsIndiaHubApiKey: process.env.SMSINDIAHUB_API_KEY,
+    smsIndiaHubSenderId: process.env.SMSINDIAHUB_SENDER_ID,
+    smsIndiaHubChannel: process.env.SMSINDIAHUB_CHANNEL || '2', // 1 = promotional, 2 = transactional
+    smsIndiaHubRoute: process.env.SMSINDIAHUB_ROUTE, // numeric route id from the panel
+    smsIndiaHubEntityId: process.env.SMSINDIAHUB_ENTITY_ID, // DLT PE ID
+    smsIndiaHubTemplateId: process.env.SMSINDIAHUB_TEMPLATE_ID, // DLT template id
+    // Exact DLT-approved text. {#var#} or {otp} is replaced with the OTP.
+    smsIndiaHubOtpText: process.env.SMSINDIAHUB_OTP_TEXT,
+
     // Rate limiting
     rateLimitWindowMinutes: Number(process.env.RATE_LIMIT_WINDOW || 15),
     rateLimitMaxRequests: Number(process.env.RATE_LIMIT_MAX || 100),
@@ -127,6 +140,14 @@ export const updateConfig = () => {
     config.useDefaultOtp = process.env.USE_DEFAULT_OTP === 'true';
     config.msg91AuthKey = process.env.MSG91_AUTH_KEY || config.msg91AuthKey;
     config.msg91TemplateId = process.env.MSG91_TEMPLATE_ID || config.msg91TemplateId;
+    config.smsProvider = (process.env.SMS_PROVIDER || config.smsProvider || 'msg91').toLowerCase();
+    config.smsIndiaHubApiKey = process.env.SMSINDIAHUB_API_KEY || config.smsIndiaHubApiKey;
+    config.smsIndiaHubSenderId = process.env.SMSINDIAHUB_SENDER_ID || config.smsIndiaHubSenderId;
+    config.smsIndiaHubChannel = process.env.SMSINDIAHUB_CHANNEL || config.smsIndiaHubChannel;
+    config.smsIndiaHubRoute = process.env.SMSINDIAHUB_ROUTE || config.smsIndiaHubRoute;
+    config.smsIndiaHubEntityId = process.env.SMSINDIAHUB_ENTITY_ID || config.smsIndiaHubEntityId;
+    config.smsIndiaHubTemplateId = process.env.SMSINDIAHUB_TEMPLATE_ID || config.smsIndiaHubTemplateId;
+    config.smsIndiaHubOtpText = process.env.SMSINDIAHUB_OTP_TEXT || config.smsIndiaHubOtpText;
     config.rateLimitWindowMinutes = Number(process.env.RATE_LIMIT_WINDOW || config.rateLimitWindowMinutes);
     config.rateLimitMaxRequests = Number(process.env.RATE_LIMIT_MAX || config.rateLimitMaxRequests);
     config.authRateLimitWindowMinutes = Number(process.env.AUTH_RATE_LIMIT_WINDOW || config.authRateLimitWindowMinutes);

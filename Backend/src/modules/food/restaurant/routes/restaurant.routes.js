@@ -177,22 +177,22 @@ router.post('/feedback-experience', authMiddleware, requireRestaurant, feedbackE
 router.get('/restaurants/:id/addons', cacheResponse(600, 'restaurant_addons'), getPublicRestaurantAddonsController);
 
 // Foods (restaurant creates/updates items -> stored in food_items collection)
-router.post('/foods', authMiddleware, requireRestaurant, async (req, res, next) => {
-    await invalidateCache('restaurant_menu:*');
+// Clear customer-facing caches AFTER the change is saved (not before): clearing first lets a
+// request re-cache the old menu in between, so the new dish stayed hidden until the cache expired.
+const clearFoodCachesAfterWrite = (req, res, next) => {
+    res.on('finish', () => {
+        if (res.statusCode < 400) {
+            ['restaurant_menu', 'foods', 'restaurants', 'restaurant_detail'].forEach((prefix) => {
+                invalidateCache(prefix + ':*').catch(() => {});
+            });
+        }
+    });
     next();
-}, createRestaurantFoodController);
-router.post('/foods/bulk', authMiddleware, requireRestaurant, async (req, res, next) => {
-    await invalidateCache('restaurant_menu:*');
-    next();
-}, bulkCreateRestaurantFoodController);
-router.patch('/foods/:id', authMiddleware, requireRestaurant, async (req, res, next) => {
-    await invalidateCache('restaurant_menu:*');
-    next();
-}, updateRestaurantFoodController);
-router.delete('/foods/:id', authMiddleware, requireRestaurant, async (req, res, next) => {
-    await invalidateCache('restaurant_menu:*');
-    next();
-}, deleteRestaurantFoodController);
+};
+router.post('/foods', authMiddleware, requireRestaurant, clearFoodCachesAfterWrite, createRestaurantFoodController);
+router.post('/foods/bulk', authMiddleware, requireRestaurant, clearFoodCachesAfterWrite, bulkCreateRestaurantFoodController);
+router.patch('/foods/:id', authMiddleware, requireRestaurant, clearFoodCachesAfterWrite, updateRestaurantFoodController);
+router.delete('/foods/:id', authMiddleware, requireRestaurant, clearFoodCachesAfterWrite, deleteRestaurantFoodController);
 
 // Add-ons (restaurant dashboard) - approval handled by admin
 router.get('/addons', authMiddleware, requireRestaurant, listAddonsController);

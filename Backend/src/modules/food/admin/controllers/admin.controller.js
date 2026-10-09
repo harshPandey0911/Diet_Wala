@@ -788,6 +788,15 @@ export async function updateSupportTicketController(req, res, next) {
     }
 }
 
+export async function getOfflineRestaurants(req, res, next) {
+    try {
+        const restaurants = await adminService.getOfflineRestaurants();
+        res.status(200).json({ success: true, message: 'Offline restaurants fetched successfully', data: restaurants });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function getPendingRestaurants(req, res, next) {
     try {
         const pending = await adminService.getPendingRestaurants();
