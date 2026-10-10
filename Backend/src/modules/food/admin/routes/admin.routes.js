@@ -46,6 +46,7 @@ router.delete('/dev-data/:section', requireSuperAdmin, devDataController.deleteD
 // ----- Broadcast Notifications -----
 router.post('/notifications/broadcast', notificationBroadcastController.createBroadcastNotificationController);
 router.get('/notifications/broadcast', notificationBroadcastController.getBroadcastNotificationsController);
+router.get('/notifications/broadcast/recipients', notificationBroadcastController.searchBroadcastRecipientsController);
 router.delete('/notifications/broadcast/:id', notificationBroadcastController.deleteBroadcastNotificationController);
 
 // ----- Customers -----

@@ -11,6 +11,7 @@ import { sendVoipPushNotification } from '../../../../core/notifications/voip.se
 import { getIO, rooms } from '../../../../config/socket.js';
 import { logger } from '../../../../utils/logger.js';
 import { addNotificationJob } from '../../../../queues/producers/notification.producer.js';
+import { getNotificationQueue } from '../../../../queues/index.js';
 
 const TARGET_TYPE_MAP = {
     ALL: 'ALL',
@@ -21,8 +22,10 @@ const TARGET_TYPE_MAP = {
 };
 
 const OWNER_LABEL_MAP = {
+    ALL: 'Everyone',
     USER: 'Users',
     RESTAURANT: 'Restaurants',
+    DELIVERY: 'Delivery Partners',
     DELIVERY_PARTNER: 'Delivery Partners'
 };
 
@@ -39,6 +42,15 @@ const normalizeText = (value, fieldName, required = true) => {
         throw new ValidationError(`${fieldName} is required`);
     }
     return text;
+};
+
+const normalizeImageUrl = (value) => {
+    const url = String(value || '').trim();
+    if (!url) return '';
+    if (!/^https:\/\//i.test(url)) {
+        throw new ValidationError('Image must be an https:// URL');
+    }
+    return url.slice(0, 1000);
 };
 
 const normalizeVoipTokens = (value) =>
@@ -163,7 +175,7 @@ const resolveTargets = async ({ targetType, targetIds = [], targets = [] } = {})
     throw new ValidationError('Unsupported targetType');
 };
 
-const buildNotificationPayload = ({ title, message, link, broadcastId, target }) => ({
+const buildNotificationPayload = ({ title, message, link, image, broadcastId, target }) => ({
     ownerType: target.ownerType,
     ownerId: target.ownerId,
     title,
@@ -173,20 +185,41 @@ const buildNotificationPayload = ({ title, message, link, broadcastId, target })
     broadcastId,
     metadata: {
         broadcastId: String(broadcastId),
+        image: image || '',
         ownerLabel: target.label || '',
         ownerSubLabel: target.subLabel || ''
     }
 });
 
-const buildPushPayload = ({ title, message, link, broadcastId }) => ({
+const buildPushPayload = ({ title, message, link, image, broadcastId }) => ({
     title,
     body: message,
     data: {
         type: 'admin_broadcast',
         broadcastId: String(broadcastId),
-        link
+        link,
+        // firebase.service reads data.image for the big picture in the notification
+        ...(image ? { image } : {})
     }
 });
+
+const PUSH_TOKEN_QUERY = { $or: [{ 'fcmTokens.0': { $exists: true } }, { 'fcmTokenMobile.0': { $exists: true } }] };
+
+// How many of the recipients have at least one device registered for push.
+const countPushReachable = async (targets = []) => {
+    const idsByType = new Map();
+    for (const target of targets) {
+        if (!idsByType.has(target.ownerType)) idsByType.set(target.ownerType, []);
+        idsByType.get(target.ownerType).push(target.ownerId);
+    }
+    let reachable = 0;
+    for (const [ownerType, ids] of idsByType) {
+        const model = ownerModelMap[ownerType];
+        if (!model) continue;
+        reachable += await model.countDocuments({ _id: { $in: ids }, ...PUSH_TOKEN_QUERY });
+    }
+    return reachable;
+};
 
 const emitRealtimeNotifications = (targets = [], broadcast) => {
     const io = getIO();
@@ -260,7 +293,17 @@ const enqueueBroadcastDelivery = async ({ broadcast, resolvedTargets = [], voipT
         payload: pushPayload
     };
 
+    let hasQueueWorker = false;
     try {
+        const queue = getNotificationQueue();
+        hasQueueWorker = queue ? (await queue.getWorkersCount()) > 0 : false;
+    } catch (error) {
+        logger.warn(`Could not check notification workers: ${error.message}`);
+    }
+
+    // Only use the queue when a notification worker is actually running; without one the job
+    // would wait in Redis and the push would never be sent.
+    if (hasQueueWorker) try {
         const job = await addNotificationJob(jobPayload, {
             jobId: `admin-broadcast:${String(broadcast?._id || Date.now())}`
         });
@@ -296,6 +339,7 @@ export const createBroadcastNotification = async ({ body = {}, adminId } = {}) =
     const title = normalizeText(body?.title, 'title');
     const message = normalizeText(body?.message, 'message');
     const link = normalizeText(body?.link, 'link', false);
+    const image = normalizeImageUrl(body?.image);
     const targetType = normalizeTargetType(body?.targetType);
     const voipTokens = normalizeVoipTokens(body?.voipToken || body?.voipTokens);
     const resolvedTargets = await resolveTargets({
@@ -332,6 +376,7 @@ export const createBroadcastNotification = async ({ body = {}, adminId } = {}) =
                 title,
                 message,
                 link,
+                image,
                 broadcastId: broadcast._id,
                 target
             })
@@ -348,14 +393,19 @@ export const createBroadcastNotification = async ({ body = {}, adminId } = {}) =
             title,
             message,
             link,
+            image,
             broadcastId: broadcast._id
         })
     });
 
+    const pushReachable = await countPushReachable(resolvedTargets).catch(() => null);
+
     return {
         broadcast,
         targetPreview: resolvedTargets.slice(0, 10),
-        delivery
+        delivery,
+        recipientCount: resolvedTargets.length,
+        pushReachable
     };
 };
 
@@ -403,4 +453,38 @@ export const deleteBroadcastNotification = async (broadcastId) => {
         broadcast,
         deletedInboxCount: Number(result?.deletedCount || 0)
     };
+};
+
+const RECIPIENT_SEARCH_FIELDS = {
+    USER: ['name', 'phone', 'email'],
+    RESTAURANT: ['restaurantName', 'ownerName', 'ownerPhone', 'ownerEmail'],
+    DELIVERY_PARTNER: ['name', 'phone', 'email']
+};
+
+/** Search users / restaurants / delivery partners by name, phone or email for a targeted send. */
+export const searchBroadcastRecipients = async ({ ownerType, q = '', limit = 30 } = {}) => {
+    const type = String(ownerType || '').trim().toUpperCase();
+    const config = modelConfigMap[type];
+    if (!config) throw new ValidationError('ownerType must be USER, RESTAURANT or DELIVERY_PARTNER');
+
+    const term = String(q || '').trim().slice(0, 60);
+    const filter = { ...config.query };
+    if (term) {
+        const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        filter.$or = RECIPIENT_SEARCH_FIELDS[type].map((field) => ({ [field]: rx }));
+    }
+
+    const rows = await config.model.find(filter)
+        .select(`${config.select} fcmTokens fcmTokenMobile`)
+        .sort({ createdAt: -1 })
+        .limit(Math.max(1, Math.min(100, Number(limit) || 30)))
+        .lean();
+
+    return rows.map((row) => ({
+        ownerType: type,
+        ownerId: String(row._id),
+        ...config.buildLabel(row),
+        hasPush: (Array.isArray(row.fcmTokens) && row.fcmTokens.length > 0)
+            || (Array.isArray(row.fcmTokenMobile) && row.fcmTokenMobile.length > 0)
+    }));
 };

@@ -384,6 +384,9 @@ export const adminAPI = {
     adminClient.patch(`/food/admin/delivery/support-tickets/${id}`, body ?? {}),
   createBroadcastNotification: (body = {}) =>
     adminClient.post("/food/admin/notifications/broadcast", body ?? {}),
+  /** Search users / restaurants / delivery partners for a targeted broadcast. ownerType: USER | RESTAURANT | DELIVERY_PARTNER */
+  searchBroadcastRecipients: (params = {}) =>
+    adminClient.get("/food/admin/notifications/broadcast/recipients", { params }),
   getBroadcastNotifications: (params = {}) =>
     adminClient.get("/food/admin/notifications/broadcast", { params }),
   deleteBroadcastNotification: (id) =>

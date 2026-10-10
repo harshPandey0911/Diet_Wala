@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, ShieldCheck, Timer, RefreshCw, Store, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { restaurantAPI } from "@food/api"
+import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging"
 import {
   setAuthData as setRestaurantAuthData,
   setRestaurantPendingPhone,
@@ -182,6 +183,8 @@ export default function RestaurantOTP() {
 
       if (accessToken && restaurant) {
         setRestaurantAuthData("restaurant", accessToken, restaurant, data?.refreshToken)
+        // Register this device for push (orders, admin notifications) right after login.
+        registerWebPushForCurrentModule("/food/restaurant").catch(() => {})
         window.dispatchEvent(new Event("restaurantAuthChanged"))
         sessionStorage.removeItem("restaurantAuthData")
         toast.success("Verification successful!")

@@ -11,6 +11,7 @@ import AppIntroSplash from "./AppIntroSplash"
 import { LocationProvider } from "@food/context/LocationProvider"
 import { useAppLocation } from "@food/hooks/useAppLocation"
 import LocationGuard from "./LocationGuard"
+import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging"
 
 const debugWarn = (...args) => {}
 
@@ -98,6 +99,13 @@ function LocationSelectorProvider({ children }) {
 function UserLayoutShell() {
   const location = useLocation()
   const { isOutOfService } = useAppLocation()
+
+  // Keep this device's push token fresh on every app open, but never prompt here:
+  // the permission prompt happens at login / from the profile screen.
+  useEffect(() => {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return
+    registerWebPushForCurrentModule().catch(() => {})
+  }, [])
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })

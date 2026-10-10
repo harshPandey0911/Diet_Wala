@@ -2,8 +2,22 @@ import { sendResponse, sendError } from '../../../../utils/response.js';
 import {
     createBroadcastNotification,
     getBroadcastNotifications,
-    deleteBroadcastNotification
+    deleteBroadcastNotification,
+    searchBroadcastRecipients
 } from '../services/notificationBroadcast.service.js';
+
+export const searchBroadcastRecipientsController = async (req, res) => {
+    try {
+        const data = await searchBroadcastRecipients({
+            ownerType: req.query?.ownerType,
+            q: req.query?.q,
+            limit: req.query?.limit
+        });
+        return sendResponse(res, 200, 'Recipients fetched successfully', { items: data });
+    } catch (error) {
+        return sendError(res, error.statusCode || 500, error.message || 'Failed to search recipients');
+    }
+};
 
 export const createBroadcastNotificationController = async (req, res) => {
     try {

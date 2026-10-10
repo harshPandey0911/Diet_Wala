@@ -7,6 +7,7 @@ import { RestaurantLayoutProvider, useRestaurantLayout } from "./RestaurantLayou
 import { getRestaurantLayoutOptions, getRestaurantHeaderOptions } from "@food/utils/restaurantLayoutConfig"
 import { applyDynamicTheme } from "@food/utils/themeSettings"
 import { cn } from "@food/utils/utils"
+import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging"
 
 export default function RestaurantLayout() {
   const { pathname } = useLocation()
@@ -20,6 +21,13 @@ export default function RestaurantLayout() {
 
   useEffect(() => {
     applyDynamicTheme().catch(() => {});
+  }, [])
+
+  // Keep this device's push token fresh on every app open, but never prompt here:
+  // the permission prompt happens at login / from the profile screen.
+  useEffect(() => {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return
+    registerWebPushForCurrentModule().catch(() => {})
   }, [])
 
   useEffect(() => {

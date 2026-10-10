@@ -1,34 +1,56 @@
 import { useEffect, useMemo, useState } from "react";
-import { BellRing, Loader2, Search, Send, Trash2 } from "lucide-react";
+import { BellRing, Loader2, Search, Send, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { adminAPI } from "@food/api";
 
-const TARGET_OPTIONS = [
-  { value: "ALL", label: "All" },
-  { value: "USER", label: "Users" },
-  { value: "RESTAURANT", label: "Restaurants" },
-  { value: "DELIVERY", label: "Delivery Partners" },
-  { value: "CUSTOM", label: "Particular Persons" },
+// Who receives the push. "CUSTOM" = specific people picked below.
+const AUDIENCE_OPTIONS = [
+  { value: "USER", label: "All Users" },
+  { value: "RESTAURANT", label: "All Restaurants" },
+  { value: "DELIVERY", label: "All Delivery Partners" },
+  { value: "ALL", label: "Everyone" },
+  { value: "CUSTOM", label: "Specific people" },
 ];
 
-const getRows = (response) => {
-  const payload = response?.data?.data;
-  return (
-    payload?.items ||
-    payload?.restaurants ||
-    payload?.partners ||
-    payload?.customers ||
-    payload?.users ||
-    payload?.data ||
-    payload?.rows ||
-    response?.data?.items ||
-    []
-  );
-};
+const RECIPIENT_TYPES = [
+  { value: "USER", label: "Users" },
+  { value: "RESTAURANT", label: "Restaurants" },
+  { value: "DELIVERY_PARTNER", label: "Delivery" },
+];
 
-const normalizeRecipients = (response, ownerType, mapper) =>
-  getRows(response)
-    .map((item) => mapper(item, ownerType))
-    .filter((item) => item.ownerId);
+// Ready-made messages the admin can start from and edit.
+const TEMPLATES = [
+  {
+    label: "Rain + chai",
+    audience: "USER",
+    title: "Baarish ho rahi hai ☔",
+    message: "Garma garam chai aur healthy snacks order karo, ghar baithe. DietVala pe abhi order karo!",
+    link: "/food/user",
+  },
+  {
+    label: "Weekend offer",
+    audience: "USER",
+    title: "Weekend special 🎉",
+    message: "Aaj apne favourite healthy meals par special offers. Abhi dekho!",
+    link: "/food/user/offers",
+  },
+  {
+    label: "Restaurant: busy hours",
+    audience: "RESTAURANT",
+    title: "Peak hours aa rahe hain 🍽️",
+    message: "Aaj shaam orders zyada aane ki ummeed hai. Apna menu aur stock update rakhein aur online rahein.",
+    link: "/food/restaurant",
+  },
+  {
+    label: "Delivery: rain alert",
+    audience: "DELIVERY",
+    title: "Baarish alert 🌧️",
+    message: "Baarish ho rahi hai, dhyan se chalayein. Safety pehle, delivery baad me.",
+    link: "/food/delivery",
+  },
+];
+
+const EMPTY_FORM = { title: "", message: "", targetType: "USER", image: "", link: "", voipToken: "" };
 
 const toDateLabel = (value) => {
   const date = value ? new Date(value) : null;
@@ -43,20 +65,23 @@ const toDateLabel = (value) => {
   });
 };
 
+const recipientKey = (item) => `${item.ownerType}:${item.ownerId}`;
+
+const typeLabel = (ownerType) =>
+  ownerType === "DELIVERY_PARTNER" ? "Delivery" : ownerType === "RESTAURANT" ? "Restaurant" : "User";
+
 export default function NotificationBroadcast() {
-  const [form, setForm] = useState({
-    title: "",
-    message: "",
-    targetType: "ALL",
-    voipToken: "",
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [recipientLoading, setRecipientLoading] = useState(false);
+
+  // Specific-people picker
+  const [recipientType, setRecipientType] = useState("USER");
   const [search, setSearch] = useState("");
-  const [allRecipients, setAllRecipients] = useState([]);
-  const [selectedRecipients, setSelectedRecipients] = useState([]);
+  const [results, setResults] = useState([]);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [selected, setSelected] = useState([]);
 
   const loadHistory = async () => {
     try {
@@ -70,105 +95,98 @@ export default function NotificationBroadcast() {
     }
   };
 
-  const loadRecipients = async () => {
-    try {
-      setRecipientLoading(true);
-      const [customersRes, restaurantsRes, deliveryRes] = await Promise.all([
-        adminAPI.getCustomers({ page: 1, limit: 500 }),
-        adminAPI.getRestaurants({ page: 1, limit: 500 }),
-        adminAPI.getDeliveryPartners({ page: 1, limit: 500 }),
-      ]);
-
-      const customers = normalizeRecipients(customersRes, "USER", (item, ownerType) => ({
-        ownerType,
-        ownerId: String(item?._id || item?.id || ""),
-        label: String(item?.name || item?.phone || "User").trim(),
-        subLabel: [item?.phone, item?.email].filter(Boolean).join(" • "),
-      }));
-
-      const restaurants = normalizeRecipients(restaurantsRes, "RESTAURANT", (item, ownerType) => ({
-        ownerType,
-        ownerId: String(item?._id || item?.id || ""),
-        label: String(item?.restaurantName || item?.ownerName || "Restaurant").trim(),
-        subLabel: [item?.ownerPhone, item?.ownerEmail].filter(Boolean).join(" • "),
-      }));
-
-      const deliveryPartners = normalizeRecipients(deliveryRes, "DELIVERY_PARTNER", (item, ownerType) => ({
-        ownerType,
-        ownerId: String(item?._id || item?.id || ""),
-        label: String(item?.name || item?.phone || "Delivery Partner").trim(),
-        subLabel: [item?.phone, item?.email].filter(Boolean).join(" • "),
-      }));
-
-      setAllRecipients([...customers, ...restaurants, ...deliveryPartners]);
-    } catch {
-      setAllRecipients([]);
-    } finally {
-      setRecipientLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadHistory();
   }, []);
 
+  // Search recipients on the server (debounced) when picking specific people.
   useEffect(() => {
-    if (form.targetType !== "CUSTOM") return;
-    if (allRecipients.length > 0) return;
-    loadRecipients();
-  }, [allRecipients.length, form.targetType]);
+    if (form.targetType !== "CUSTOM") return undefined;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setResultsLoading(true);
+        const response = await adminAPI.searchBroadcastRecipients({
+          ownerType: recipientType,
+          q: search.trim(),
+          limit: 30,
+        });
+        if (!cancelled) setResults(response?.data?.data?.items || []);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setResultsLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [form.targetType, recipientType, search]);
 
-  useEffect(() => {
-    if (form.targetType !== "CUSTOM") {
-      setSelectedRecipients([]);
-      setSearch("");
-    }
-  }, [form.targetType]);
-
-  const filteredRecipients = useMemo(() => {
-    const keyword = String(search || "").trim().toLowerCase();
-    if (!keyword) return allRecipients;
-    return allRecipients.filter((item) =>
-      [item.label, item.subLabel, item.ownerType]
-        .join(" ")
-        .toLowerCase()
-        .includes(keyword)
-    );
-  }, [allRecipients, search]);
-
-  const selectedKeys = useMemo(
-    () => new Set(selectedRecipients.map((item) => `${item.ownerType}:${item.ownerId}`)),
-    [selectedRecipients]
-  );
+  const selectedKeys = useMemo(() => new Set(selected.map(recipientKey)), [selected]);
 
   const toggleRecipient = (recipient) => {
-    const key = `${recipient.ownerType}:${recipient.ownerId}`;
-    setSelectedRecipients((prev) =>
-      prev.some((item) => `${item.ownerType}:${item.ownerId}` === key)
-        ? prev.filter((item) => `${item.ownerType}:${item.ownerId}` !== key)
+    const key = recipientKey(recipient);
+    setSelected((prev) =>
+      prev.some((item) => recipientKey(item) === key)
+        ? prev.filter((item) => recipientKey(item) !== key)
         : [...prev, recipient]
     );
   };
 
+  const applyTemplate = (template) => {
+    setForm((prev) => ({
+      ...prev,
+      title: template.title,
+      message: template.message,
+      link: template.link,
+      targetType: prev.targetType === "CUSTOM" ? "CUSTOM" : template.audience,
+    }));
+  };
+
+  const audienceLabel = AUDIENCE_OPTIONS.find((o) => o.value === form.targetType)?.label || form.targetType;
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.title.trim() || !form.message.trim()) return;
-    if (form.targetType === "CUSTOM" && selectedRecipients.length === 0) return;
+    const title = form.title.trim();
+    const message = form.message.trim();
+    const image = form.image.trim();
+    const link = form.link.trim();
+
+    if (!title || !message) {
+      toast.error("Title aur message dono zaroori hain");
+      return;
+    }
+    if (form.targetType === "CUSTOM" && selected.length === 0) {
+      toast.error("Kam se kam ek person select karo");
+      return;
+    }
+    if (image && !/^https:\/\//i.test(image)) {
+      toast.error("Image ka link https:// se shuru hona chahiye");
+      return;
+    }
+    if (link && !link.startsWith("/")) {
+      toast.error("Link app ka page hona chahiye, jaise /food/user");
+      return;
+    }
+
+    const audienceText =
+      form.targetType === "CUSTOM" ? `${selected.length} selected people` : audienceLabel.toLowerCase();
+    if (!window.confirm(`Send "${title}" to ${audienceText}?`)) return;
 
     try {
       setSubmitting(true);
-      await adminAPI.createBroadcastNotification({
-        title: form.title.trim(),
-        message: form.message.trim(),
+      const response = await adminAPI.createBroadcastNotification({
+        title,
+        message,
+        image,
+        link,
         targetType: form.targetType,
         voipToken: form.voipToken.trim(),
-        targetIds:
-          form.targetType === "CUSTOM"
-            ? selectedRecipients.map((item) => item.ownerId)
-            : [],
         targets:
           form.targetType === "CUSTOM"
-            ? selectedRecipients.map((item) => ({
+            ? selected.map((item) => ({
                 ownerType: item.ownerType,
                 ownerId: item.ownerId,
                 label: item.label,
@@ -176,11 +194,21 @@ export default function NotificationBroadcast() {
               }))
             : [],
       });
-      setForm({ title: "", message: "", targetType: "ALL", voipToken: "" });
-      setSelectedRecipients([]);
+      const data = response?.data?.data || {};
+      const total = data.recipientCount ?? data.targetPreview?.length ?? 0;
+      const reach = data.pushReachable;
+      toast.success(
+        reach === null || reach === undefined
+          ? `Notification sent to ${total} recipient(s)`
+          : `Notification sent to ${total} recipient(s). ${reach} of them have push enabled; the rest will see it in their in-app notifications.`
+      );
+      setForm(EMPTY_FORM);
+      setSelected([]);
       setSearch("");
       window.dispatchEvent(new Event("adminBroadcastUpdated"));
       await loadHistory();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Notification send nahi hui. Dobara try karo.");
     } finally {
       setSubmitting(false);
     }
@@ -188,12 +216,18 @@ export default function NotificationBroadcast() {
 
   const handleDelete = async (id) => {
     if (!id) return;
+    if (!window.confirm("Delete this notification from history and from everyone's in-app inbox?")) return;
     try {
       await adminAPI.deleteBroadcastNotification(id);
       window.dispatchEvent(new Event("adminBroadcastUpdated"));
       await loadHistory();
-    } catch {}
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Delete failed");
+    }
   };
+
+  const inputClass =
+    "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
   return (
     <div className="p-2 lg:p-3 bg-slate-50 min-h-screen">
@@ -204,140 +238,230 @@ export default function NotificationBroadcast() {
             <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
               <BellRing className="w-3.5 h-3.5 text-white" />
             </div>
-            <h1 className="text-lg font-bold text-slate-900">Broadcast Notification</h1>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">Send Push Notification</h1>
+              <p className="text-[11px] text-slate-500">
+                Users, restaurants ya delivery partners ko phone par notification bhejo, sabko ya kisi specific ko.
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-          {/* Form Section */}
-          <div className="lg:col-span-4 bg-white rounded-lg shadow-sm border border-slate-200 p-3">
-            <h2 className="text-sm font-bold text-slate-900 mb-3">Send Broadcast</h2>
+          {/* Form */}
+          <div className="lg:col-span-5 bg-white rounded-lg shadow-sm border border-slate-200 p-3">
             <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="space-y-3">
-                <label className="block">
-                  <span className="text-xs font-semibold text-slate-700">Title</span>
-                  <input
-                    value={form.title}
-                    onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                    placeholder="Enter notification title"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-semibold text-slate-700">Target Type</span>
-                  <select
-                    value={form.targetType}
-                    onChange={(event) => setForm((prev) => ({ ...prev, targetType: event.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  >
-                    {TARGET_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              {/* Templates */}
+              <div>
+                <span className="text-xs font-semibold text-slate-700">Quick templates</span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {TEMPLATES.map((template) => (
+                    <button
+                      key={template.label}
+                      type="button"
+                      onClick={() => applyTemplate(template)}
+                      className="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      {template.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
+              {/* Audience */}
               <label className="block">
-                <span className="text-xs font-semibold text-slate-700">Message</span>
-                <textarea
-                  value={form.message}
-                  onChange={(event) => setForm((prev) => ({ ...prev, message: event.target.value }))}
-                  placeholder="Enter notification message"
-                  rows={4}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-y"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-semibold text-slate-700">iOS VoIP Token</span>
-                <input
-                  value={form.voipToken}
-                  onChange={(event) => setForm((prev) => ({ ...prev, voipToken: event.target.value }))}
-                  placeholder="Paste one or more VoIP tokens, comma separated"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-                <p className="mt-1 text-[10px] text-slate-500">
-                  Optional. Use this to ring a specific iPhone device directly.
-                </p>
+                <span className="text-xs font-semibold text-slate-700">Send to</span>
+                <select
+                  value={form.targetType}
+                  onChange={(event) => setForm((prev) => ({ ...prev, targetType: event.target.value }))}
+                  className={inputClass}
+                >
+                  {AUDIENCE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               {form.targetType === "CUSTOM" && (
                 <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2 space-y-2">
+                  <div className="flex gap-1">
+                    {RECIPIENT_TYPES.map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setRecipientType(type.value)}
+                        className={`flex-1 rounded-md px-2 py-1 text-[11px] font-semibold ${
+                          recipientType === type.value
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-slate-600 border border-slate-200"
+                        }`}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-2 py-1.5">
                     <Search className="w-3.5 h-3.5 text-slate-400" />
                     <input
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search users, restaurants..."
-                      className="w-full text-xs bg-transparent outline-none flex-1 min-w-[150px]"
+                      placeholder="Name, phone ya email se search karo"
+                      className="w-full text-xs bg-transparent outline-none flex-1"
                     />
                   </div>
 
-                  <div className="text-[10px] font-medium text-slate-500 px-1">
-                    Selected recipients: {selectedRecipients.length}
-                  </div>
+                  {selected.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {selected.map((item) => (
+                        <span
+                          key={recipientKey(item)}
+                          className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-medium text-blue-700"
+                        >
+                          {typeLabel(item.ownerType)}: {item.label}
+                          <button type="button" onClick={() => toggleRecipient(item)} aria-label="Remove">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                  <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
-                    {recipientLoading ? (
+                  <div className="max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+                    {resultsLoading ? (
                       <div className="p-3 text-xs text-slate-500 flex items-center gap-2">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        Loading...
+                        Searching...
                       </div>
-                    ) : filteredRecipients.length === 0 ? (
-                      <div className="p-3 text-xs text-slate-500">No recipients found.</div>
+                    ) : results.length === 0 ? (
+                      <div className="p-3 text-xs text-slate-500">Koi nahi mila.</div>
                     ) : (
-                      filteredRecipients.map((recipient) => {
-                        const key = `${recipient.ownerType}:${recipient.ownerId}`;
-                        const checked = selectedKeys.has(key);
-                        return (
-                          <label
-                            key={key}
-                            className="flex items-start gap-2 px-2 py-2 cursor-pointer hover:bg-slate-50"
+                      results.map((recipient) => (
+                        <label
+                          key={recipientKey(recipient)}
+                          className="flex items-start gap-2 px-2 py-2 cursor-pointer hover:bg-slate-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedKeys.has(recipientKey(recipient))}
+                            onChange={() => toggleRecipient(recipient)}
+                            className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] font-semibold text-slate-900 leading-tight">{recipient.label}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">{recipient.subLabel || "-"}</div>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${
+                              recipient.hasPush ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+                            }`}
+                            title={recipient.hasPush ? "Phone par push jayega" : "Push token nahi hai, sirf in-app inbox me dikhega"}
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleRecipient(recipient)}
-                              className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <div className="min-w-0">
-                              <div className="text-[11px] font-semibold text-slate-900 leading-tight">
-                                {recipient.label}
-                              </div>
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                {recipient.ownerType.replaceAll("_", " ")}
-                                {recipient.subLabel ? ` • ${recipient.subLabel}` : ""}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })
+                            {recipient.hasPush ? "Push on" : "No push"}
+                          </span>
+                        </label>
+                      ))
                     )}
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition-all w-full"
-                >
-                  {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  Send Broadcast
-                </button>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-700">Title</span>
+                <input
+                  value={form.title}
+                  maxLength={65}
+                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="Jaise: Baarish ho rahi hai ☔"
+                  className={inputClass}
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-700">Message</span>
+                <textarea
+                  value={form.message}
+                  maxLength={240}
+                  onChange={(event) => setForm((prev) => ({ ...prev, message: event.target.value }))}
+                  placeholder="Jaise: Garma garam chai order karo, ghar baithe!"
+                  rows={3}
+                  className={`${inputClass} resize-y`}
+                />
+                <span className="text-[10px] text-slate-400">{form.message.length}/240</span>
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-700">Image URL (optional)</span>
+                <input
+                  value={form.image}
+                  onChange={(event) => setForm((prev) => ({ ...prev, image: event.target.value }))}
+                  placeholder="https://.../banner.jpg"
+                  className={inputClass}
+                />
+                <span className="text-[10px] text-slate-400">Notification me badi photo dikhegi (Android/Chrome).</span>
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-700">Open on tap (optional)</span>
+                <input
+                  value={form.link}
+                  onChange={(event) => setForm((prev) => ({ ...prev, link: event.target.value }))}
+                  placeholder="/food/user"
+                  className={inputClass}
+                />
+                <span className="text-[10px] text-slate-400">Notification par tap karne se app ka ye page khulega.</span>
+              </label>
+
+              <details className="text-xs">
+                <summary className="cursor-pointer font-semibold text-slate-600">Advanced</summary>
+                <label className="block mt-2">
+                  <span className="text-xs font-semibold text-slate-700">iOS VoIP Token</span>
+                  <input
+                    value={form.voipToken}
+                    onChange={(event) => setForm((prev) => ({ ...prev, voipToken: event.target.value }))}
+                    placeholder="Paste one or more VoIP tokens, comma separated"
+                    className={inputClass}
+                  />
+                  <span className="text-[10px] text-slate-500">Optional. Ek specific iPhone ko ring karne ke liye.</span>
+                </label>
+              </details>
+
+              {/* Preview */}
+              <div>
+                <span className="text-xs font-semibold text-slate-700">Preview</span>
+                <div className="mt-1 rounded-xl bg-slate-800 p-2">
+                  <div className="rounded-lg bg-white p-2.5 shadow">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                      <img src="/logo.png" alt="" className="h-3.5 w-3.5 rounded" />
+                      DietVala • now
+                    </div>
+                    <div className="mt-1 text-[12px] font-bold text-slate-900">{form.title || "Notification title"}</div>
+                    <div className="text-[11px] text-slate-600 whitespace-pre-line">
+                      {form.message || "Notification message yahan dikhega"}
+                    </div>
+                    {/^https:\/\//i.test(form.image.trim()) && (
+                      <img src={form.image.trim()} alt="" className="mt-2 max-h-32 w-full rounded object-cover" />
+                    )}
+                  </div>
+                </div>
               </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition-all w-full"
+              >
+                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {form.targetType === "CUSTOM" ? `Send to ${selected.length} selected` : `Send to ${audienceLabel}`}
+              </button>
             </form>
           </div>
 
-          {/* History Section */}
-          <div className="lg:col-span-8 bg-white rounded-lg shadow-sm border border-slate-200 p-3">
-            <div className="flex items-center justify-between gap-4 mb-3">
-              <h2 className="text-sm font-bold text-slate-900">Broadcast History</h2>
-            </div>
+          {/* History */}
+          <div className="lg:col-span-7 bg-white rounded-lg shadow-sm border border-slate-200 p-3">
+            <h2 className="text-sm font-bold text-slate-900 mb-3">Sent notifications</h2>
 
             {historyLoading ? (
               <div className="py-10 text-xs text-slate-500 flex flex-col items-center gap-2">
@@ -345,17 +469,15 @@ export default function NotificationBroadcast() {
                 Loading history...
               </div>
             ) : history.length === 0 ? (
-              <div className="py-10 text-xs text-slate-500 text-center flex flex-col items-center">
-                <p>No broadcast notifications found.</p>
-              </div>
+              <div className="py-10 text-xs text-slate-500 text-center">Abhi tak koi notification nahi bheji.</div>
             ) : (
               <div className="overflow-x-auto scrollbar-hide border border-slate-200 rounded-lg">
-                <table className="w-full text-left" style={{ tableLayout: 'auto' }}>
+                <table className="w-full text-left" style={{ tableLayout: "auto" }}>
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Title</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Message</th>
-                      <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Target</th>
+                      <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Sent to</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Recipients</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Date</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider text-right">Action</th>
@@ -368,13 +490,17 @@ export default function NotificationBroadcast() {
                           <span className="text-[11px] font-semibold text-slate-900">{item?.title || "Notification"}</span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="text-[11px] text-slate-600 line-clamp-2 max-w-[200px]">{item?.message || "-"}</span>
+                          <span className="text-[11px] text-slate-600 line-clamp-2 max-w-[220px]">{item?.message || "-"}</span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="text-[11px] text-slate-700 whitespace-nowrap">{item?.targetLabel || item?.targetType}</span>
+                          <span className="text-[11px] text-slate-700 whitespace-nowrap">
+                            {item?.targetType === "ALL" ? "Everyone" : item?.targetLabel || item?.targetType}
+                          </span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="text-[11px] font-medium text-slate-700">{item?.targetCount || item?.targets?.length || 0}</span>
+                          <span className="text-[11px] font-medium text-slate-700">
+                            {item?.targetCount || item?.targets?.length || 0}
+                          </span>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
                           <span className="text-[11px] text-slate-500">{toDateLabel(item?.createdAt)}</span>
