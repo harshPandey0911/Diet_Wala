@@ -23,29 +23,29 @@ const TEMPLATES = [
   {
     label: "Rain + chai",
     audience: "USER",
-    title: "Baarish ho rahi hai ☔",
-    message: "Garma garam chai aur healthy snacks order karo, ghar baithe. DietVala pe abhi order karo!",
+    title: "It's raining ☔",
+    message: "Perfect weather for a hot cup of chai and healthy snacks. Order now on DietVala!",
     link: "/food/user",
   },
   {
     label: "Weekend offer",
     audience: "USER",
     title: "Weekend special 🎉",
-    message: "Aaj apne favourite healthy meals par special offers. Abhi dekho!",
+    message: "Special offers on your favourite healthy meals today. Check them out!",
     link: "/food/user/offers",
   },
   {
     label: "Restaurant: busy hours",
     audience: "RESTAURANT",
-    title: "Peak hours aa rahe hain 🍽️",
-    message: "Aaj shaam orders zyada aane ki ummeed hai. Apna menu aur stock update rakhein aur online rahein.",
+    title: "Peak hours ahead 🍽️",
+    message: "Expect more orders this evening. Keep your menu and stock updated and stay online.",
     link: "/food/restaurant",
   },
   {
     label: "Delivery: rain alert",
     audience: "DELIVERY",
-    title: "Baarish alert 🌧️",
-    message: "Baarish ho rahi hai, dhyan se chalayein. Safety pehle, delivery baad me.",
+    title: "Rain alert 🌧️",
+    message: "It's raining. Ride carefully: safety first, delivery second.",
     link: "/food/delivery",
   },
 ];
@@ -81,6 +81,7 @@ export default function NotificationBroadcast() {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState("");
   const [selected, setSelected] = useState([]);
 
   const loadHistory = async () => {
@@ -111,9 +112,19 @@ export default function NotificationBroadcast() {
           q: search.trim(),
           limit: 30,
         });
-        if (!cancelled) setResults(response?.data?.data?.items || []);
-      } catch {
-        if (!cancelled) setResults([]);
+        if (!cancelled) {
+          setResults(response?.data?.data?.items || []);
+          setResultsError("");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setResults([]);
+          setResultsError(
+            error?.response?.status === 404
+              ? "Recipient search is not available on the server yet. Please deploy the latest backend and restart it."
+              : error?.response?.data?.message || "Could not load recipients. Please try again."
+          );
+        }
       } finally {
         if (!cancelled) setResultsLoading(false);
       }
@@ -155,19 +166,19 @@ export default function NotificationBroadcast() {
     const link = form.link.trim();
 
     if (!title || !message) {
-      toast.error("Title aur message dono zaroori hain");
+      toast.error("Title and message are both required");
       return;
     }
     if (form.targetType === "CUSTOM" && selected.length === 0) {
-      toast.error("Kam se kam ek person select karo");
+      toast.error("Select at least one person");
       return;
     }
     if (image && !/^https:\/\//i.test(image)) {
-      toast.error("Image ka link https:// se shuru hona chahiye");
+      toast.error("Image URL must start with https://");
       return;
     }
     if (link && !link.startsWith("/")) {
-      toast.error("Link app ka page hona chahiye, jaise /food/user");
+      toast.error("Link must be an app page, like /food/user");
       return;
     }
 
@@ -208,7 +219,7 @@ export default function NotificationBroadcast() {
       window.dispatchEvent(new Event("adminBroadcastUpdated"));
       await loadHistory();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Notification send nahi hui. Dobara try karo.");
+      toast.error(error?.response?.data?.message || "Notification could not be sent. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -241,7 +252,7 @@ export default function NotificationBroadcast() {
             <div>
               <h1 className="text-lg font-bold text-slate-900 leading-tight">Send Push Notification</h1>
               <p className="text-[11px] text-slate-500">
-                Users, restaurants ya delivery partners ko phone par notification bhejo, sabko ya kisi specific ko.
+                Send phone notifications to users, restaurants or delivery partners: everyone, or specific people.
               </p>
             </div>
           </div>
@@ -308,7 +319,7 @@ export default function NotificationBroadcast() {
                     <input
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Name, phone ya email se search karo"
+                      placeholder="Search by name, phone or email"
                       className="w-full text-xs bg-transparent outline-none flex-1"
                     />
                   </div>
@@ -335,8 +346,10 @@ export default function NotificationBroadcast() {
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         Searching...
                       </div>
+                    ) : resultsError ? (
+                      <div className="p-3 text-xs text-red-600">{resultsError}</div>
                     ) : results.length === 0 ? (
-                      <div className="p-3 text-xs text-slate-500">Koi nahi mila.</div>
+                      <div className="p-3 text-xs text-slate-500">No one found.</div>
                     ) : (
                       results.map((recipient) => (
                         <label
@@ -357,7 +370,7 @@ export default function NotificationBroadcast() {
                             className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${
                               recipient.hasPush ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
                             }`}
-                            title={recipient.hasPush ? "Phone par push jayega" : "Push token nahi hai, sirf in-app inbox me dikhega"}
+                            title={recipient.hasPush ? "Will get a push on their phone" : "No push token: will only see it in the in-app inbox"}
                           >
                             {recipient.hasPush ? "Push on" : "No push"}
                           </span>
@@ -374,7 +387,7 @@ export default function NotificationBroadcast() {
                   value={form.title}
                   maxLength={65}
                   onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                  placeholder="Jaise: Baarish ho rahi hai ☔"
+                  placeholder="e.g. It's raining ☔"
                   className={inputClass}
                 />
               </label>
@@ -385,7 +398,7 @@ export default function NotificationBroadcast() {
                   value={form.message}
                   maxLength={240}
                   onChange={(event) => setForm((prev) => ({ ...prev, message: event.target.value }))}
-                  placeholder="Jaise: Garma garam chai order karo, ghar baithe!"
+                  placeholder="e.g. Order a hot cup of chai, delivered home!"
                   rows={3}
                   className={`${inputClass} resize-y`}
                 />
@@ -400,7 +413,7 @@ export default function NotificationBroadcast() {
                   placeholder="https://.../banner.jpg"
                   className={inputClass}
                 />
-                <span className="text-[10px] text-slate-400">Notification me badi photo dikhegi (Android/Chrome).</span>
+                <span className="text-[10px] text-slate-400">Shows a large picture in the notification (Android/Chrome).</span>
               </label>
 
               <label className="block">
@@ -411,7 +424,7 @@ export default function NotificationBroadcast() {
                   placeholder="/food/user"
                   className={inputClass}
                 />
-                <span className="text-[10px] text-slate-400">Notification par tap karne se app ka ye page khulega.</span>
+                <span className="text-[10px] text-slate-400">Tapping the notification opens this page in the app.</span>
               </label>
 
               <details className="text-xs">
@@ -424,7 +437,7 @@ export default function NotificationBroadcast() {
                     placeholder="Paste one or more VoIP tokens, comma separated"
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-slate-500">Optional. Ek specific iPhone ko ring karne ke liye.</span>
+                  <span className="text-[10px] text-slate-500">Optional. Rings a specific iPhone directly.</span>
                 </label>
               </details>
 
@@ -439,7 +452,7 @@ export default function NotificationBroadcast() {
                     </div>
                     <div className="mt-1 text-[12px] font-bold text-slate-900">{form.title || "Notification title"}</div>
                     <div className="text-[11px] text-slate-600 whitespace-pre-line">
-                      {form.message || "Notification message yahan dikhega"}
+                      {form.message || "Your notification message appears here"}
                     </div>
                     {/^https:\/\//i.test(form.image.trim()) && (
                       <img src={form.image.trim()} alt="" className="mt-2 max-h-32 w-full rounded object-cover" />
@@ -469,7 +482,7 @@ export default function NotificationBroadcast() {
                 Loading history...
               </div>
             ) : history.length === 0 ? (
-              <div className="py-10 text-xs text-slate-500 text-center">Abhi tak koi notification nahi bheji.</div>
+              <div className="py-10 text-xs text-slate-500 text-center">No notifications sent yet.</div>
             ) : (
               <div className="overflow-x-auto scrollbar-hide border border-slate-200 rounded-lg">
                 <table className="w-full text-left" style={{ tableLayout: "auto" }}>
