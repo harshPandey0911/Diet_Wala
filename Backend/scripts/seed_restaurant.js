@@ -32,7 +32,7 @@ async function seedRestaurant() {
         restaurant = await FoodRestaurant.create({
             restaurantName: 'Diet Cafe 7879363299',
             ownerName: 'Restaurant 7879363299',
-            ownerEmail: 'restaurant7879363299@dietwala.com',
+            ownerEmail: 'dietcafe@dietvala.com',
             ownerPhone: phone,
             primaryContactNumber: phone,
             pureVegRestaurant: false,

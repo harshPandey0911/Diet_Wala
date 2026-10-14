@@ -359,8 +359,6 @@ export default function ExploreMore() {
   const [existingSchedule, setExistingSchedule] = useState(null)
   const [deleteAccountConfirmOpen, setDeleteAccountConfirmOpen] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-  const [activeTestNotification, setActiveTestNotification] = useState("")
-  const isProductionEnv = String(import.meta.env?.MODE || import.meta.env?.NODE_ENV || "").toLowerCase() === "production"
 
   useEffect(() => {
     // Register for push notifications on mount for this module
@@ -671,72 +669,6 @@ export default function ExploreMore() {
     }
   }
 
-
-  const handleTestNotification = async (channel = "fcm") => {
-    if (activeTestNotification) return
-    setActiveTestNotification(channel)
-    try {
-      let platform = "web"
-      if (typeof window !== "undefined" && window.flutter_inappwebview) {
-        platform = "mobile"
-      }
-
-      console.info("[RestaurantVoIPTest] click", {
-        channel,
-        platform,
-        path: typeof window !== "undefined" ? window.location.pathname : "unknown",
-        ts: new Date().toISOString(),
-      })
-
-      const response = await notificationAPI.sendTestNotification(platform, channel, { contextModule: "restaurant" })
-      const voipResult = response?.data?.data?.voip
-
-      console.info("[RestaurantVoIPTest] response", {
-        channel,
-        platform,
-        status: response?.status,
-        data: response?.data,
-        voipResult,
-      })
-
-      if (channel === "voip" && voipResult?.skipped) {
-        console.warn("[RestaurantVoIPTest] skipped", voipResult)
-        toast.error(voipResult.reason || "No VoIP token registered on this device")
-        return
-      }
-
-      if (channel === "voip") {
-        if (voipResult?.failureCount > 0) {
-          console.warn("[RestaurantVoIPTest] voip failed", voipResult)
-          toast.error(voipResult?.results?.[0]?.error || "VoIP send failed")
-          return
-        }
-        console.info("[RestaurantVoIPTest] voip success", voipResult)
-        toast.success("Test VOIP sent! Check your iPhone.")
-      } else {
-        const details = response?.data?.data || {}
-        const successCount = details?.successCount || 0
-        const failureCount = details?.failureCount || 0
-        console.info("[FCM Test Details]:", details)
-        if (successCount > 0) {
-          toast.success(`Test sent! Delivered: ${successCount}, Failed: ${failureCount}`)
-        } else {
-          toast.error(`Test failed to deliver. Delivered: 0, Failed: ${failureCount}`)
-        }
-      }
-    } catch (err) {
-      console.error("[RestaurantVoIPTest] error", {
-        channel,
-        platform: typeof window !== "undefined" && window.flutter_inappwebview ? "mobile" : "web",
-        status: err?.response?.status,
-        data: err?.response?.data,
-        message: err?.message,
-      })
-      toast.error(err?.response?.data?.message || (channel === "voip" ? "Failed to send test VOIP" : "Failed to send test notification"))
-    } finally {
-      setActiveTestNotification("")
-    }
-  }
 
   const scheduleOffReasons = [
     "renovation or relocation of restaurant",
@@ -1415,40 +1347,6 @@ export default function ExploreMore() {
                 </button>
               </div>
 
-              {!isProductionEnv && (
-                <>
-              {/* Test Notifications (Debug) */}
-              <div className="px-6 pb-4 space-y-3">
-                <button
-                  onClick={() => handleTestNotification("fcm")}
-                  disabled={Boolean(activeTestNotification)}
-                  className="w-full bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100/50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed font-bold py-4 px-4 rounded-2xl transition-all flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white p-2 rounded-xl shadow-sm">
-                      <Bell className={`w-5 h-5 text-blue-500 ${activeTestNotification === "fcm" ? "animate-pulse" : ""}`} />
-                    </div>
-                    <span className="text-base font-bold">{activeTestNotification === "fcm" ? "Sending FCM..." : "Test FCM Notification"}</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-blue-300 group-hover:text-blue-500 transition-colors" />
-                </button>
-
-                <button
-                  onClick={() => handleTestNotification("voip")}
-                  disabled={Boolean(activeTestNotification)}
-                  className="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100/50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed font-bold py-4 px-4 rounded-2xl transition-all flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white p-2 rounded-xl shadow-sm">
-                      <Bell className={`w-5 h-5 text-emerald-500 ${activeTestNotification === "voip" ? "animate-pulse" : ""}`} />
-                    </div>
-                    <span className="text-base font-bold">{activeTestNotification === "voip" ? "Sending VOIP..." : "Test VOIP Call"}</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-emerald-300 group-hover:text-emerald-500 transition-colors" />
-                </button>
-              </div>
-                </>
-              )}
 
               {/* Logout Buttons */}
               <div className="px-6 pb-6 space-y-3">

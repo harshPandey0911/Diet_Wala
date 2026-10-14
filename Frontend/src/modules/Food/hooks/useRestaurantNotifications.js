@@ -214,6 +214,7 @@ export const useRestaurantNotificationsState = () => {
   // Enqueue a new order into the queue (deduplicates by ID).
   // An order that was already accepted/rejected/cancelled is never queued again.
   const enqueueOrder = (orderData) => {
+    if (orderData?.demoSeed) return; // seeded test orders only appear in the New tab, silently
     if (isRestaurantOrderHandled(orderData)) return;
     setOrderQueue(prev => {
       if (prev.some(o => isSameOrder(o, orderData))) return prev;
@@ -356,6 +357,11 @@ export const useRestaurantNotificationsState = () => {
 
   const handleIncomingOrderAlert = (orderData, source = 'unknown') => {
     const isSocket = source === 'socket';
+
+    // Seeded test orders are shown in the New tab without ringing or popping up.
+    if (orderData?.demoSeed) {
+      return;
+    }
 
     // Already accepted / rejected / cancelled: never ring again (a stale poll or a late push
     // can still carry the old "new order" state).

@@ -1515,6 +1515,7 @@ export default function OrdersMain() {
 
           // Find orders that should trigger the popup
           const targetOrders = response.data.data.orders.filter((order) => {
+            if (order.demoSeed) return false; // seeded test orders never open the popup
             if (hasOrderBeenShown(order)) return false;
 
             const isConfirmed = order.status === "confirmed";
@@ -1558,6 +1559,7 @@ export default function OrdersMain() {
               scheduledAt: orderToPopup.scheduledAt,
               estimatedDeliveryTime: orderToPopup.estimatedDeliveryTime || 30,
               note: orderToPopup.note || "",
+              demoSeed: orderToPopup.demoSeed,
               sendCutlery: orderToPopup.sendCutlery,
               paymentMethod:
                 orderToPopup.paymentMethod ||
@@ -1616,7 +1618,14 @@ export default function OrdersMain() {
       const orderToReject = popupOrder || newOrder;
       const orderId = resolveOrderActionId(orderToReject);
 
-      if (orderId && !isAcceptingOrder) {
+      if (orderToReject?.demoSeed) {
+        // Test order from the demo seed: never auto-reject it. Just close the popup; the order
+        // stays in the "New" tab until the restaurant accepts or rejects it.
+        setShowNewOrderPopup(false);
+        setPopupOrder(null);
+        clearNewOrder(orderToReject, { markHandled: false });
+        setCountdown(180);
+      } else if (orderId && !isAcceptingOrder) {
         debugLog("?? Timer expired. Auto-rejecting order:", orderId);
         restaurantAPI.rejectOrder(orderId, "No response from restaurant (Auto-rejected)")
           .then(() => {
