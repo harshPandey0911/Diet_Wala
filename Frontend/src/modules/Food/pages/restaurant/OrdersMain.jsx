@@ -627,6 +627,48 @@ function DeadOrders({ onSelectOrder, refreshToken = 0 }) {
   );
 }
 
+// UI-only sample order for the test restaurant (7879363299). It is NOT created in the database
+// and only appears while the New tab has no real orders. Remove this block (and its use in
+// NewOrders) when the screenshots are done.
+const SCREENSHOT_SAMPLE_PHONE = "7879363299";
+const buildScreenshotSampleOrder = () => ({
+  _id: "ui-sample-order",
+  orderId: "FOD-5028416",
+  status: "confirmed",
+  customerName: "Harsh Pandey",
+  createdAt: new Date(Date.now() - 2 * 60000).toISOString(),
+  updatedAt: new Date().toISOString(),
+  items: [
+    { quantity: 2, name: "Grilled Chicken Rice Bowl", image: "https://dietvala.com/uploads/img_279fca2867.webp" },
+    { quantity: 1, name: "Banana Protein Shake", image: "https://dietvala.com/uploads/img_60d003bb7a.webp" },
+  ],
+  pricing: { total: 524 },
+  payment: { method: "cash" },
+  restaurantNote: "Less spicy please",
+  estimatedDeliveryTime: 30,
+});
+
+function useIsScreenshotSampleRestaurant() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    restaurantAPI
+      .getCurrentRestaurant()
+      .then((response) => {
+        const restaurant = response?.data?.data?.restaurant || response?.data?.restaurant || {};
+        const phone = String(restaurant.ownerPhone || restaurant.primaryContactNumber || "")
+          .replace(/\D/g, "")
+          .slice(-10);
+        if (!cancelled) setEnabled(phone === SCREENSHOT_SAMPLE_PHONE);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return enabled;
+}
+
 // New Orders List Component
 function NewOrders({ onSelectOrder }) {
   const pollMs =
@@ -639,8 +681,11 @@ function NewOrders({ onSelectOrder }) {
       enablePoll: true,
       pollMs,
     });
+  const isSampleRestaurant = useIsScreenshotSampleRestaurant();
+  // Test restaurant only: show one hard-coded order while there is no real new order.
+  const showSampleOrder = isSampleRestaurant && !loading && rawOrders.length === 0;
 
-  const orders = rawOrders
+  const orders = (showSampleOrder ? [buildScreenshotSampleOrder()] : rawOrders)
     .map(transformOrderForList)
     .sort((a, b) => b.sortTimestamp - a.sortTimestamp);
 
@@ -661,7 +706,7 @@ function NewOrders({ onSelectOrder }) {
       <div className="flex items-baseline justify-between mb-3">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-black">New orders</h2>
-          <span className="text-xs text-gray-500">({meta.total})</span>
+          <span className="text-xs text-gray-500">({showSampleOrder ? 1 : meta.total})</span>
         </div>
       </div>
       {orders.length === 0 ? (
