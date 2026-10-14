@@ -1288,24 +1288,42 @@ export default function Under250() {
       
       {/* Header removed */}
 
+      {/* Back / search row for phones: kept above the banner so the buttons never cover the banner text */}
+      <div className="md:hidden flex items-center justify-between px-3 py-2 bg-white dark:bg-[#0a0a0a]">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          className="w-9 h-9 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-800 dark:text-white active:scale-95 transition-transform"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setShowSearch(true)}
+          aria-label="Search"
+          className="w-9 h-9 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-800 dark:text-white active:scale-95 transition-transform"
+        >
+          <Search className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Banner Section */}
       <div
         ref={bannerShellRef}
         data-banner-shell="true"
-        className="relative w-full aspect-[2/1] sm:aspect-[21/9] lg:aspect-[3/1] max-h-[240px] md:max-h-[320px]"
+        className="relative w-full aspect-[12/5] sm:aspect-[21/9] lg:aspect-[3/1] md:max-h-[320px]"
       >
-        {/* Floating Back Button */}
+        {/* Floating Back Button (tablet / desktop) */}
         <button 
           onClick={() => navigate(-1)} 
-          className="absolute top-4 left-4 md:top-48 md:left-8 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
+          className="hidden md:flex absolute top-4 left-4 md:top-48 md:left-8 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        {/* Floating Search Button */}
+        {/* Floating Search Button (tablet / desktop) */}
         <button 
           onClick={() => setShowSearch(true)} 
-          className="absolute top-4 right-4 md:top-48 md:right-8 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
+          className="hidden md:flex absolute top-4 right-4 md:top-48 md:right-8 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
         >
           <Search className="w-5 h-5" />
         </button>

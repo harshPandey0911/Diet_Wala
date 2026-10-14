@@ -99,26 +99,39 @@ export default function BusinessSetup() {
     }));
   };
 
+  // Show the error, then scroll to the field that caused it and focus it (the form is long, so the
+  // field is often out of view and the message alone is confusing).
+  const failField = (fieldId, message) => {
+    toast.error(message);
+    const el = typeof document !== "undefined" ? document.getElementById(fieldId) : null;
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+      el.classList.add("ring-2", "ring-red-500", "border-red-500");
+      window.setTimeout(() => el.classList.remove("ring-2", "ring-red-500", "border-red-500"), 3500);
+    }
+  };
+
   const handleSave = async () => {
     try {
       // Validate required fields
       if (!formData.companyName.trim()) {
-        toast.error("Company name is required");
+        failField("bs-company-name", "Company name is required");
         return;
       }
       if (formData.companyName.trim().length < 2) {
-        toast.error("Company name must be at least 2 characters long");
+        failField("bs-company-name", "Company name must be at least 2 characters long");
         return;
       }
 
       if (!formData.email.trim()) {
-        toast.error("Email is required");
+        failField("bs-email", "Email is required");
         return;
       }
 
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(formData.email.trim())) {
-        toast.error("Please enter a valid email address");
+        failField("bs-email", "Please enter a valid email address");
         return;
       }
 
@@ -130,21 +143,21 @@ export default function BusinessSetup() {
       }
 
       if (!formData.phoneNumber.trim()) {
-        toast.error("Phone number is required");
+        failField("bs-phone", "Company phone number is required (the \"Phone *\" field at the top of the form)");
         return;
       }
       if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
-        toast.error("Phone number must be exactly 10 digits");
+        failField("bs-phone", "Company phone number must be exactly 10 digits");
         return;
       }
 
       if (!formData.state.trim()) {
-        toast.error("State is required");
+        failField("bs-state", "State is required");
         return;
       }
 
       if (!formData.pincode.trim()) {
-        toast.error("Pincode is required");
+        failField("bs-pincode", "Pincode is required");
         return;
       }
       if (!/^\d{4,10}$/.test(formData.pincode.trim())) {
@@ -327,7 +340,8 @@ export default function BusinessSetup() {
                 <input
                   type="text"
                   placeholder="Enter Your Company Name"
-                  value={formData.companyName}
+                  id="bs-company-name"
+                    value={formData.companyName}
                   maxLength={50}
                   onChange={(e) => handleInputChange("companyName", e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -341,7 +355,8 @@ export default function BusinessSetup() {
                 <input
                   type="email"
                   placeholder="Enter Your Email"
-                  value={formData.email}
+                  id="bs-email"
+                    value={formData.email}
                   maxLength={100}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -382,6 +397,7 @@ export default function BusinessSetup() {
                   <input
                     type="text"
                     placeholder="Enter Your Phone Number"
+                    id="bs-phone"
                     value={formData.phoneNumber}
                     maxLength={10}
                     onChange={(e) => {
@@ -414,7 +430,8 @@ export default function BusinessSetup() {
                 <input
                   type="text"
                   placeholder="Enter Your State"
-                  value={formData.state}
+                  id="bs-state"
+                    value={formData.state}
                   maxLength={50}
                   onChange={(e) => handleInputChange("state", e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -428,7 +445,8 @@ export default function BusinessSetup() {
                 <input
                   type="text"
                   placeholder="Enter Your Pincode"
-                  value={formData.pincode}
+                  id="bs-pincode"
+                    value={formData.pincode}
                   maxLength={10}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");
