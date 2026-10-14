@@ -50,6 +50,30 @@ const extractReviewText = (order) => {
 const toComparableId = (value) =>
   String(value?._id || value || "").trim()
 
+// UI-only sample feedback for the test restaurant (7879363299). Nothing is saved in the database,
+// and it only shows while the restaurant has no real reviews/complaints. Remove this block and
+// its two uses below when the screenshots are done.
+const SAMPLE_FEEDBACK_PHONE = "7879363299"
+const isSampleFeedbackRestaurant = (restaurant) =>
+  String(restaurant?.ownerPhone || restaurant?.primaryContactNumber || "").replace(/\D/g, "").slice(-10) === SAMPLE_FEEDBACK_PHONE
+const sampleDate = (daysAgo) => {
+  const d = new Date(Date.now() - daysAgo * 86400000)
+  return `${d.getDate()} ${d.toLocaleDateString("en-GB", { month: "short" })}, ${d.getFullYear()}`
+}
+const sampleAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+const buildSampleReviews = (outlet) => [
+  { id: "sample-review-1", orderNumber: "FOD-2906417", userName: "Rahul Verma", ordersCount: 6, rating: 5, date: sampleDate(1), reviewText: "Chicken rice bowl was fresh and perfectly portioned. Delivered hot and right on time." },
+  { id: "sample-review-2", orderNumber: "FOD-2874093", userName: "Priya Sharma", ordersCount: 3, rating: 4, date: sampleDate(3), reviewText: "Loved the banana protein shake. The rice could have been a little warmer." },
+  { id: "sample-review-3", orderNumber: "FOD-2841625", userName: "Ankit Gupta", ordersCount: 9, rating: 5, date: sampleDate(6), reviewText: "Best high-protein meal I have had in Indore. Will definitely order again." },
+  { id: "sample-review-4", orderNumber: "FOD-2793580", userName: "Sneha Patel", ordersCount: 2, rating: 4, date: sampleDate(9), reviewText: "Fruit bowl was very fresh and the packaging was neat and leak-proof." },
+  { id: "sample-review-5", orderNumber: "FOD-2755214", userName: "Mohit Jain", ordersCount: 4, rating: 3, date: sampleDate(12), reviewText: "Food was good but delivery took longer than expected." },
+].map((r) => ({ ...r, outlet, userImage: sampleAvatar(r.userName), orderData: {} }))
+const SAMPLE_COMPLAINTS = [
+  { _id: "sample-complaint-1", status: "open", createdAt: new Date(Date.now() - 1 * 86400000).toISOString(), userId: { name: "Rahul Verma" }, orderId: { orderId: "FOD-2906417" }, issueType: "Missing item", description: "The cold coffee was missing from my order. Only the chicken rice bowl arrived." },
+  { _id: "sample-complaint-2", status: "resolved", createdAt: new Date(Date.now() - 4 * 86400000).toISOString(), userId: { name: "Priya Sharma" }, orderId: { orderId: "FOD-2874093" }, issueType: "Late delivery", description: "My order arrived almost 25 minutes late and the food was lukewarm.", adminResponse: "We have spoken to the delivery partner and added ₹50 to your wallet. Sorry for the inconvenience." },
+  { _id: "sample-complaint-3", status: "resolved", createdAt: new Date(Date.now() - 8 * 86400000).toISOString(), userId: { name: "Ankit Gupta" }, orderId: { orderId: "FOD-2841625" }, issueType: "Food quality", description: "The rice was a bit dry in today's bowl.", adminResponse: "Thank you for the feedback. Our kitchen team has been informed and will take care of it." },
+]
+
 export default function Feedback() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabFromUrl = searchParams.get("tab")
@@ -182,11 +206,14 @@ export default function Feedback() {
         if (complaintsSearchQuery) params.search = complaintsSearchQuery
 
         const response = await restaurantAPI.getComplaints(params)
-        if (response?.data?.success && response.data.data?.complaints) {
-          setComplaints(response.data.data.complaints)
-        } else {
-          setComplaints([])
-        }
+        const realComplaints = response?.data?.success && response.data.data?.complaints
+          ? response.data.data.complaints
+          : []
+        setComplaints(
+          realComplaints.length === 0 && !complaintsSearchQuery && isSampleFeedbackRestaurant(restaurantData)
+            ? SAMPLE_COMPLAINTS
+            : realComplaints
+        )
       } catch (error) {
         debugError('Error fetching complaints:', error)
         setComplaints([])
@@ -196,7 +223,7 @@ export default function Feedback() {
     }
 
     fetchComplaints()
-  }, [activeTab, selectedDateRange, customDateRange, complaintsFilterValues, complaintsSearchQuery])
+  }, [activeTab, selectedDateRange, customDateRange, complaintsFilterValues, complaintsSearchQuery, restaurantData])
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -266,15 +293,19 @@ export default function Feedback() {
           })
           .filter(review => review.rating !== null || (review.reviewText && review.reviewText !== 'No review text'))
 
-        const ratings = transformedReviews.map(r => r.rating).filter(r => r !== null)
+        const usedReviews = transformedReviews.length === 0 && isSampleFeedbackRestaurant(restaurantData)
+          ? buildSampleReviews(restaurantData?.name || restaurantData?.restaurantName || "Diet Cafe")
+          : transformedReviews
+
+        const ratings = usedReviews.map(r => r.rating).filter(r => r !== null)
         const averageRating = ratings.length > 0 ? (ratings.reduce((sum, r) => sum + r, 0) / ratings.length).toFixed(1) : 0
         
         setRatingSummary({
           averageRating: parseFloat(averageRating),
           totalRatings: ratings.length,
-          totalReviews: transformedReviews.length
+          totalReviews: usedReviews.length
         })
-        setReviews(transformedReviews)
+        setReviews(usedReviews)
       } catch (error) {
         debugError("Error fetching reviews:", error)
       } finally {
