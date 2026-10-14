@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Heart, Star, Clock, MapPin, ArrowRight, ArrowLeft, Bookmark } from "lucide-react"
 import AnimatedPage from "@food/components/user/AnimatedPage"
@@ -7,10 +7,36 @@ import ScrollReveal from "@food/components/user/ScrollReveal"
 import { Card, CardHeader, CardTitle, CardContent } from "@food/components/ui/card"
 import { Button } from "@food/components/ui/button"
 import { useProfile } from "@food/context/ProfileContext"
+import useNortheastPreviewActive from "@food/hooks/useNortheastPreviewActive"
 import { toast } from "sonner"
 
 export default function Favorites() {
-  const { getFavorites, removeFavorite, getDishFavorites, removeDishFavorite } = useProfile()
+  const { getFavorites, removeFavorite, getDishFavorites, removeDishFavorite, addFavorite, addDishFavorite } = useProfile()
+  const previewActive = useNortheastPreviewActive()
+
+  // Preview account only: fill an empty favorites list once with real restaurants/dishes
+  // (all with working pictures) so this screen is never blank.
+  useEffect(() => {
+    if (!previewActive) return
+    try {
+      if (localStorage.getItem("demoFavoritesSeeded7879363299") === "true") return
+      if (getFavorites().length > 0 || getDishFavorites().length > 0) return
+      const img = (file) => `https://dietvala.com/uploads/${file}`
+      ;[
+        { slug: "diet-cafe", name: "Diet Cafe", image: img("img_58d76f4086.webp"), rating: 4.6, cuisine: "High Protein, Healthy", deliveryTime: "15-20 min", distance: "2.5 km" },
+        { slug: "humera-foods", name: "Humera Foods", image: img("restaurant_a4c816e5b8.webp"), rating: 4.4, cuisine: "Energy Bites, Snacks", deliveryTime: "25-30 min", distance: "3.1 km" },
+      ].forEach(addFavorite)
+      ;[
+        { id: "6ac72268d87d1683bcc3e9a2", name: "GRILLED CHICKEN RICE WITH SALAD", price: 140, image: img("img_279fca2867.webp"), restaurantId: "6ac646f1d87d1683bcc3c112", restaurantName: "Diet Cafe", restaurantSlug: "diet-cafe", isVeg: false },
+        { id: "6acbd79d479d89e51dbeb695", name: "BANANA SHAKE", price: 60, image: img("img_60d003bb7a.webp"), restaurantId: "6ac646f1d87d1683bcc3c112", restaurantName: "Diet Cafe", restaurantSlug: "diet-cafe", isVeg: true },
+        { id: "6ac7da96a2635f412c417d26", name: "Energy Bite", price: 357, image: img("img_52feb20802.webp"), restaurantId: "6ac691a5d87d1683bcc3e2e3", restaurantName: "Humera Foods", restaurantSlug: "humera-foods", isVeg: true },
+      ].forEach(addDishFavorite)
+      localStorage.setItem("demoFavoritesSeeded7879363299", "true")
+    } catch {
+      // demo data is best-effort
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewActive])
   const restaurantFavorites = getFavorites()
   const dishFavorites = getDishFavorites()
   const [activeTab, setActiveTab] = useState("restaurants")

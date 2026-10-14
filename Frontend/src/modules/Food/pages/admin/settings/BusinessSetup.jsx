@@ -166,7 +166,9 @@ export default function BusinessSetup() {
       }
 
       if (formData.supportPhone?.trim()) {
-        const sPhone = formData.supportPhone.trim().replace(/\D/g, "");
+        // Accept "+91 1234567890" (country code + 10 digits) as well as a plain 10-digit number.
+        let sPhone = formData.supportPhone.trim().replace(/\D/g, "");
+        if (sPhone.length === 12 && sPhone.startsWith("91")) sPhone = sPhone.slice(2);
         if (!/^\d{10}$/.test(sPhone)) {
           toast.error("Support phone number must be exactly 10 digits");
           return;

@@ -18,6 +18,7 @@ import api, { restaurantAPI, getPublicCategories, getPublicFoods } from "@food/a
 import { API_BASE_URL } from "@food/api/config"
 import { useProfile } from "@food/context/ProfileContext"
 import { useAppLocation } from "@food/hooks/useAppLocation"
+import useNortheastPreviewActive, { PREVIEW_OPEN_STATUS } from "@food/hooks/useNortheastPreviewActive"
 import { useDelayedLoading } from "@food/hooks/useDelayedLoading"
 import { getMenuFromResponse } from "@food/utils/menuItems"
 import { normalizeImageUrl } from "@food/utils/common"
@@ -39,6 +40,7 @@ const CATEGORY_PAGE_FILTERS_STORAGE_KEY = "food-category-page-filters-v1"
 
 
 export default function CategoryPage() {
+  const previewActive = useNortheastPreviewActive()
   const { category } = useParams()
   const navigate = useNavigate()
   const { vegMode, vegModeOption } = useProfile()
@@ -1410,7 +1412,7 @@ export default function CategoryPage() {
               {/* Dishes List - Horizontal Cards */}
               <div className="flex flex-col gap-3 md:gap-4">
                 {filteredRecommended.slice(0, visibleCount).map((restaurant) => {
-                  const availability = getRestaurantAvailabilityStatus(restaurant)
+                  const availability = previewActive ? PREVIEW_OPEN_STATUS : getRestaurantAvailabilityStatus(restaurant)
                   const isClosed = !availability.isOpen
 
                   return (
@@ -1521,7 +1523,7 @@ export default function CategoryPage() {
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 lg:gap-6 xl:gap-7 items-stretch ${showRestaurantSkeleton ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}>
               {filteredAllRestaurants.slice(0, visibleCount).map((restaurant) => {
                 const isFavorite = favorites.has(restaurant.id)
-                const availability = getRestaurantAvailabilityStatus(restaurant)
+                const availability = previewActive ? PREVIEW_OPEN_STATUS : getRestaurantAvailabilityStatus(restaurant)
                 const isClosed = !availability.isOpen
 
                 return (

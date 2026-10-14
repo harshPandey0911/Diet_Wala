@@ -11,6 +11,7 @@ import { Card, CardContent } from "@food/components/ui/card";
 import { Button } from "@food/components/ui/button";
 import RestaurantImageCarousel from "@food/components/user/home/RestaurantImageCarousel";
 import { useDeferredOutletTimings } from "@food/hooks/user/useDeferredOutletTimings";
+import useNortheastPreviewActive, { PREVIEW_OPEN_STATUS } from "@food/hooks/useNortheastPreviewActive"
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability";
 
 function resolveRestaurantSlug(restaurant, index) {
@@ -51,10 +52,10 @@ function HomeRestaurantCard({
     [restaurant, outletTimings],
   );
 
-  const availability = getRestaurantAvailabilityStatus(
-    restaurantForAvailability,
-    new Date()
-  );
+  const previewActive = useNortheastPreviewActive();
+  const availability = previewActive
+    ? PREVIEW_OPEN_STATUS
+    : getRestaurantAvailabilityStatus(restaurantForAvailability, new Date());
 
   const restaurantSlug = resolveRestaurantSlug(restaurant, index);
   const favorite = isFavorite(restaurantSlug);

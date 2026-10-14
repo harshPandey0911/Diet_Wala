@@ -45,6 +45,8 @@ import { useCart } from "@food/context/CartContext"
 import { useProfile } from "@food/context/ProfileContext"
 import AddToCartAnimation from "@food/components/user/AddToCartAnimation"
 import { getCompanyNameAsync } from "@food/utils/businessSettings"
+import { getNortheastDemoMenuSections, shouldUseNortheastDemoMenu } from "@food/utils/northeastDemoMenu"
+import useNortheastPreviewActive, { PREVIEW_OPEN_STATUS } from "@food/hooks/useNortheastPreviewActive"
 import { isModuleAuthenticated } from "@food/utils/auth"
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability"
 import { extractImages, normalizeImageUrl } from "@food/utils/common"
@@ -116,7 +118,8 @@ function RestaurantDetailsContent() {
   const targetDishId = useMemo(() => String(searchParams.get('dish') || '').trim(), [searchParams])
   const BACKEND_ORIGIN = useMemo(() => API_BASE_URL.replace(/\/api(\/v\d+)?\/?$/, ""), [])
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart } = useCart()
-  const { vegMode, vegModeOption, addDishFavorite, removeDishFavorite, isDishFavorite, getDishFavorites, getFavorites, addFavorite, removeFavorite, isFavorite } = useProfile()
+  const previewActive = useNortheastPreviewActive()
+  const { userProfile: previewUserProfile, vegMode, vegModeOption, addDishFavorite, removeDishFavorite, isDishFavorite, getDishFavorites, getFavorites, addFavorite, removeFavorite, isFavorite } = useProfile()
   const { location: userLocation, zoneId, zone, loading: loadingZone, isOutOfService, serviceUnavailableMessage } = useAppLocation()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [highlightIndex, setHighlightIndex] = useState(0)
@@ -823,13 +826,20 @@ function RestaurantDetailsContent() {
                   })),
                 }))
 
-                const menuHasItems = menuSections.some((section) => {
+                let menuHasItems = menuSections.some((section) => {
                   const directItems = Array.isArray(section.items) && section.items.length > 0
                   const subsectionItems = Array.isArray(section.subsections)
                     ? section.subsections.some((subsection) => Array.isArray(subsection.items) && subsection.items.length > 0)
                     : false
                   return directItems || subsectionItems
                 })
+
+                // Preview account only: show a demo menu (browser-only, not orderable) instead of an
+                // empty "Menu is not available yet" page. See utils/northeastDemoMenu.js.
+                if (!menuHasItems && (await shouldUseNortheastDemoMenu(previewUserProfile))) {
+                  menuSections.splice(0, menuSections.length, ...getNortheastDemoMenuSections())
+                  menuHasItems = true
+                }
 
                 // Collect all recommended items from all sections
                 // Only include items that are both recommended (isRecommended === true) AND available (isAvailable !== false)
@@ -1178,6 +1188,10 @@ function RestaurantDetailsContent() {
 
   // Helper function to update item quantity in both local state and cart
   const updateItemQuantity = (item, newQuantity, event = null, preferredVariant = null) => {
+    if (item?.isDemo) {
+      toast.info("This is a demo dish for preview, so it can't be ordered.")
+      return
+    }
     // Check authentication
     if (!isModuleAuthenticated('user')) {
       toast.error("Please login to add items to cart")
@@ -1191,7 +1205,7 @@ function RestaurantDetailsContent() {
       return;
     }
 
-    const availability = getRestaurantAvailabilityStatus(restaurant)
+    const availability = previewActive ? PREVIEW_OPEN_STATUS : getRestaurantAvailabilityStatus(restaurant)
     if (!availability.isOpen) {
       toast.error("Restaurant is currently offline. Please try again later.")
       return
@@ -2394,9 +2408,12 @@ function RestaurantDetailsContent() {
     )
   }
 
-  const availabilityStatus = restaurant ? getRestaurantAvailabilityStatus(restaurant, new Date(availabilityTick)) : { isOpen: false }
+  // Preview account: never show the restaurant as offline / out of service (no grey page).
+  const availabilityStatus = previewActive
+    ? PREVIEW_OPEN_STATUS
+    : (restaurant ? getRestaurantAvailabilityStatus(restaurant, new Date(availabilityTick)) : { isOpen: false })
   const isRestaurantOffline = !availabilityStatus.isOpen
-  const shouldShowGrayscale = isOutOfService || isRestaurantOffline
+  const shouldShowGrayscale = (!previewActive && isOutOfService) || isRestaurantOffline
   const ratingValue = Number(restaurant?.rating || 0)
   const hasRating = Number.isFinite(ratingValue) && ratingValue > 0
   const ratingLabel = hasRating ? ratingValue.toFixed(1) : "New"

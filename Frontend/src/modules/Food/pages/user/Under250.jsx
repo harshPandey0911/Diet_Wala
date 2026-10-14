@@ -9,6 +9,7 @@ import { Card, CardContent } from "@food/components/ui/card"
 import { Button } from "@food/components/ui/button"
 import { useLocationSelector } from "@food/components/user/UserLayout"
 import { useAppLocation } from "@food/hooks/useAppLocation"
+import useNortheastPreviewActive, { PREVIEW_OPEN_STATUS } from "@food/hooks/useNortheastPreviewActive"
 import { useCart } from "@food/context/CartContext"
 import PageNavbar from "@food/components/user/PageNavbar"
 import offerImage from "@food/assets/offerimage.png"
@@ -311,6 +312,7 @@ const pageCache = {
 };
 
 export default function Under250() {
+  const previewActive = useNortheastPreviewActive()
   const initialFiltersRef = useRef(readUnder250Filters())
   const { location, zoneId, zoneStatus, isInService, isOutOfService, serviceUnavailableMessage } = useAppLocation()
   // Initialize state from cache if zoneId matches
@@ -1549,7 +1551,7 @@ export default function Under250() {
         ) : (
           sortedAndFilteredRestaurants.map((restaurant) => {
             const restaurantSlug = restaurant.slug || restaurant.name.toLowerCase().replace(/\s+/g, "-")
-            const availability = getRestaurantAvailabilityStatus(restaurant)
+            const availability = previewActive ? PREVIEW_OPEN_STATUS : getRestaurantAvailabilityStatus(restaurant)
             const isClosed = !availability.isOpen
 
             return (
