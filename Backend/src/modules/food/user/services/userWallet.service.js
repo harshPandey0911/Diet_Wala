@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { FoodUserWallet } from '../models/userWallet.model.js';
-import { createRazorpayOrder, getRazorpayKeyId, isRazorpayConfigured, verifyPaymentSignature } from '../../orders/helpers/razorpay.helper.js';
+import { createRazorpayOrder, getRazorpayKeyId, isRazorpayConfigured, verifyPaymentSignature, assertRazorpayEnabled } from '../../orders/helpers/razorpay.helper.js';
 
 const ensureWallet = async (userId) => {
     const id = String(userId || '');
@@ -70,6 +70,7 @@ export const createWalletTopupOrder = async (userId, amountInr) => {
     if (amount > 50000) {
         throw new ValidationError('Maximum amount is 50,000');
     }
+    await assertRazorpayEnabled();
 
     const amountPaise = Math.round(amount * 100);
 

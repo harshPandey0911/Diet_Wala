@@ -11,6 +11,7 @@ import {
   createPaymentLink,
   fetchRazorpayPaymentLink,
   isRazorpayConfigured,
+  assertRazorpayEnabled,
 } from '../helpers/razorpay.helper.js';
 import * as foodTransactionService from './foodTransaction.service.js';
 import {
@@ -90,6 +91,7 @@ export async function createCollectQr(
 
   const amountDue = payment.amountDue ?? tx?.pricing?.total ?? order.pricing?.total ?? 0;
   if (amountDue < 1) throw new ValidationError('No amount due');
+  await assertRazorpayEnabled();
   if (!isRazorpayConfigured()) {
     throw new ValidationError('QR payment not configured');
   }

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import ProtectedRoute from "@food/components/ProtectedRoute"
 import Loader from "@food/components/Loader"
 import GlobalPickupOtpModal from "./GlobalPickupOtpModal"
+import GlobalNewOrderModal from "./GlobalNewOrderModal"
 import RestaurantBlockGuard from "./RestaurantBlockGuard"
 import RestaurantLayout from "./RestaurantLayout"
 import { RestaurantNotificationProvider } from "@food/context/RestaurantNotificationContext"
@@ -125,6 +126,7 @@ export default function RestaurantRouter() {
           </Routes>
         </Suspense>
         <GlobalPickupOtpModal />
+        <GlobalNewOrderModal />
       </div>
     </RestaurantNotificationProvider>
   )

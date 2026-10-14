@@ -128,6 +128,7 @@ export default function Cart() {
   const [walletBalance, setWalletBalance] = useState(0)
   const [isLoadingWallet, setIsLoadingWallet] = useState(false)
   const [onlinePaymentOnly, setOnlinePaymentOnly] = useState(false)
+  const [razorpayDisabled, setRazorpayDisabled] = useState(false) // admin switched Razorpay off platform-wide
   const [maxCodAmount, setMaxCodAmount] = useState(0)
   const [loyaltySummary, setLoyaltySummary] = useState(null)
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false)
@@ -140,6 +141,7 @@ export default function Cart() {
           const isOnlineOnly = !!response.data.data.onlinePaymentOnly;
           const codLimit = Number(response.data.data.maxCodAmount) || 0;
           setOnlinePaymentOnly(isOnlineOnly)
+          setRazorpayDisabled(response.data.data.razorpayDisabled === true)
           setMaxCodAmount(codLimit)
         }
       } catch (error) {
@@ -1130,15 +1132,20 @@ export default function Cart() {
   const total = pricing?.total || Math.max(0, totalBeforeDiscount - discount);
   const savings = pricing?.savings ?? Math.max(0, totalBeforeDiscount - total)
 
-  // Determine if COD should be hidden
-  const isCodHidden = onlinePaymentOnly || (maxCodAmount > 0 && total > maxCodAmount)
+  // Determine if COD should be hidden. When the admin turns Razorpay off, COD must stay
+  // available (otherwise "online only" / the COD limit would leave no way to pay).
+  const isCodHidden = !razorpayDisabled && (onlinePaymentOnly || (maxCodAmount > 0 && total > maxCodAmount))
 
   // Ensure valid payment method is selected
   useEffect(() => {
+    if (razorpayDisabled && selectedPaymentMethod === "razorpay") {
+      setSelectedPaymentMethod("cash")
+      return
+    }
     if (isCodHidden && selectedPaymentMethod === "cash") {
       setSelectedPaymentMethod("razorpay")
     }
-  }, [isCodHidden, selectedPaymentMethod, total])
+  }, [isCodHidden, razorpayDisabled, selectedPaymentMethod, total])
 
   // Calculate platform pricing comparison savings
   const platformPricingSavings = useMemo(() => {
@@ -1579,6 +1586,11 @@ export default function Cart() {
   const isRestaurantOfflineNow = restaurantData?.isAcceptingOrders === false
 
   const handlePlaceOrder = async () => {
+    if (razorpayDisabled && selectedPaymentMethod === "razorpay") {
+      toast.error("Online payment is currently unavailable. Please choose another payment method.")
+      setSelectedPaymentMethod("cash")
+      return
+    }
     if (isRestaurantOfflineNow) {
       toast.error("This restaurant is offline right now and not accepting orders. Please try again later.")
       return
@@ -3466,7 +3478,8 @@ export default function Cart() {
                           icon: <Zap className="w-5 h-5" />,
                           color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400',
                           selectedColor: 'bg-emerald-500 text-white',
-                          badge: 'SECURE'
+                          badge: 'SECURE',
+                          hidden: razorpayDisabled
                         },
                         {
                           id: 'wallet',

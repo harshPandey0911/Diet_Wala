@@ -8,6 +8,8 @@ export const DEFAULT_RESTAURANT_NOTIFICATIONS = Object.freeze({
   clearNewOrder: () => {},
   isConnected: false,
   playNotificationSound: () => {},
+  stopAlertLoop: () => {},
+  removeOrderFromQueue: () => {},
 });
 
 export const RestaurantNotificationContext = createContext(DEFAULT_RESTAURANT_NOTIFICATIONS);

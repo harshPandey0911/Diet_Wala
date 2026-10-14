@@ -273,27 +273,41 @@ export function buildDeliverySocketPayload(orderDoc, restaurantDoc = null) {
 }
 
 export function canExposeOrderToRestaurant(orderLike) {
-  const method = String(orderLike?.payment?.method || "").toLowerCase();
-  const status = String(orderLike?.payment?.status || "").toLowerCase();
-  if (["cash", "wallet"].includes(method)) return true;
-  return ["paid", "authorized", "captured", "settled"].includes(status);
+  const method = String(orderLike?.payment?.method || orderLike?.paymentMethod || "").toLowerCase().trim();
+  const status = String(orderLike?.payment?.status || orderLike?.status || "").toLowerCase().trim();
+  if (["cash", "cod", "wallet"].includes(method)) return true;
+  return ["paid", "authorized", "captured", "settled", "cod_pending"].includes(status);
 }
 
 export async function notifyRestaurantNewOrder(orderDoc) {
   try {
     if (!orderDoc || !canExposeOrderToRestaurant(orderDoc)) return;
 
+    const restId = (orderDoc.restaurantId?._id || orderDoc.restaurantId)?.toString?.() || "";
+    if (!restId) return;
+
     const io = getIO();
     if (io) {
       const payload = {
-        ...orderDoc.toObject(),
+        ...(orderDoc.toObject ? orderDoc.toObject() : orderDoc),
+        status: "confirmed",
+        orderStatus: orderDoc.orderStatus || "created",
         orderMongoId: orderDoc._id?.toString?.() || undefined,
         orderId: orderDoc.order_id || orderDoc._id?.toString?.(),
       };
+      const room = rooms.restaurant(restId);
       logger.info(
-        `[RestaurantOrders] Emitting new_order to ${rooms.restaurant(orderDoc.restaurantId)} for order ${orderDoc._id?.toString?.() || ''}`,
+        `[RestaurantOrders] Emitting new_order to ${room} for order ${orderDoc._id?.toString?.() || ''}`,
       );
-      io.to(rooms.restaurant(orderDoc.restaurantId)).emit("new_order", payload);
+      io.to(room).emit("new_order", payload);
+      if (restId && room !== restId) {
+        io.to(restId).emit("new_order", payload);
+      }
+      io.to(room).emit("play_notification_sound", {
+        type: "new_order",
+        orderId: payload.orderId,
+        orderMongoId: payload.orderMongoId,
+      });
     }
 
     const pushTargets = await listOwnerUrgentPushTargets({ ownerType: "RESTAURANT", ownerId: orderDoc.restaurantId });
@@ -317,8 +331,8 @@ export async function notifyRestaurantNewOrder(orderDoc) {
         },
       },
     );
-  } catch {
-    // Do not block order/payment flow if notification fails.
+  } catch (err) {
+    logger.warn(`[RestaurantOrders] notifyRestaurantNewOrder failed (non-fatal): ${err.message}`);
   }
 }
 

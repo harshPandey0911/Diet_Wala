@@ -46,6 +46,15 @@ const roomNames = {
  * @returns {Promise<Server>}
  */
 export const initSocket = async (server) => {
+    if (io) {
+        logger.info('[SocketInit] Attaching existing Socket.IO instance to additional server');
+        try {
+            io.attach(server);
+        } catch (err) {
+            logger.warn(`[SocketInit] io.attach error: ${err.message}`);
+        }
+        return io;
+    }
     logger.info(
         `[SocketInit] initSocket called redisEnabled=${config.redisEnabled} redisUrlPresent=${Boolean(config.redisUrl)} socketCorsOrigin=${config.socketCorsOrigin}`
     );
@@ -290,15 +299,15 @@ export const initSocket = async (server) => {
 
                     if (trackingQueue && redis) {
                         const coordString = JSON.stringify({ lat, lng, timestamp: now });
-                        
+
                         await Promise.all([
                             redis.hSet('rider:locations:hot', String(userId), coordString),
                             redis.hSet('order:locations:hot', String(data.orderId), coordString)
                         ]);
 
                         const syncJobId = `sync:loc:${data.orderId}`;
-                        trackingQueue.add('sync-hot-locations', 
-                            { userId, orderId: data.orderId }, 
+                        trackingQueue.add('sync-hot-locations',
+                            { userId, orderId: data.orderId },
                             { jobId: syncJobId, delay: 30000, removeOnComplete: true }
                         ).catch(e => logger.error(`BullMQ sync schedule failed: ${e.message}`));
                     }
@@ -362,79 +371,79 @@ export const initSocket = async (server) => {
 
         // ðŸ†• Resync State on Reconnect
         socket.on('resync', async () => {
-          try {
-            if (role === 'DELIVERY_PARTNER') {
-              logDeliverySocket('Resync requested', {
-                socketId: socket.id,
-                deliveryPartnerId: String(userId || ''),
-              });
-            }
-            const { resyncState } = await import('../modules/food/orders/services/order.service.js');
-            const state = await resyncState(userId, role);
-            if (state.activeOrder) {
-              const eventName = role === 'USER' ? 'order_state' : 'active_order';
-              socket.emit(eventName, state.activeOrder);
-              if (role === 'DELIVERY_PARTNER') {
-                logDeliverySocket('Resync emitted active order', {
-                  socketId: socket.id,
-                  deliveryPartnerId: String(userId || ''),
-                  orderId: String(
-                    state.activeOrder?.orderId ||
-                    state.activeOrder?.orderMongoId ||
-                    ''
-                  ),
-                  eventName,
-                });
-              }
-              
-              // Re-emit OTP if user is in drop phase
-              if (role === 'USER' && state.activeOrder.handoverOtp) {
-                socket.emit('delivery_drop_otp', {
-                  orderId: state.activeOrder.orderId,
-                  otp: state.activeOrder.handoverOtp,
-                  message: 'Share this OTP with your delivery partner.'
-                });
-              }
-            }
+            try {
+                if (role === 'DELIVERY_PARTNER') {
+                    logDeliverySocket('Resync requested', {
+                        socketId: socket.id,
+                        deliveryPartnerId: String(userId || ''),
+                    });
+                }
+                const { resyncState } = await import('../modules/food/orders/services/order.service.js');
+                const state = await resyncState(userId, role);
+                if (state.activeOrder) {
+                    const eventName = role === 'USER' ? 'order_state' : 'active_order';
+                    socket.emit(eventName, state.activeOrder);
+                    if (role === 'DELIVERY_PARTNER') {
+                        logDeliverySocket('Resync emitted active order', {
+                            socketId: socket.id,
+                            deliveryPartnerId: String(userId || ''),
+                            orderId: String(
+                                state.activeOrder?.orderId ||
+                                state.activeOrder?.orderMongoId ||
+                                ''
+                            ),
+                            eventName,
+                        });
+                    }
 
-            if (
-              role === 'DELIVERY_PARTNER' &&
-              Array.isArray(state.pendingOffers) &&
-              state.pendingOffers.length > 0
-            ) {
-              logDeliverySocket('Resync recovered pending offers', {
-                socketId: socket.id,
-                deliveryPartnerId: String(userId || ''),
-                pendingOfferCount: state.pendingOffers.length,
-              });
+                    // Re-emit OTP if user is in drop phase
+                    if (role === 'USER' && state.activeOrder.handoverOtp) {
+                        socket.emit('delivery_drop_otp', {
+                            orderId: state.activeOrder.orderId,
+                            otp: state.activeOrder.handoverOtp,
+                            message: 'Share this OTP with your delivery partner.'
+                        });
+                    }
+                }
 
-              socket.emit('pending_offers', {
-                offers: state.pendingOffers,
-                count: state.pendingOffers.length,
-                recoveredAt: Date.now(),
-              });
+                if (
+                    role === 'DELIVERY_PARTNER' &&
+                    Array.isArray(state.pendingOffers) &&
+                    state.pendingOffers.length > 0
+                ) {
+                    logDeliverySocket('Resync recovered pending offers', {
+                        socketId: socket.id,
+                        deliveryPartnerId: String(userId || ''),
+                        pendingOfferCount: state.pendingOffers.length,
+                    });
 
-              for (const offer of state.pendingOffers) {
-                socket.emit('new_order_available', {
-                  ...offer,
-                  recovered: true,
-                  recoveredAt: Date.now(),
-                });
-              }
+                    socket.emit('pending_offers', {
+                        offers: state.pendingOffers,
+                        count: state.pendingOffers.length,
+                        recoveredAt: Date.now(),
+                    });
+
+                    for (const offer of state.pendingOffers) {
+                        socket.emit('new_order_available', {
+                            ...offer,
+                            recovered: true,
+                            recoveredAt: Date.now(),
+                        });
+                    }
+                }
+
+                socket.emit('resync_complete', { timestamp: Date.now() });
+                if (role === 'DELIVERY_PARTNER') {
+                    logDeliverySocket('Resync complete', {
+                        socketId: socket.id,
+                        deliveryPartnerId: String(userId || ''),
+                        hasActiveOrder: Boolean(state.activeOrder),
+                        pendingOfferCount: Array.isArray(state.pendingOffers) ? state.pendingOffers.length : 0,
+                    });
+                }
+            } catch (err) {
+                logger.error(`Resync failed for ${role}:${userId} â€” ${err.message}`);
             }
-
-            socket.emit('resync_complete', { timestamp: Date.now() });
-            if (role === 'DELIVERY_PARTNER') {
-              logDeliverySocket('Resync complete', {
-                socketId: socket.id,
-                deliveryPartnerId: String(userId || ''),
-                hasActiveOrder: Boolean(state.activeOrder),
-                pendingOfferCount: Array.isArray(state.pendingOffers) ? state.pendingOffers.length : 0,
-              });
-            }
-          } catch (err) {
-            logger.error(`Resync failed for ${role}:${userId} â€” ${err.message}`);
-          }
         });
     });
 
@@ -464,10 +473,10 @@ export const initRedisEmitter = (redisClient) => {
 export const getIO = () => {
     if (io) return io;
     if (redisEmitter) return redisEmitter;
-    
+
     // Fallback: If Redis is disabled, we forward calls to the standalone socket server via HTTP loopback
     const broadcastUrl = `http://127.0.0.1:${config.socketPort || 5001}/internal/broadcast`;
-    
+
     return {
         to: (room) => ({
             emit: (event, data) => {

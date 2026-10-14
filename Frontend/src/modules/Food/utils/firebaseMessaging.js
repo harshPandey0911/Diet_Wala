@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { isRestaurantOrderHandled } from "./restaurantOrderAlerts";
 import { userAPI, restaurantAPI, deliveryAPI, adminAPI } from "@food/api";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import fallbackNotificationSound from "@food/assets/audio/alert.mp3";
@@ -645,6 +646,17 @@ function showForegroundNotification(payload = {}, options = {}) {
   const notificationKey = getNotificationKey(payload);
   pushDebugLog(PUSH_DEBUG_PREFIX, "showForegroundNotification received", { notificationKey, fromSwRelay: options.fromSwRelay, payload });
   if (wasRecentlyHandled(notificationKey)) {
+    return;
+  }
+
+  // A "new order" push that arrives after the restaurant already accepted/rejected that order
+  // must not ring (late delivery, retries, or a second device).
+  if (
+    moduleName === "restaurant" &&
+    String(payload?.data?.type || "").toLowerCase() === "new_order" &&
+    isRestaurantOrderHandled(payload)
+  ) {
+    pushDebugLog(PUSH_DEBUG_PREFIX, "Skipping new_order push: order already answered", { notificationKey });
     return;
   }
 

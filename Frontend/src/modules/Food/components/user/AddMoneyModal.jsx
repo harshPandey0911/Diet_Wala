@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@food/components/ui/dialog"
 import { Button } from "@food/components/ui/button"
 import { Input } from "@food/components/ui/input"
@@ -6,7 +6,7 @@ import { IndianRupee, Loader2, X } from "lucide-react"
 import { userAPI } from "@food/api"
 import { initRazorpayPayment } from "@food/utils/razorpay"
 import { toast } from "sonner"
-import { getCompanyNameAsync } from "@food/utils/businessSettings"
+import { getCompanyNameAsync, loadBusinessSettings } from "@food/utils/businessSettings"
 
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -16,6 +16,20 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [razorpayDisabled, setRazorpayDisabled] = useState(false) // admin switched Razorpay off
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    loadBusinessSettings({ force: true })
+      .then((settings) => {
+        if (!cancelled) setRazorpayDisabled(settings?.razorpayDisabled === true)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   const quickAmounts = [100, 250, 500, 1000, 2000, 5000]
 
@@ -31,6 +45,10 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
   }
 
   const handleAddMoney = async () => {
+    if (razorpayDisabled) {
+      toast.error("Adding money is unavailable right now because online payments are turned off.")
+      return
+    }
     const amountNum = parseFloat(amount)
 
     if (!amount || isNaN(amountNum) || amountNum < 1) {
@@ -228,9 +246,14 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
               </div>
             </div>
 
+            {razorpayDisabled && (
+              <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600">
+                Adding money is unavailable right now because online payments are turned off.
+              </p>
+            )}
             <Button
               onClick={handleAddMoney}
-              disabled={!amount || loading || processing || parseFloat(amount) < 1}
+              disabled={razorpayDisabled || !amount || loading || processing || parseFloat(amount) < 1}
               className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold text-base"
             >
               {loading || processing ? (

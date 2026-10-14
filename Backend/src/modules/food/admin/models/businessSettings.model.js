@@ -35,8 +35,13 @@ const businessSettingsSchema = new mongoose.Schema(
             publicId: { type: String, default: '' }
         },
         onlinePaymentOnly: { type: Boolean, default: false },
+        // When true, no new Razorpay/online payment can be started anywhere on the platform.
+        razorpayDisabled: { type: Boolean, default: false },
         maxCodAmount: { type: Number, default: 0 }, // 0 means no limit
         maintenanceMode: { type: Boolean, default: false },
+        // Targeted catalogue preview used by the 7879363299 customer account.
+        // This only changes the user-home data source; checkout keeps using the real address/zone.
+        northeastUserPreview: { type: Boolean, default: false },
         customerRegistration: { type: Boolean, default: true },
         restaurantRegistration: { type: Boolean, default: true },
         deliveryRegistration: { type: Boolean, default: true }

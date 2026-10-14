@@ -91,8 +91,9 @@ import {
 import { useAppLocation } from "@food/hooks/useAppLocation";
 import { useCompanyName } from "@food/hooks/useCompanyName";
 import offerImage from "@food/assets/offerimage.png";
-import api, { publicGetOnce, restaurantAPI, getPublicLandingSettings, getPublicExploreIcons, getPublicCategories, getPublicFoods } from "@food/api";
+import api, { publicGetOnce, restaurantAPI, zoneAPI, getPublicLandingSettings, getPublicExploreIcons, getPublicCategories, getPublicFoods } from "@food/api";
 import { API_BASE_URL } from "@food/api/config";
+import { loadBusinessSettings } from "@food/utils/businessSettings";
 import OptimizedImage, { ShopPlaceholder } from "@food/components/OptimizedImage";
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability";
 import HomeHeader from "@food/components/user/home/HomeHeader";
@@ -143,6 +144,29 @@ const roundCoord = (value) =>
   Number.isFinite(Number(value))
     ? Math.round(Number(value) * 100000) / 100000
     : null;
+
+const NORTHEAST_PREVIEW_PHONE = "7879363299";
+const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
+const normalizeZoneName = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const getZoneCenter = (zone) => {
+  const centerLat = Number(zone?.centerPoint?.latitude);
+  const centerLng = Number(zone?.centerPoint?.longitude);
+  if (Number.isFinite(centerLat) && Number.isFinite(centerLng)) {
+    return { latitude: centerLat, longitude: centerLng };
+  }
+
+  const coordinates = Array.isArray(zone?.coordinates) ? zone.coordinates : [];
+  const validCoordinates = coordinates
+    .map((point) => ({ latitude: Number(point?.latitude), longitude: Number(point?.longitude) }))
+    .filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+  if (!validCoordinates.length) return null;
+
+  return {
+    latitude: validCoordinates.reduce((sum, point) => sum + point.latitude, 0) / validCoordinates.length,
+    longitude: validCoordinates.reduce((sum, point) => sum + point.longitude, 0) / validCoordinates.length,
+  };
+};
 
 export default function Home() {
   const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api(\/v\d+)?\/?$/, "");
@@ -645,6 +669,7 @@ export default function Home() {
   }
 
   const {
+    userProfile,
     addFavorite,
     removeFavorite,
     isFavorite,
@@ -652,7 +677,68 @@ export default function Home() {
     getDefaultAddress,
   } = profileContext;
   const { addToCart, cart } = useCart();
-  const { location, loading: effectiveZoneLoading, requestLocation, zoneId: effectiveZoneId, zoneStatus: effectiveZoneStatus, isOutOfService: isEffectiveLocationOutOfService, isOutOfZone: isEffectiveLocationOutOfZone, isOutOfRadius: isEffectiveLocationOutOfRadius, serviceUnavailableMessage: effectiveServiceUnavailableMessage } = useAppLocation();
+  const { location, loading: actualZoneLoading, requestLocation, zoneId: actualZoneId, zoneStatus: actualZoneStatus, isOutOfService: isActualLocationOutOfService, isOutOfZone: isActualLocationOutOfZone, isOutOfRadius: isActualLocationOutOfRadius, serviceUnavailableMessage: actualServiceUnavailableMessage } = useAppLocation();
+  const [northeastPreview, setNortheastPreview] = useState({ resolved: false, zoneId: null, location: null });
+  const isNortheastPreviewAccount = normalizePhone(userProfile?.phone || userProfile?.mobile) === NORTHEAST_PREVIEW_PHONE;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!isNortheastPreviewAccount) {
+      setNortheastPreview({ resolved: true, zoneId: null, location: null });
+      return () => { cancelled = true; };
+    }
+
+    setNortheastPreview((current) => ({ ...current, resolved: false }));
+    Promise.all([
+      loadBusinessSettings({ force: true }),
+      zoneAPI.getPublicZones({}, { noCache: true }),
+    ])
+      .then(([settings, zonesResponse]) => {
+        if (cancelled || settings?.northeastUserPreview !== true) {
+          if (!cancelled) setNortheastPreview({ resolved: true, zoneId: null, location: null });
+          return;
+        }
+
+        const zones = zonesResponse?.data?.data?.zones || zonesResponse?.data?.zones || [];
+        const zone = zones.find((item) =>
+          [item?.name, item?.zoneName].some((name) => normalizeZoneName(name).startsWith("northeast")),
+        );
+        const center = getZoneCenter(zone);
+        if (!zone?._id || !center) {
+          setNortheastPreview({ resolved: true, zoneId: null, location: null });
+          return;
+        }
+
+        setNortheastPreview({
+          resolved: true,
+          zoneId: String(zone._id),
+          location: {
+            ...center,
+            city: zone.serviceLocation || zone.zoneName || zone.name || "Northeast",
+            state: zone.country || "India",
+            address: zone.serviceLocation || zone.zoneName || zone.name || "Northeast",
+            formattedAddress: zone.serviceLocation || zone.zoneName || zone.name || "Northeast",
+          },
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setNortheastPreview({ resolved: true, zoneId: null, location: null });
+      });
+
+    return () => { cancelled = true; };
+  }, [isNortheastPreviewAccount]);
+
+  const hasNortheastPreview = Boolean(northeastPreview.zoneId && northeastPreview.location);
+  const effectiveZoneId = hasNortheastPreview ? northeastPreview.zoneId : actualZoneId;
+  const effectiveZoneLoading = isNortheastPreviewAccount && !northeastPreview.resolved
+    ? true
+    : (hasNortheastPreview ? false : actualZoneLoading);
+  const effectiveZoneStatus = hasNortheastPreview ? "IN_SERVICE" : actualZoneStatus;
+  const isEffectiveLocationOutOfService = hasNortheastPreview ? false : isActualLocationOutOfService;
+  const isEffectiveLocationOutOfZone = hasNortheastPreview ? false : isActualLocationOutOfZone;
+  const isEffectiveLocationOutOfRadius = hasNortheastPreview ? false : isActualLocationOutOfRadius;
+  const effectiveServiceUnavailableMessage = hasNortheastPreview ? "" : actualServiceUnavailableMessage;
   const companyName = useCompanyName();
 
   useEffect(() => {
@@ -767,7 +853,10 @@ export default function Home() {
     return null;
   }, [defaultSavedAddress]);
 
-  const effectiveLocation = location;
+  const effectiveLocation = useMemo(
+    () => hasNortheastPreview ? { ...(location || {}), ...northeastPreview.location } : location,
+    [hasNortheastPreview, location, northeastPreview.location],
+  );
 
   // Fetch categories (zone-aware) for the homepage category rail.
   useEffect(() => {

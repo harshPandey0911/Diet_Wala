@@ -304,17 +304,18 @@ export const sendUrgentOrderNotificationToOwner = async ({ ownerType, ownerId, p
         }
     }
 
-    /* 
-    if (iosFcmTokens && iosFcmTokens.length > 0) {
+    // iPhone fallback: if no VoIP push was delivered (no VoIP token, expired token, APNs error),
+    // send a normal FCM alert so the restaurant is still notified. When VoIP did go through we
+    // skip this, otherwise the same order would ring twice.
+    const voipDelivered = Number(responses.voip?.successCount || 0) > 0;
+    if (!voipDelivered && iosFcmTokens && iosFcmTokens.length > 0) {
         try {
-            // iOS drops `dataOnly: true` (background pushes) when app is killed. 
-            // We force `dataOnly: false` so it shows up natively in the Notification Center!
+            // iOS drops `dataOnly: true` pushes when the app is killed, so send a visible alert.
             responses.iosFcm = await sendPushNotification(iosFcmTokens, { ...payload, dataOnly: false });
         } catch (error) {
             logger.warn(`iOS FCM fallback failed for ${ownerType}:${ownerId} - ${error?.message || error}`);
         }
     }
-    */
 
     const standardFcmTokens = androidFcmTokens && androidFcmTokens.length > 0 ? androidFcmTokens : fcmTokens;
     if (standardFcmTokens && standardFcmTokens.length > 0) {

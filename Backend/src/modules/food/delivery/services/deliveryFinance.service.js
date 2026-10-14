@@ -7,7 +7,7 @@ import { FoodDeliveryPartner } from '../models/deliveryPartner.model.js';
 import { DeliveryBonusTransaction } from '../../admin/models/deliveryBonusTransaction.model.js';
 import { getDeliveryCashLimitSettings } from '../../admin/services/admin.service.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
-import { createRazorpayOrder, getRazorpayKeyId, isRazorpayConfigured, verifyPaymentSignature } from '../../orders/helpers/razorpay.helper.js';
+import { createRazorpayOrder, getRazorpayKeyId, isRazorpayConfigured, verifyPaymentSignature, assertRazorpayEnabled } from '../../orders/helpers/razorpay.helper.js';
 
 /**
  * Enhanced wallet fetch for delivery partners.
@@ -221,6 +221,7 @@ export const createDeliveryCashDepositOrder = async (deliveryPartnerId, amountIn
 
     const amountPaise = Math.round(amount * 100);
     const receipt = `cash_deposit_${String(deliveryPartnerId).slice(-8)}_${Date.now()}`;
+    await assertRazorpayEnabled();
 
     if (!isRazorpayConfigured()) {
         return {

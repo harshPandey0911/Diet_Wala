@@ -7,7 +7,6 @@ import SearchOverlay from "./SearchOverlay"
 import BottomNavigation from "./BottomNavigation"
 import DesktopNavbar from "./DesktopNavbar"
 import { UserNotificationProvider } from "@food/context/UserNotificationContext"
-import AppIntroSplash from "./AppIntroSplash"
 import { LocationProvider } from "@food/context/LocationProvider"
 import { useAppLocation } from "@food/hooks/useAppLocation"
 import LocationGuard from "./LocationGuard"
@@ -149,20 +148,8 @@ function UserLayoutShell() {
 }
 
 export default function UserLayout() {
-  const [introFinished, setIntroFinished] = useState(() => {
-    try {
-      return !!(typeof window !== 'undefined' && sessionStorage.getItem("appIntroSeen"))
-    } catch (e) {
-      return true;
-    }
-  })
-
   return (
     <div className="min-h-screen min-h-[100dvh] bg-[#f5f5f5] dark:bg-[#0a0a0a] transition-colors duration-200 box-border">
-      {!introFinished && (
-        <AppIntroSplash onComplete={() => setIntroFinished(true)} />
-      )}
-
       <CartProvider>
         <ProfileProvider>
           <LocationProvider>

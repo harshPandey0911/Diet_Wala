@@ -25,8 +25,9 @@ import {
 import { toast } from "sonner";
 import notificationSound from "@food/assets/audio/alert.mp3";
 import { restaurantAPI } from "@food/api";
-import { useAuthStore } from "@/core/auth/auth.store";
+import { isModuleAuthenticated } from "@food/utils/auth";
 import { useRestaurantNotifications } from "@food/hooks/useRestaurantNotifications";
+import { markRestaurantOrderHandled, unmarkRestaurantOrderHandled } from "@food/utils/restaurantOrderAlerts";
 import useRestaurantLenis from "@food/hooks/useRestaurantLenis";
 import usePaginatedRestaurantOrders, {
   RESTAURANT_ORDERS_PAGE_SIZE,
@@ -973,7 +974,7 @@ const getInitialCountdown = (order) => {
 export default function OrdersMain() {
   const navigate = useNavigate();
   useRestaurantLenis();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAuthenticated = isModuleAuthenticated("restaurant");
   const [activeFilter, setActiveFilter] = useState("new");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -1323,7 +1324,7 @@ export default function OrdersMain() {
       debugLog("?? New order (queue head) changed:", newOrder);
 
       if (isAnyCancelledStatus(newOrder?.status || newOrder?.orderStatus)) {
-        clearNewOrder();
+        clearNewOrder(newOrder);
         return;
       }
 
@@ -1337,7 +1338,7 @@ export default function OrdersMain() {
         toast.info(
           `New scheduled order received for ${new Date(scheduledAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
         );
-        clearNewOrder(); // remove from queue so next order can be shown
+        clearNewOrder(newOrder, { markHandled: false }); // not due yet: drop from queue, ring later when due
         requestOrdersRefresh();
         return;
       }
@@ -1383,7 +1384,7 @@ export default function OrdersMain() {
 
       setShowNewOrderPopup(false);
       setPopupOrder(null);
-      clearNewOrder();
+      clearNewOrder(activePopupOrder || payload);
       setCountdown(180);
       setPrepTime(11);
       requestOrdersRefresh();
@@ -1488,22 +1489,18 @@ export default function OrdersMain() {
     };
   }, []);
 
-  // Ensure audio stops when user comes to the page
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-        }
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
+// Audio managed globally by useRestaurantNotifications
 
   const [ordersRefreshToken, setOrdersRefreshToken] = useState(0);
   const requestOrdersRefresh = () => setOrdersRefreshToken((t) => t + 1);
+
+  useEffect(() => {
+    const handleGlobalRefresh = () => {
+      requestOrdersRefresh();
+    };
+    window.addEventListener("restaurantOrdersRefresh", handleGlobalRefresh);
+    return () => window.removeEventListener("restaurantOrdersRefresh", handleGlobalRefresh);
+  }, []);
 
   // Check for confirmed orders that haven't been shown in popup yet, or scheduled orders whose time has come
   useEffect(() => {
@@ -1627,7 +1624,7 @@ export default function OrdersMain() {
             requestOrdersRefresh();
             setShowNewOrderPopup(false);
             setPopupOrder(null);
-            clearNewOrder();
+            clearNewOrder(orderToReject);
             setCountdown(180);
           })
           .catch((err) => {
@@ -1755,6 +1752,10 @@ export default function OrdersMain() {
     // Ensure this order can't re-trigger fallback popup by using a different id key.
     markOrderAsShown(orderToAccept);
 
+    // Stop the ring right away and make sure nothing (late poll, push, socket) can ring for
+    // this order again. Undone below if the accept request fails.
+    clearNewOrder(orderToAccept);
+
     // Accept order via API if we have a real order
     let orderId = resolveOrderActionId(orderToAccept);
     if (!orderId) {
@@ -1794,11 +1795,14 @@ export default function OrdersMain() {
         } else {
           toast.error(errorMessage);
         }
+        // The order still needs an answer: let it ring/queue again.
+        unmarkRestaurantOrderHandled(orderToAccept);
         setIsAcceptingOrder(false);
         setAcceptSwipeProgress(0);
         return;
       }
     } else {
+      unmarkRestaurantOrderHandled(orderToAccept);
       toast.error("Unable to accept this order: order id missing");
       setIsAcceptingOrder(false);
       setAcceptSwipeProgress(0);
@@ -1807,7 +1811,7 @@ export default function OrdersMain() {
 
     setShowNewOrderPopup(false);
     setPopupOrder(null);
-    clearNewOrder();
+    clearNewOrder(orderToAccept);
     setCountdown(180);
     setPrepTime(11);
     setAcceptSwipeProgress(0);
@@ -1849,19 +1853,17 @@ export default function OrdersMain() {
     setShowRejectPopup(false);
     setShowNewOrderPopup(false);
     setPopupOrder(null);
-    clearNewOrder();
+    clearNewOrder(orderToReject);
     setRejectReason("");
     setCountdown(180);
     setPrepTime(11);
   };
 
   const handleRejectCancel = () => {
+    // Only close the "reason" dialog. The order has not been answered, so its popup stays open
+    // and it keeps ringing; dismissing it here left a silent/ghost order behind.
     setShowRejectPopup(false);
-    setShowNewOrderPopup(false);
-    setPopupOrder(null);
-    clearNewOrder();
     setRejectReason("");
-    setCountdown(180);
   };
 
   // Handle cancel order (for preparing orders)
@@ -2560,7 +2562,7 @@ export default function OrdersMain() {
 
       {/* New Order Popup */}
       <AnimatePresence>
-        {showNewOrderPopup && (
+        {/* Local popup superseded by GlobalNewOrderModal */ false && showNewOrderPopup && (
           <>
             <motion.div
               className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4 pb-[110px]"
@@ -2939,7 +2941,7 @@ export default function OrdersMain() {
 
       {/* Reject Order Popup */}
       <AnimatePresence>
-        {showRejectPopup && (
+        {/* Local reject popup superseded by GlobalNewOrderModal */ false && showRejectPopup && (
           <>
             <motion.div
               className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4 pb-[110px]"

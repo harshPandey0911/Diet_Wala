@@ -7,7 +7,9 @@ import { getUploadApiBaseUrl, getUploadTarget, isVpsUploadTargetAvailable, setUp
 
 const TOGGLE_LABELS = {
   onlinePaymentOnly: "Online payment only",
+  razorpayDisabled: "Razorpay payments",
   maintenanceMode: "Maintenance mode",
+  northeastUserPreview: "Northeast preview for 7879363299",
   customerRegistration: "Customer registration",
   restaurantRegistration: "Restaurant registration",
   deliveryRegistration: "Delivery partner registration",
@@ -21,8 +23,10 @@ export default function ToggleManagement() {
 
   const [toggles, setToggles] = useState({
     onlinePaymentOnly: false,
+    razorpayDisabled: false,
     maxCodAmount: 0,
     maintenanceMode: false,
+    northeastUserPreview: false,
     customerRegistration: true,
     restaurantRegistration: true,
     deliveryRegistration: true,
@@ -58,8 +62,10 @@ export default function ToggleManagement() {
         setToggles((prev) => ({
           ...prev,
           onlinePaymentOnly: settings.onlinePaymentOnly || false,
+          razorpayDisabled: settings.razorpayDisabled === true,
           maxCodAmount: settings.maxCodAmount || 0,
           maintenanceMode: settings.maintenanceMode || false,
+          northeastUserPreview: settings.northeastUserPreview === true,
           customerRegistration: settings.customerRegistration !== false,
           restaurantRegistration: settings.restaurantRegistration !== false,
           deliveryRegistration: settings.deliveryRegistration !== false,
@@ -241,6 +247,41 @@ export default function ToggleManagement() {
                 </button>
               </div>
 
+              <div className="flex items-center justify-between border border-red-200 p-4 rounded-xl bg-red-50/50 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Disable Razorpay</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Turn ON to remove Razorpay (online payment) from the whole platform: customer checkout, wallet top-up,
+                    delivery cash deposit and QR collection. Cash on Delivery and Quick Wallet keep working. Payments already in
+                    progress still complete.
+                  </p>
+                  {toggles.razorpayDisabled && toggles.onlinePaymentOnly && (
+                    <p className="text-xs font-semibold text-red-600 mt-1">
+                      "Online Payment Only" is ignored while Razorpay is disabled, so customers can still pay by COD.
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  aria-label="Toggle Razorpay off for the platform"
+                  disabled={isSaving("razorpayDisabled")}
+                  onClick={() => handleToggleChange("razorpayDisabled")}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-60 ${
+                    toggles.razorpayDisabled ? "bg-red-500" : "bg-slate-200"
+                  }`}
+                >
+                  {isSaving("razorpayDisabled") ? (
+                    <Loader2 className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin text-white" />
+                  ) : (
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        toggles.razorpayDisabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  )}
+                </button>
+              </div>
+
               {!toggles.onlinePaymentOnly && (
                 <div className="flex items-center justify-between border border-slate-100 p-4 rounded-xl bg-slate-50/50">
                   <div>
@@ -280,6 +321,34 @@ export default function ToggleManagement() {
                     <span
                       className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                         toggles.maintenanceMode ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  )}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between border border-amber-200 p-4 rounded-xl bg-amber-50/50 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Northeast Preview — 7879363299</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Show the Northeast zone's home data only to customer 7879363299. Checkout and delivery location remain unchanged.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Toggle Northeast preview for customer 7879363299"
+                  disabled={isSaving("northeastUserPreview")}
+                  onClick={() => handleToggleChange("northeastUserPreview")}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-60 ${
+                    toggles.northeastUserPreview ? "bg-amber-500" : "bg-slate-200"
+                  }`}
+                >
+                  {isSaving("northeastUserPreview") ? (
+                    <Loader2 className="absolute inset-0 m-auto h-3.5 w-3.5 animate-spin text-white" />
+                  ) : (
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        toggles.northeastUserPreview ? "translate-x-5" : "translate-x-0"
                       }`}
                     />
                   )}

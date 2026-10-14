@@ -1,4 +1,5 @@
 import { FoodBusinessSettings } from '../models/businessSettings.model.js';
+import { clearRazorpayDisabledCache } from '../../orders/helpers/razorpay.helper.js';
 import { sendResponse } from '../../../../utils/response.js';
 import { uploadGenericImage, uploadFileBuffer } from '../../../../services/upload.service.js';
 
@@ -36,8 +37,8 @@ export async function updateBusinessSettings(req, res, next) {
             companyName, email, phoneCountryCode, phoneNumber, address, state, pincode, region,
             supportEmail, supportPhone, supportHours,
             userSupportPhone, restaurantSupportPhone, deliverySupportPhone,
-            fssai, gstin, onlinePaymentOnly, maxCodAmount,
-            maintenanceMode, customerRegistration, restaurantRegistration, deliveryRegistration
+            fssai, gstin, onlinePaymentOnly, razorpayDisabled, maxCodAmount,
+            maintenanceMode, northeastUserPreview, customerRegistration, restaurantRegistration, deliveryRegistration
         } = data;
 
         // Ensure string inputs for validation to prevent crashes from non-string values
@@ -119,12 +120,19 @@ export async function updateBusinessSettings(req, res, next) {
             settings.onlinePaymentOnly = Boolean(onlinePaymentOnly === 'true' || onlinePaymentOnly === true);
         }
         
+        if (razorpayDisabled !== undefined) {
+            settings.razorpayDisabled = Boolean(razorpayDisabled === 'true' || razorpayDisabled === true);
+        }
+
         if (maxCodAmount !== undefined) {
             settings.maxCodAmount = Number(maxCodAmount) || 0;
         }
 
         if (maintenanceMode !== undefined) {
             settings.maintenanceMode = Boolean(maintenanceMode === 'true' || maintenanceMode === true);
+        }
+        if (northeastUserPreview !== undefined) {
+            settings.northeastUserPreview = Boolean(northeastUserPreview === 'true' || northeastUserPreview === true);
         }
         if (customerRegistration !== undefined) {
             settings.customerRegistration = Boolean(customerRegistration === 'true' || customerRegistration === true);
@@ -163,6 +171,7 @@ export async function updateBusinessSettings(req, res, next) {
         }
 
         await settings.save();
+        clearRazorpayDisabledCache();
         return sendResponse(res, 200, 'Business settings updated successfully', settings);
     } catch (error) {
         next(error);
@@ -173,8 +182,10 @@ export async function updateBusinessToggles(req, res, next) {
     try {
         const {
             onlinePaymentOnly,
+            razorpayDisabled,
             maxCodAmount,
             maintenanceMode,
+            northeastUserPreview,
             customerRegistration,
             restaurantRegistration,
             deliveryRegistration,
@@ -191,11 +202,17 @@ export async function updateBusinessToggles(req, res, next) {
         if (onlinePaymentOnly !== undefined) {
             settings.onlinePaymentOnly = Boolean(onlinePaymentOnly);
         }
+        if (razorpayDisabled !== undefined) {
+            settings.razorpayDisabled = Boolean(razorpayDisabled);
+        }
         if (maxCodAmount !== undefined) {
             settings.maxCodAmount = Number(maxCodAmount) || 0;
         }
         if (maintenanceMode !== undefined) {
             settings.maintenanceMode = Boolean(maintenanceMode);
+        }
+        if (northeastUserPreview !== undefined) {
+            settings.northeastUserPreview = Boolean(northeastUserPreview);
         }
         if (customerRegistration !== undefined) {
             settings.customerRegistration = Boolean(customerRegistration);
@@ -208,6 +225,7 @@ export async function updateBusinessToggles(req, res, next) {
         }
 
         await settings.save();
+        clearRazorpayDisabledCache();
         const payload = settings.toObject ? settings.toObject() : settings;
         return sendResponse(res, 200, 'Toggle settings updated successfully', payload);
     } catch (error) {

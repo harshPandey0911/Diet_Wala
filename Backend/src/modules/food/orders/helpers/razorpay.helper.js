@@ -9,9 +9,39 @@ try {
 }
 
 import { config } from '../../../../config/env.js';
+import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
+import { ValidationError } from '../../../../core/auth/errors.js';
 
 const KEY_ID = config.razorpayKeyId || process.env.RAZORPAY_KEY_ID || '';
 const KEY_SECRET = config.razorpayKeySecret || process.env.RAZORPAY_KEY_SECRET || '';
+
+// Admin switch (Toggle Management -> "Disable Razorpay"): when on, no new Razorpay payment can be
+// started anywhere on the platform. Payments already in progress can still be verified/refunded.
+let razorpayDisabledCache = { value: false, at: 0 };
+const RAZORPAY_SETTING_TTL_MS = 10 * 1000;
+
+export function clearRazorpayDisabledCache() {
+    razorpayDisabledCache = { value: false, at: 0 };
+}
+
+export async function isRazorpayDisabledByAdmin() {
+    const now = Date.now();
+    if (now - razorpayDisabledCache.at < RAZORPAY_SETTING_TTL_MS) return razorpayDisabledCache.value;
+    try {
+        const settings = await FoodBusinessSettings.findOne().select('razorpayDisabled').lean();
+        razorpayDisabledCache = { value: settings?.razorpayDisabled === true, at: now };
+    } catch {
+        // If settings can't be read, don't block payments.
+        razorpayDisabledCache = { value: false, at: now };
+    }
+    return razorpayDisabledCache.value;
+}
+
+export async function assertRazorpayEnabled() {
+    if (await isRazorpayDisabledByAdmin()) {
+        throw new ValidationError('Online payment is currently unavailable. Please choose another payment method.');
+    }
+}
 
 export function isRazorpayConfigured() {
     return Boolean(KEY_ID && KEY_SECRET && Razorpay);

@@ -12,6 +12,12 @@ import {
 } from '../context/RestaurantNotificationContextBase';
 import { isModuleAuthenticated } from '@food/utils/auth';
 import { dispatchNotificationInboxRefresh } from '@food/hooks/useNotificationInbox';
+import {
+  collectOrderIds,
+  isRestaurantOrderHandled,
+  isSameOrder,
+  markRestaurantOrderHandled,
+} from '@food/utils/restaurantOrderAlerts';
 const debugLog = (...args) => console.log(...args)
 const debugWarn = (...args) => console.warn(...args)
 const debugError = (...args) => console.error(...args)
@@ -23,13 +29,53 @@ const isProductionDeployment =
 
 const resolveAudioSource = (source) => {
   if (!source) return '';
-  let url = typeof source === 'object' ? (source.default || source) : source;
-  if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {
-    const separator = url.includes("?") ? "&" : "?";
-    url = `${url}${separator}cb=${Date.now()}`;
+  return typeof source === 'object' ? (source.default || source) : source;
+};
+
+// Robust Web Audio API synthesized chime fallback (runs even if MP3 loading or autoplay is restricted)
+const playWebAudioChime = () => {
+  try {
+    if (typeof window === 'undefined') return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!window._restaurantAudioCtx || window._restaurantAudioCtx.state === 'closed') {
+      window._restaurantAudioCtx = new AudioContextClass();
+    }
+    const ctx = window._restaurantAudioCtx;
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+    const notes = [
+      { freq: 1046.5, time: now, duration: 0.2 },
+      { freq: 1318.5, time: now + 0.22, duration: 0.35 },
+      { freq: 1046.5, time: now + 0.6, duration: 0.2 },
+      { freq: 1318.5, time: now + 0.82, duration: 0.45 },
+    ];
+
+    notes.forEach(({ freq, time, duration }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, time);
+
+      gain.gain.setValueAtTime(0.001, time);
+      gain.gain.exponentialRampToValueAtTime(0.4, time + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(time);
+      osc.stop(time + duration);
+    });
+  } catch (err) {
+    debugWarn('Web Audio Chime failed:', err);
   }
-  return url;
-}
+};
 
 const supportsBrowserNotifications = () =>
   typeof window !== 'undefined' && typeof Notification !== 'undefined';
@@ -130,6 +176,7 @@ export const useRestaurantNotificationsState = () => {
   const [isConnected, setIsConnected] = useState(false);
   const audioRef = useRef(null);
   const activeOrderRef = useRef(null);
+  const orderQueueRef = useRef([]); // always the latest queue, readable from timers/callbacks
   const alertLoopTimerRef = useRef(null);
   const alertLoopStartedAtRef = useRef(0);
   const userInteractedRef = useRef(false); // Track user interaction for autoplay policy
@@ -159,12 +206,20 @@ export const useRestaurantNotificationsState = () => {
     ).trim()
   );
 
-  // Enqueue a new order into the queue (deduplicates by ID)
+  // Keep the ref in step with state.
+  useEffect(() => {
+    orderQueueRef.current = orderQueue;
+  }, [orderQueue]);
+
+  // Enqueue a new order into the queue (deduplicates by ID).
+  // An order that was already accepted/rejected/cancelled is never queued again.
   const enqueueOrder = (orderData) => {
+    if (isRestaurantOrderHandled(orderData)) return;
     setOrderQueue(prev => {
-      const key = getOrderAlertKey(orderData);
-      if (key && prev.some(o => getOrderAlertKey(o) === key)) return prev;
-      return [...prev, orderData];
+      if (prev.some(o => isSameOrder(o, orderData))) return prev;
+      const next = [...prev, orderData];
+      orderQueueRef.current = next;
+      return next;
     });
   };
 
@@ -243,18 +298,37 @@ export const useRestaurantNotificationsState = () => {
     alertLoopStartedAtRef.current = 0;
   };
 
-  const removeOrderFromQueue = useCallback((orderIdToRemove) => {
-    const keyToRemove = String(orderIdToRemove).trim();
-    if (!keyToRemove) return;
-    
-    setOrderQueue(prev => {
-      const filtered = prev.filter(o => getOrderAlertKey(o) !== keyToRemove);
-      if (activeOrderRef.current && getOrderAlertKey(activeOrderRef.current) === keyToRemove) {
-         stopAlertLoop();
-         activeOrderRef.current = null;
+  // Ring for `order` now and keep ringing until it is answered (or the max time passes).
+  const startRingingFor = (order) => {
+    activeOrderRef.current = order;
+    playNotificationSound(order);
+    startAlertLoop();
+  };
+
+  /**
+   * An order has been answered (accepted / rejected / cancelled / moved past "new").
+   * Removes it from the queue, remembers it so no source can ring for it again, and
+   * stops the ring. If another order is still waiting, the ring continues for that one
+   * instead of going silent.
+   */
+  const removeOrderFromQueue = useCallback((orderLike, { markHandled = true } = {}) => {
+    if (orderLike == null || orderLike === '') return;
+    // markHandled=false: just take it out of the queue for now (e.g. a scheduled order that
+    // is still far away) but let it ring later when it becomes due.
+    if (markHandled) markRestaurantOrderHandled(orderLike);
+    const wasActive = activeOrderRef.current && isSameOrder(activeOrderRef.current, orderLike);
+
+    const remaining = orderQueueRef.current.filter((o) => !isSameOrder(o, orderLike));
+    orderQueueRef.current = remaining;
+    setOrderQueue(remaining);
+
+    if (wasActive) {
+      stopAlertLoop();
+      activeOrderRef.current = null;
+      if (remaining.length > 0) {
+        startRingingFor(remaining[0]);
       }
-      return filtered;
-    });
+    }
   }, []);
 
   const startAlertLoop = () => {
@@ -268,6 +342,12 @@ export const useRestaurantNotificationsState = () => {
         return;
       }
 
+      // Safety net: never ring for an order that has already been answered.
+      if (isRestaurantOrderHandled(activeOrderRef.current)) {
+        removeOrderFromQueue(activeOrderRef.current);
+        return;
+      }
+
       if (typeof document !== 'undefined') {
         playNotificationSound(activeOrderRef.current);
       }
@@ -276,6 +356,12 @@ export const useRestaurantNotificationsState = () => {
 
   const handleIncomingOrderAlert = (orderData, source = 'unknown') => {
     const isSocket = source === 'socket';
+
+    // Already accepted / rejected / cancelled: never ring again (a stale poll or a late push
+    // can still carry the old "new order" state).
+    if (isRestaurantOrderHandled(orderData)) {
+      return;
+    }
     
     // For scheduled orders, don't alert at all if they are far away (more than 15 mins)
     if (orderData?.scheduledAt) {
@@ -297,7 +383,11 @@ export const useRestaurantNotificationsState = () => {
       return;
     }
 
-    activeOrderRef.current = orderData || { id: Date.now() };
+    // If another order is already ringing, keep that ring going (it stays first in the queue);
+    // the new one rings immediately once, and takes over when the first is answered.
+    if (!activeOrderRef.current || isSameOrder(activeOrderRef.current, orderData)) {
+      activeOrderRef.current = orderData || { id: Date.now() };
+    }
 
     const isTabHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
     
@@ -308,6 +398,24 @@ export const useRestaurantNotificationsState = () => {
 
     if (isTabHidden) {
       showBackgroundOrderNotification(orderData);
+    }
+  };
+
+  // Orders still waiting for the restaurant have UI status "confirmed" (backend "created").
+  // If a queued/ringing order shows any other status on the server, it was already answered.
+  const syncQueueWithServerRows = (rows = []) => {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    const candidates = [
+      ...(activeOrderRef.current ? [activeOrderRef.current] : []),
+      ...orderQueueRef.current,
+    ];
+    for (const queued of candidates) {
+      const serverRow = rows.find((row) => isSameOrder(row, queued));
+      if (!serverRow) continue;
+      const status = String(serverRow?.status || serverRow?.orderStatus || '').toLowerCase().trim().replace(/\s+/g, '_');
+      if (status && status !== 'confirmed' && status !== 'created') {
+        removeOrderFromQueue(serverRow);
+      }
     }
   };
 
@@ -361,22 +469,30 @@ export const useRestaurantNotificationsState = () => {
             // Skip orders that have been locally marked as cancelled
             const oId = String(o?._id || o?.orderMongoId || o?.orderId || '').trim();
             if (oId && cancelledOrderIdsRef.current.has(oId)) return false;
+            if (isRestaurantOrderHandled(o)) return false;
 
             // If it's a scheduled order, only alert if it's due soon (within 30 mins)
             if (o.scheduledAt) {
               const scheduledTime = new Date(o.scheduledAt).getTime();
               const now = Date.now();
-              // Only alert if scheduled time is <= 30 mins from now
               return scheduledTime <= now + 30 * 60000;
             }
 
-            return true;
+            // Only alert for recent confirmed orders (created within the last 15 minutes)
+            // This prevents old historical orders from filling the queue and blocking new incoming orders
+            const createdAtTime = new Date(o?.createdAt || o?.updatedAt || 0).getTime();
+            const isRecent = Date.now() - createdAtTime <= 15 * 60 * 1000;
+            return isRecent;
           })
           .sort((a, b) => {
             const at = a?.updatedAt || a?.createdAt || 0;
             const bt = b?.updatedAt || b?.createdAt || 0;
             return new Date(bt).getTime() - new Date(at).getTime();
           });
+
+        // Server is the truth: any order we are ringing/queueing that is no longer "new"
+        // (accepted from another device, auto-rejected, cancelled, ...) must stop ringing.
+        syncQueueWithServerRows(rows);
 
         if (confirmed.length > 0) {
           // Trigger alerts for newest confirmed orders (dedupe prevents spam).
@@ -502,9 +618,16 @@ export const useRestaurantNotificationsState = () => {
                 // Skip orders that have been locally marked as cancelled
                 const oId = String(o?._id || o?.orderMongoId || o?.orderId || '').trim();
                 if (oId && cancelledOrderIdsRef.current.has(oId)) return false;
-                return !o.scheduledAt || new Date(o.scheduledAt).getTime() <= Date.now() + 30 * 60000;
+                if (isRestaurantOrderHandled(o)) return false;
+                if (o.scheduledAt) {
+                  return new Date(o.scheduledAt).getTime() <= Date.now() + 30 * 60000;
+                }
+                const createdAtTime = new Date(o?.createdAt || o?.updatedAt || 0).getTime();
+                return Date.now() - createdAtTime <= 15 * 60 * 1000;
              }).sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime());
              
+             syncQueueWithServerRows(rows);
+
              if (confirmed.length > 0) {
                 confirmed.slice(0, 5).forEach(o => enqueueOrder(o));
              }
@@ -802,6 +925,11 @@ export const useRestaurantNotificationsState = () => {
 
       // Track cancelled order IDs so REST polling never resurrects them
       const statusRaw = String(data?.orderStatus || data?.status || '').toLowerCase().trim().replace(/\s+/g, '_');
+
+      // Accepted / preparing / ready / delivered ...: this order is no longer "new", stop ringing for it.
+      if (statusRaw && statusRaw !== 'confirmed' && statusRaw !== 'created') {
+        removeOrderFromQueue(data);
+      }
       if (statusRaw === 'cancelled_by_user' || statusRaw === 'cancelled_by_restaurant' || statusRaw === 'cancelled_by_admin' || statusRaw === 'cancelled') {
         const ids = [data?.orderMongoId, data?.orderId, data?._id, data?.id]
           .map(v => v == null ? '' : String(v).trim())
@@ -837,33 +965,45 @@ export const useRestaurantNotificationsState = () => {
       dispatchNotificationInboxRefresh();
     });
 
-    // Load notification sound
-    audioRef.current = new Audio(resolveAudioSource(alertSound));
-    audioRef.current.preload = 'auto';
-    audioRef.current.volume = 1;
-
+    // Load notification sound cleanup on restaurantId change
     return () => {
       stopAlertLoop();
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
+    };
+  }, [restaurantId]);
+
+  // Initialize notification sound audio element immediately on mount
+  useEffect(() => {
+    try {
+      const audio = new Audio(resolveAudioSource(alertSound));
+      audio.preload = 'auto';
+      audio.volume = 1;
+      audioRef.current = audio;
+    } catch (e) {
+      debugWarn('Failed to create notification audio element:', e);
+    }
+
+    return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
     };
-  }, [restaurantId]);
+  }, []);
 
-  // Prime audio gesture silently on first interaction (no alert.mp3 on iOS unlock)
+  // Prime audio & Web Audio API gesture on user interaction
   useEffect(() => {
+    let unlocked = false;
+
     const handleUserInteraction = async () => {
+      if (unlocked) return;
       userInteractedRef.current = true;
       audioUnlockAttemptedRef.current = true;
 
-      // Actually unlock the <audio> element: a muted play+pause during this
-      // real user gesture lets the browser allow later programmatic .play()
-      // calls (e.g. from the socket 'new_order' handler, which has no gesture).
+      // Unlock HTMLAudioElement
       if (audioRef.current) {
         try {
           const wasMuted = audioRef.current.muted;
@@ -872,81 +1012,97 @@ export const useRestaurantNotificationsState = () => {
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
           audioRef.current.muted = wasMuted;
+          unlocked = true;
         } catch (err) {
-          debugWarn('Audio unlock attempt failed:', err);
+          debugWarn('Audio element unlock attempt failed:', err);
         }
       }
 
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      window.removeEventListener('pointerdown', handleUserInteraction);
+      // Unlock Web Audio Context
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          if (!window._restaurantAudioCtx || window._restaurantAudioCtx.state === 'closed') {
+            window._restaurantAudioCtx = new AudioContextClass();
+          }
+          if (window._restaurantAudioCtx.state === 'suspended') {
+            await window._restaurantAudioCtx.resume();
+          }
+          unlocked = true;
+        }
+      } catch (err) {
+        debugWarn('AudioContext unlock attempt failed:', err);
+      }
+
+      if (unlocked) {
+        ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+          document.removeEventListener(evt, handleUserInteraction);
+          window.removeEventListener(evt, handleUserInteraction);
+        });
+      }
     };
-    
-    document.addEventListener('click', handleUserInteraction, { once: true });
-    document.addEventListener('touchstart', handleUserInteraction, { once: true });
-    document.addEventListener('keydown', handleUserInteraction, { once: true });
-    window.addEventListener('pointerdown', handleUserInteraction, { once: true, passive: true });
-    
+
+    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+      document.addEventListener(evt, handleUserInteraction, { passive: true });
+      window.addEventListener(evt, handleUserInteraction, { passive: true });
+    });
+
     return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      window.removeEventListener('pointerdown', handleUserInteraction);
+      ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+        document.removeEventListener(evt, handleUserInteraction);
+        window.removeEventListener(evt, handleUserInteraction);
+      });
     };
   }, []);
 
   const playNotificationSound = async (orderData = {}) => {
     try {
-      // Temporarily disabled native bridge sound trigger
-      // const usedNativeBridge = await triggerWebViewNativeNotification(orderData);
-      const usedNativeBridge = false;
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         try {
-          if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
-            // Skip vibration to avoid Chrome intervention warning if user hasn't interacted
-          } else {
+          if (!navigator.userActivation || navigator.userActivation.hasBeenActive) {
             navigator.vibrate([200, 100, 200, 100, 300]);
           }
         } catch (e) {
           // Ignore vibration errors
         }
       }
-      if (usedNativeBridge) {
-        return;
-      }
 
+      let playedSuccessfully = false;
       if (audioRef.current) {
         audioRef.current.muted = false;
         audioRef.current.volume = 1;
         audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(error => {
-          debugWarn('Error playing notification sound:', error);
-          // Fallback: try one-shot audio instance (more reliable in background tabs on some browsers,
-          // and worth trying even after a NotAllowedError since browser autoplay state can vary per element).
-          try {
-            const fallbackAudio = new Audio(resolveAudioSource(alertSound, `restaurant-alert-${Date.now()}`));
-            fallbackAudio.volume = 1;
-            fallbackAudio.play().catch(fallbackError => {
-              debugWarn('Fallback audio playback failed:', fallbackError);
-            });
-          } catch (fallbackError) {
-            debugWarn('Fallback audio playback failed:', fallbackError);
-          }
-        });
+        try {
+          await audioRef.current.play();
+          playedSuccessfully = true;
+        } catch (error) {
+          debugWarn('HTMLAudioElement play failed, trying fallback:', error);
+        }
+      }
+
+      if (!playedSuccessfully) {
+        // Fallback: Web Audio synthesizer chime
+        playWebAudioChime();
       }
     } catch (error) {
-      // Don't log autoplay policy errors
-      if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
-        debugWarn('Error playing sound:', error);
-      }
+      debugWarn('Error playing sound, using chime fallback:', error);
+      playWebAudioChime();
     }
   };
 
-  const clearNewOrder = () => {
-    stopAlertLoop();
-    activeOrderRef.current = null;
-    dequeueOrder(); // pop front of queue; next order becomes head
+  /**
+   * Call when the restaurant has answered an order (accept / reject / dismiss).
+   * Pass the order that was answered. Without it, the order currently at the head of the
+   * queue is treated as answered.
+   */
+  const clearNewOrder = (answeredOrder, options) => {
+    const target = answeredOrder || orderQueueRef.current[0] || activeOrderRef.current;
+    if (!target) {
+      stopAlertLoop();
+      activeOrderRef.current = null;
+      return;
+    }
+    removeOrderFromQueue(target, options);
   };
 
   // Expose the head of queue as `newOrder` for backward compatibility
@@ -959,7 +1115,9 @@ export const useRestaurantNotificationsState = () => {
     clearPickupOtpReveal: () => setPickupOtpReveal(null),
     clearNewOrder,
     isConnected,
-    playNotificationSound
+    playNotificationSound,
+    stopAlertLoop,
+    removeOrderFromQueue,
   };
 };
 

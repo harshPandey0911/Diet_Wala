@@ -8,21 +8,27 @@ import { connectDB, disconnectDB } from './src/config/db.js';
 import { connectRedis, closeRedis, getRedisClient } from './src/config/redis.js';
 import { initializeQueues, closeBullMQConnection } from './src/queues/index.js';
 
+import express from 'express';
+import cors from 'cors';
 import { logger } from './src/utils/logger.js';
 import { initializeFirebaseRealtime } from './src/config/firebase.js';
 import { loadEnvFromDb } from './src/config/envLoader.js';
-import { initRedisEmitter } from './src/config/socket.js';
+import { initSocket, initRedisEmitter, getIO } from './src/config/socket.js';
 import { logVoipConfigurationWarnings } from './src/core/notifications/voip.service.js';
 import { resumeStuckDispatches } from './src/modules/food/orders/services/order-dispatch.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
 let server = null;
+let dedicatedSocketServer = null;
 
 const gracefulShutdown = async (signal) => {
     logger.info(`${signal} received, starting graceful shutdown`);
     if (!server) {
         process.exit(0);
         return;
+    }
+    if (dedicatedSocketServer) {
+        try { dedicatedSocketServer.close(); } catch (_) {}
     }
     server.close(async () => {
         try {
@@ -59,16 +65,53 @@ const startServer = async () => {
         // 2. Create HTTP server from Express app
         const httpServer = http.createServer(app);
 
-        logger.info('[Bootstrap] Local Socket.IO init skipped in API server; expecting socket-server.js or Redis emitter for broadcasts');
+        // Attach Socket.IO to the primary HTTP server
+        await initSocket(httpServer);
+        logger.info(`[Bootstrap] Socket.IO attached to primary HTTP server on port ${config.port}`);
 
+        // If a dedicated socket port is configured (e.g. 5001), also bind it if free
+        if (config.socketPort && Number(config.socketPort) !== Number(config.port)) {
+            try {
+                const socketApp = express();
+                socketApp.use(cors({ origin: config.socketCorsOrigin }));
+                socketApp.use(express.json());
+                socketApp.get('/health', (req, res) => res.json({ status: 'ok', service: 'socket', port: config.socketPort }));
+                socketApp.post('/internal/broadcast', (req, res) => {
+                    try {
+                        const { room, event, data } = req.body;
+                        const ioInstance = getIO();
+                        if (room) {
+                            ioInstance.to(room).emit(event, data);
+                        } else {
+                            ioInstance.emit(event, data);
+                        }
+                        res.json({ success: true });
+                    } catch (err) {
+                        res.status(500).json({ error: err.message });
+                    }
+                });
+                dedicatedSocketServer = http.createServer(socketApp);
+                await initSocket(dedicatedSocketServer);
+                dedicatedSocketServer.on('error', (err) => {
+                    if (err.code === 'EADDRINUSE') {
+                        logger.info(`[Bootstrap] Socket port ${config.socketPort} in use (standalone socket-server active). Sockets will forward.`);
+                    } else {
+                        logger.warn(`[Bootstrap] Dedicated socket port warning: ${err.message}`);
+                    }
+                });
+                dedicatedSocketServer.listen(config.socketPort, config.host || '0.0.0.0', () => {
+                    logger.info(`[Bootstrap] Dedicated Socket.IO server also active on port ${config.socketPort}`);
+                });
+            } catch (err) {
+                logger.warn(`[Bootstrap] Failed to bind dedicated socket port ${config.socketPort}: ${err.message}`);
+            }
+        }
 
         if (config.redisEnabled) {
             logger.info('[Bootstrap] Redis is enabled for API server; connecting Redis client for socket emitter/queues');
             await connectRedis();
             initRedisEmitter(getRedisClient());
             logger.info('[Bootstrap] Redis emitter setup attempted from API server');
-        } else {
-            logger.warn('[Bootstrap] Redis is disabled in API server; getIO() will warn unless socket events stay inside socket-server.js');
         }
 
         // Watchdog recovered stuck orders is moved to scheduler-server.js
