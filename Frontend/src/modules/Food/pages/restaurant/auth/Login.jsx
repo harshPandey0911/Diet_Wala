@@ -15,7 +15,7 @@ export default function RestaurantLogin() {
   const navigate = useNavigate()
   const companyName = useCompanyName()
   const phoneInputRef = useRef(null)
-  const [phone, setPhone] = useState(() => sessionStorage.getItem("restaurantLoginPhone") || "9000000000")
+  const [phone, setPhone] = useState(() => sessionStorage.getItem("restaurantLoginPhone") || "")
   const [loading, setLoading] = useState(false)
   const submitting = useRef(false)
   const dynamicLogo = useAppLogo("restaurant_app")
