@@ -27,7 +27,6 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const PHONE = '7879363299';
 const DEMO = 'demo-seed-7879363299'; // marker stored on every demo record
-const ORDER_PREFIX = 'DEMO-';
 
 // Images that already exist on the live site (all verified to load).
 const IMG = (file) => `https://dietvala.com/uploads/${file}`;
@@ -132,10 +131,10 @@ async function main() {
 
   const byName = Object.fromEntries(dishDocs.map((d) => [d.name, d]));
   const ORDERS = [
-    { code: 'DEMO-1001', daysAgo: 1, items: [['Grilled Chicken Rice Bowl', 1], ['Banana Protein Shake', 1]] },
-    { code: 'DEMO-1002', daysAgo: 4, items: [['Fish Rice Bowl', 2]] },
-    { code: 'DEMO-1003', daysAgo: 9, items: [['Fresh Fruit Salad Bowl', 1], ['Energy Bite Box', 1], ['Cold Coffee', 1]] },
-    { code: 'DEMO-1004', daysAgo: 15, items: [['Chicken Rice with Salad', 1]] },
+    { code: 'FOD-2906417', daysAgo: 1, items: [['Grilled Chicken Rice Bowl', 1], ['Banana Protein Shake', 1]] },
+    { code: 'FOD-2874093', daysAgo: 4, items: [['Fish Rice Bowl', 2]] },
+    { code: 'FOD-2841625', daysAgo: 9, items: [['Fresh Fruit Salad Bowl', 1], ['Energy Bite Box', 1], ['Cold Coffee', 1]] },
+    { code: 'FOD-2793580', daysAgo: 15, items: [['Chicken Rice with Salad', 1]] },
   ];
   for (const o of ORDERS) {
     const items = o.items.map(([name, qty]) => {
@@ -187,7 +186,7 @@ async function main() {
   wallet.transactions = (wallet.transactions || []).filter((t) => t?.metadata?.demoSeed !== DEMO);
   wallet.transactions.unshift(
     { type: 'addition', amount: 500, description: 'Added to wallet', status: 'Completed', metadata: { demoSeed: DEMO }, createdAt: daysAgo(12) },
-    { type: 'deduction', amount: 189, description: 'Paid for order DEMO-1001', status: 'Completed', metadata: { demoSeed: DEMO }, createdAt: daysAgo(1) },
+    { type: 'deduction', amount: 189, description: 'Paid for order FOD-2906417', status: 'Completed', metadata: { demoSeed: DEMO }, createdAt: daysAgo(1) },
     { type: 'refund', amount: 99, description: 'Refund for a cancelled order', status: 'Completed', metadata: { demoSeed: DEMO }, createdAt: daysAgo(3) },
   );
   wallet.balance = 500 - 189 + 99;
@@ -201,9 +200,9 @@ async function main() {
     { upsert: true }
   );
   await FoodLoyaltyTransaction.insertMany([
-    { userId: user._id, type: 'earn', points: 120, balanceAfter: 120, rupeeValue: 12, description: 'Points earned on order DEMO-1003', reference: DEMO, createdAt: daysAgo(9) },
-    { userId: user._id, type: 'redeem', points: -100, balanceAfter: 20, rupeeValue: 10, description: 'Redeemed on order DEMO-1002', reference: DEMO, createdAt: daysAgo(4) },
-    { userId: user._id, type: 'earn', points: 120, balanceAfter: 140, rupeeValue: 12, description: 'Points earned on order DEMO-1001', reference: DEMO, createdAt: daysAgo(1) },
+    { userId: user._id, type: 'earn', points: 120, balanceAfter: 120, rupeeValue: 12, description: 'Points earned on order FOD-2841625', reference: DEMO, createdAt: daysAgo(9) },
+    { userId: user._id, type: 'redeem', points: -100, balanceAfter: 20, rupeeValue: 10, description: 'Redeemed on order FOD-2874093', reference: DEMO, createdAt: daysAgo(4) },
+    { userId: user._id, type: 'earn', points: 120, balanceAfter: 140, rupeeValue: 12, description: 'Points earned on order FOD-2906417', reference: DEMO, createdAt: daysAgo(1) },
   ]);
 
   // 6) Notifications with pictures
@@ -217,7 +216,7 @@ async function main() {
   });
   await FoodNotification.collection.insertMany([
     note('20% off on shakes today', 'Banana, coffee and protein shakes at a special price. Order now!', '/food/user', IMAGES.bananaShake, 0),
-    note('Your order was delivered', 'Order DEMO-1001 was delivered. Hope you enjoyed it! Rate your meal.', '/food/user/orders', IMAGES.grilledChicken, 1),
+    note('Your order was delivered', 'Order FOD-2906417 was delivered. Hope you enjoyed it! Rate your meal.', '/food/user/orders', IMAGES.grilledChicken, 1),
     note('Healthy lunch ideas', 'High-protein bowls ready in 20 minutes.', '/food/user', IMAGES.chickenRice, 2),
     note('New: Fresh fruit bowls', 'Seasonal fruits, no added sugar.', '/food/user', IMAGES.fruits, 5),
     note('You earned 120 points', 'Use your loyalty points on your next order.', '/food/user/profile', IMAGES.energyBite, 9),

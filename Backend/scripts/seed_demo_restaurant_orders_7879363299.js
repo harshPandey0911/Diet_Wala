@@ -1,5 +1,5 @@
 /**
- * 3 demo orders for the restaurant 7879363299 so its Orders screen shows something in the
+ * Test orders for the restaurant 7879363299 so its Orders screen shows something in the
  * "New", "Preparing" and "Ready" tabs. Orders belong to the customer 7879363299 and to the
  * restaurant's own test dishes (run scripts/seed_demo_user_7879363299.js first).
  *
@@ -46,9 +46,13 @@ async function main() {
   const { _id: _omit, transactionId: _tx, ...template } = base;
 
   const ORDERS = [
-    { code: 'DEMO-2001', status: 'created', placedMinutesAgo: 1, items: [['Grilled Chicken Rice Bowl', 2], ['Banana Protein Shake', 1]], note: 'Less spicy please' },
-    { code: 'DEMO-2002', status: 'preparing', placedMinutesAgo: 14, items: [['Fish Rice Bowl', 1], ['Cold Coffee', 1]], note: '' },
-    { code: 'DEMO-2003', status: 'ready_for_pickup', placedMinutesAgo: 26, items: [['Fresh Fruit Salad Bowl', 1], ['Energy Bite Box', 1]], note: '' },
+    // New orders (waiting for the restaurant to accept)
+    { code: 'FOD-3076341', status: 'created', placedMinutesAgo: 1, items: [['Chicken Rice with Salad', 2], ['Cold Coffee', 2]], note: 'Less spicy please' },
+    { code: 'FOD-3076877', status: 'created', placedMinutesAgo: 3, items: [['Banana Protein Shake', 2], ['Energy Bite Box', 1]], note: '' },
+    // Being prepared / ready for pickup
+    { code: 'FOD-3074518', status: 'preparing', placedMinutesAgo: 20, items: [['Grilled Chicken Rice Bowl', 2], ['Banana Protein Shake', 1]], note: '' },
+    { code: 'FOD-3074902', status: 'preparing', placedMinutesAgo: 14, items: [['Fish Rice Bowl', 1], ['Cold Coffee', 1]], note: '' },
+    { code: 'FOD-3075226', status: 'ready_for_pickup', placedMinutesAgo: 26, items: [['Fresh Fruit Salad Bowl', 1], ['Energy Bite Box', 1]], note: '' },
   ];
 
   for (const o of ORDERS) {
@@ -95,7 +99,7 @@ async function main() {
     console.log(`  ${o.code}: ${o.status} | ${items.map((i) => `${i.quantity}x ${i.name}`).join(', ')} | ₹${total}`);
   }
 
-  console.log(`\n3 demo orders ready for restaurant ${restaurant.restaurantName}`);
+  console.log(`\nOrders ready for restaurant ${restaurant.restaurantName}`);
   await mongoose.disconnect();
   process.exit(0);
 }
