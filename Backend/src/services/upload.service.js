@@ -247,11 +247,15 @@ export const uploadDeliveryImage = async (buffer) => {
 };
 
 export const uploadGenericImage = async (buffer, folder = 'misc') => {
+    // Menu photos and banners come through here straight from phone cameras (often 4000px, 1+ MB).
+    // Cap the size: nothing in the apps is displayed larger than ~1200px.
     return processAndSaveImage({
         buffer,
         folder,
         prefix: 'img',
-        quality: 85
+        width: 1200,
+        height: 1200,
+        quality: 80
     });
 };
 
