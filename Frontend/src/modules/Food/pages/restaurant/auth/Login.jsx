@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { restaurantAPI } from "@food/api"
 import { useAppLogo } from "@food/hooks/useAppLogo"
 import { useCompanyName } from "@food/hooks/useCompanyName"
-import logoNew from "@/assets/logo.png"
+import logoNew from "@/assets/logo.webp"
 
 const DEFAULT_COUNTRY_CODE = "+91"
 

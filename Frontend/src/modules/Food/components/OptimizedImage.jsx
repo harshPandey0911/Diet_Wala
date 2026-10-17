@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { ConciergeBell } from 'lucide-react'
-import { getMediaUrl } from '@/shared/utils/media.js'
+import { getMediaUrl, getThumbUrl, isOwnUploadUrl } from '@/shared/utils/media.js'
 
 export const ShopPlaceholder = () => (
   <svg viewBox="0 0 100 100" className="w-[40%] h-[40%] max-w-[80px] max-h-[80px] text-[#cfcac2] dark:text-zinc-600" fill="currentColor">
@@ -90,6 +90,7 @@ const OptimizedImage = React.memo(({
   // Check if image URL supports optimization (external URLs)
   const supportsOptimization = (imageSrc) => {
     if (!imageSrc || typeof imageSrc !== 'string' || imageSrc === '') return false
+    if (isOwnUploadUrl(imageSrc)) return true
     if (imageSrc.startsWith('data:') || imageSrc.startsWith('/')) return false
     // Don't proxy localhost
     if (/localhost|127\.0\.0\.1/i.test(imageSrc)) return false;
@@ -104,6 +105,7 @@ const OptimizedImage = React.memo(({
   const getOptimizedUrl = (imageSrc, params) => {
     if (!imageSrc) return imageSrc;
     const { w, format, q = 80 } = params;
+    if (isOwnUploadUrl(imageSrc)) return getThumbUrl(imageSrc, w || 800);
     
     // Native Cloudinary optimization (bypasses wsrv proxy for faster loading)
     if (/res\.cloudinary\.com/i.test(imageSrc) && /\/image\/upload\//i.test(imageSrc)) {

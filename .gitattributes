@@ -1,0 +1,15 @@
+# Keep binary files byte-for-byte. Without this, Git on Windows (core.autocrlf=true) rewrote line
+# endings inside many PNGs, which corrupted them (most images in Frontend/src/**/assets were broken).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.mp3  binary
+*.mp4  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.p12  binary

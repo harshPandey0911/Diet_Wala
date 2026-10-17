@@ -62,6 +62,7 @@ import {
 import fssaiLogo from "@food/assets/fssai.png"
 import { RestaurantDetailSkeleton } from "@food/components/ui/loading-skeletons"
 import MenuScanAnimation from "@food/components/user/MenuScanAnimation"
+import { getThumbUrl } from "@/shared/utils/media.js"
 
 const debugLog = (...args) => { }
 const debugWarn = (...args) => { }
@@ -95,7 +96,7 @@ const DishImage = ({ src, alt, className = "" }) => {
 
       {/* Actual Image */}
       <img
-        src={src}
+        src={getThumbUrl(src, 400)}
         alt={alt}
         loading="lazy"
         className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
@@ -2789,7 +2790,7 @@ function RestaurantDetailsContent() {
                       >
                         {category.image ? (
                           <img
-                            src={category.image}
+                            src={getThumbUrl(category.image, 100)}
                             alt={category.name}
                             className="h-6 w-6 rounded-full object-cover border border-white/70 shadow-sm"
                             onError={(event) => {
@@ -3091,7 +3092,7 @@ function RestaurantDetailsContent() {
                           <div className="flex items-center gap-3 min-w-0">
                             {category.image ? (
                               <img
-                                src={category.image}
+                                src={getThumbUrl(category.image, 100)}
                                 alt={category.name}
                                 className="h-10 w-10 rounded-xl object-cover border border-gray-200"
                                 onError={(event) => {

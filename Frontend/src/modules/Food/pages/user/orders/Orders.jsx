@@ -6,6 +6,7 @@ import { useCart } from "@food/context/CartContext"
 import { toast } from "sonner"
 import { getCompanyNameAsync, getSupportPhone, getSupportPhoneAsync } from "@food/utils/businessSettings"
 import { isModuleAuthenticated } from "@food/utils/auth"
+import { getThumbUrl } from "@/shared/utils/media.js"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -829,7 +830,7 @@ Order again from this restaurant in the ${companyName} app.`
                     {/* Restaurant Image */}
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
                       <img
-                        src={restaurantImage}
+                        src={getThumbUrl(restaurantImage, 200)}
                         alt={order.restaurant}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -909,7 +910,7 @@ Order again from this restaurant in the ${companyName} app.`
                           {itemImage && (
                             <div className="hidden sm:block w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                               <img
-                                src={itemImage}
+                                src={getThumbUrl(itemImage, 200)}
                                 alt={itemName}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {

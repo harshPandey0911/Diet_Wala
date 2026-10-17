@@ -23,6 +23,7 @@ import { useDelayedLoading } from "@food/hooks/useDelayedLoading"
 import { getMenuFromResponse } from "@food/utils/menuItems"
 import { normalizeImageUrl } from "@food/utils/common"
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability"
+import { getThumbUrl } from "@/shared/utils/media.js"
 
 // Filter options
 const filterOptions = [
@@ -1287,7 +1288,7 @@ export default function CategoryPage() {
                       <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 transition-all ${isSelected ? 'border-primary shadow-lg' : 'border-transparent'
                         }`}>
                         <img
-                          src={cat.image}
+                          src={getThumbUrl(cat.image, 200)}
                           alt={cat.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -1444,7 +1445,7 @@ export default function CategoryPage() {
 
                           {restaurant.categoryDishImage ? (
                             <img
-                              src={restaurant.categoryDishImage}
+                              src={getThumbUrl(restaurant.categoryDishImage, 400)}
                               alt={restaurant.categoryDishName || restaurant.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -1550,7 +1551,7 @@ export default function CategoryPage() {
                           {/* Use category dish image if available, otherwise restaurant image */}
                           {restaurant.categoryDishImage ? (
                             <img
-                              src={restaurant.categoryDishImage}
+                              src={getThumbUrl(restaurant.categoryDishImage, 400)}
                               alt={restaurant.categoryDishName || restaurant.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               onError={(e) => {
@@ -1569,7 +1570,7 @@ export default function CategoryPage() {
                             />
                           ) : restaurant.image ? (
                             <img
-                              src={restaurant.image}
+                              src={getThumbUrl(restaurant.image, 400)}
                               alt={restaurant.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               onError={(e) => {

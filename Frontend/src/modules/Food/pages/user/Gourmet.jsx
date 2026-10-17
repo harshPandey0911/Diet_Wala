@@ -14,7 +14,7 @@ import { useAppLocation } from "@food/hooks/useAppLocation"
 
 
 // Import banner
-import gourmetBanner from "@food/assets/gourmet_new_banner.png"
+import gourmetBanner from "@food/assets/gourmet_new_banner.webp"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}

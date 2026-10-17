@@ -42,7 +42,7 @@ import {
   Bell,
 } from "lucide-react";
 import { toast } from "sonner";
-import outOfZoneBg from "@food/assets/out-of-zone-bg.png";
+import outOfZoneBg from "@food/assets/out-of-zone-bg.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "@food/components/user/Footer";
 import AddToCartButton from "@food/components/user/AddToCartButton";
@@ -104,7 +104,7 @@ import RestaurantImageCarousel from "@food/components/user/home/RestaurantImageC
 import QuickSection from "@food/components/user/home/QuickSection";
 import PromoRow from "@food/components/user/home/PromoRow";
 import FestBanner from "@food/components/user/home/FestBanner";
-import chefMascot from "@food/assets/chef-mascot.png";
+import chefMascot from "@food/assets/chef-mascot.webp";
 import AdsBannerCarousel from "@food/components/user/home/AdsBannerCarousel";
 import { getRestaurantDisplayName } from "@food/utils/restaurantDisplayName";
 import { primeOutletTimingsCache } from "@food/utils/outletTimingsCache";
@@ -114,6 +114,7 @@ import exploreOffers from "@food/assets/explore more icons/offers.png";
 import exploreGourmet from "@food/assets/explore more icons/gourmet.png";
 import exploreTop10 from "@food/assets/explore more icons/top 10.png";
 import exploreCollection from "@food/assets/explore more icons/collection.png";
+import { getThumbUrl } from "@/shared/utils/media.js"
 
 // Animated placeholder for search - moved outside component to prevent recreation
 const placeholders = [
@@ -2284,7 +2285,7 @@ export default function Home() {
                             <div className={`w-[54px] h-[54px] sm:w-[60px] sm:h-[60px] md:w-[72px] md:h-[72px] rounded-full bg-[#FFFBEB] dark:bg-amber-950/40 border ${isSelected ? 'border-[#FFC700] ring-2 ring-[#FFC700]/30' : 'border-[#FFE699]/60 dark:border-amber-800/40'} flex items-center justify-center overflow-hidden shadow-2xs group-hover:scale-105 group-active:scale-95 transition-all relative`}>
                               {category.image ? (
                                 <img 
-                                  src={normalizeImageUrl(category.image)} 
+                                  src={getThumbUrl(normalizeImageUrl(category.image), 200)} 
                                   alt={category.name} 
                                   className="w-full h-full object-cover rounded-full"
                                   onError={(e) => {
@@ -2357,7 +2358,7 @@ export default function Home() {
                             {/* Image Container with Badge */}
                             <div className="relative h-24 sm:h-28 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                               {restaurant.image ? (
-                                <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <img src={getThumbUrl(restaurant.image, 400)} alt={restaurant.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                               ) : (
                                 <RestaurantImageCarousel
                                   restaurant={restaurant}

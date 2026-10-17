@@ -125,3 +125,30 @@ export const getMediaUrl = (path) => {
   return backendOrigin ? `${backendOrigin}${normalizedUploadsPath}` : normalizedUploadsPath;
 };
 
+
+// ---- Thumbnails -------------------------------------------------------------------------------
+// The backend can resize our own uploaded pictures on the fly: /uploads/<file>?w=400 returns a small
+// cached WebP. Use getThumbUrl() for pictures shown small (cards, lists, icons) so the phone downloads
+// ~10-20 KB instead of the full 200+ KB original. Anything that is not one of our uploads, or that
+// already has a width, is returned unchanged.
+const THUMB_WIDTHS = [100, 150, 200, 300, 400, 600, 800, 1200];
+
+export const isOwnUploadUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  if (!/\/uploads\/[^?#]+\.(webp|png|jpe?g)(\?[^#]*)?$/i.test(value)) return false;
+  if (/[?&]w=/.test(value)) return false;
+  if (value.startsWith('/')) return true;
+  try {
+    const host = new URL(value).hostname;
+    const pageHost = typeof window !== 'undefined' ? window.location.hostname : '';
+    return host === pageHost || /(^|\.)dietvala\.com$/i.test(host) || LOCAL_HOSTS.has(host);
+  } catch {
+    return false;
+  }
+};
+
+export const getThumbUrl = (value, width = 400) => {
+  if (!isOwnUploadUrl(value)) return value;
+  const w = THUMB_WIDTHS.find((candidate) => candidate >= width) || THUMB_WIDTHS[THUMB_WIDTHS.length - 1];
+  return `${value}${value.includes('?') ? '&' : '?'}w=${w}`;
+};

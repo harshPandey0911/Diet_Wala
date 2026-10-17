@@ -1,7 +1,7 @@
 import React from 'react';
-import discountPromoIcon from "@food/assets/category-icons/discount_promo.png";
-import vegPromoIcon from "@food/assets/category-icons/veg_promo.png";
-import pricePromoIcon from "@food/assets/category-icons/price_promo.png";
+import discountPromoIcon from "@food/assets/category-icons/discount_promo.webp";
+import vegPromoIcon from "@food/assets/category-icons/veg_promo.webp";
+import pricePromoIcon from "@food/assets/category-icons/price_promo.webp";
 
 export default function PromoRow({ handleVegModeChange, navigate, isVegMode, toggleRef }) {
   const promoCardsData = [

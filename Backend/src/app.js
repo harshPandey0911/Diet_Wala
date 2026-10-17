@@ -13,6 +13,9 @@ import { healthCheck } from './config/health.js';
 import { config } from './config/env.js';
 import { getUploadDirectory } from './services/upload.service.js';
 import compression from 'compression';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 
 const app = express();
 
@@ -121,7 +124,9 @@ app.use('/api', routes);
 // Static file serving for uploads. Resolve lazily so settings loaded during
 // application bootstrap are honored without requiring a process restart.
 const uploadStaticOptions = {
-    maxAge: '7d',
+    // Upload file names are unique (hash in the name), so browsers can keep them for a long time.
+    maxAge: '30d',
+    immutable: true,
     setHeaders: (res) => {
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -129,6 +134,55 @@ const uploadStaticOptions = {
 };
 let uploadStaticRoot = '';
 let uploadStaticHandler = null;
+
+// On-the-fly thumbnails: /uploads/<file>?w=400 returns a resized WebP (cached on disk), so a list
+// screen downloads ~15 KB per picture instead of the full 200+ KB original.
+const THUMB_WIDTHS = new Set([100, 150, 200, 300, 400, 600, 800, 1200]);
+const THUMB_SOURCE_EXT = /\.(webp|png|jpe?g)$/i;
+const thumbInFlight = new Map();
+app.use(['/var/www/uploads', '/uploads'], async (req, res, next) => {
+    try {
+        if (req.method !== 'GET' || !req.query?.w) return next();
+        const width = Number(req.query.w);
+        if (!THUMB_WIDTHS.has(width)) return next();
+
+        const relative = decodeURIComponent(req.path || '').replace(/^\/+/, '');
+        if (!relative || relative.includes('..') || !THUMB_SOURCE_EXT.test(relative)) return next();
+
+        const root = path.resolve(getUploadDirectory());
+        const source = path.resolve(root, relative);
+        if (!source.startsWith(root + path.sep) || !fs.existsSync(source)) return next();
+
+        const cacheDir = path.join(root, '.thumbs');
+        const cacheFile = path.join(cacheDir, `${relative.replace(/[\/]/g, '_')}.w${width}.webp`);
+        const sourceStat = fs.statSync(source);
+        const cacheStat = fs.existsSync(cacheFile) ? fs.statSync(cacheFile) : null;
+
+        if (!cacheStat || cacheStat.mtimeMs < sourceStat.mtimeMs) {
+            let job = thumbInFlight.get(cacheFile);
+            if (!job) {
+                job = (async () => {
+                    await fs.promises.mkdir(cacheDir, { recursive: true });
+                    const tmp = `${cacheFile}.${process.pid}.tmp`;
+                    await sharp(source).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 75, effort: 4 }).toFile(tmp);
+                    await fs.promises.rename(tmp, cacheFile);
+                })().finally(() => thumbInFlight.delete(cacheFile));
+                thumbInFlight.set(cacheFile, job);
+            }
+            await job;
+        }
+
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.type('image/webp');
+        return res.sendFile(cacheFile);
+    } catch (_error) {
+        // Any problem: fall back to the original file.
+        return next();
+    }
+});
+
 app.use(['/var/www/uploads', '/uploads'], (req, res, next) => {
     const currentRoot = getUploadDirectory();
     if (!uploadStaticHandler || uploadStaticRoot !== currentRoot) {

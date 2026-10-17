@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { foodImages } from "@food/constants/images";
+import { getThumbUrl } from "@/shared/utils/media.js";
 
 const WEBVIEW_SESSION_CACHE_BUSTER = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -272,7 +273,8 @@ const RestaurantImageCarousel = React.memo(
       images.length > 0
         ? ((currentIndex % images.length) + images.length) % images.length
         : 0;
-    const primarySrc = images[safeIndex] || "";
+    // Home cards are small: ask the backend for a resized copy instead of the full-size original.
+    const primarySrc = getThumbUrl(images[safeIndex] || "", 600);
     const displaySrc = primarySrc;
     const renderSrc = displaySrc || lastGoodSrc;
     const isImageLoaded = Boolean(loadedBySrc[renderSrc] || lastGoodSrc);
@@ -409,7 +411,7 @@ const RestaurantImageCarousel = React.memo(
           {/* Secretly preload the next image to prevent white flash on swipe */}
           {images.length > 1 && (
             <img 
-              src={images[(currentIndex + 1) % images.length]} 
+              src={getThumbUrl(images[(currentIndex + 1) % images.length], 600)} 
               className="hidden" 
               alt="preload next" 
               aria-hidden="true"
