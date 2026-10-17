@@ -8,7 +8,8 @@ import {
     extractRawFoodVariants,
     getFoodDisplayPrice,
     hasFoodVariants,
-    normalizeFoodVariantsInput
+    normalizeFoodVariantsInput,
+    serializeFoodVariants
 } from '../../admin/services/foodVariant.service.js';
 import { getFoodMarkupMultiplier, applyFoodMarkup } from '../../admin/services/foodMarkup.service.js';
 import {
@@ -541,8 +542,15 @@ export async function listPublicApprovedFoods(query = {}) {
         name: f.name,
         description: f.description || '',
         price: applyFoodMarkup(getFoodDisplayPrice(f), markupMultiplier),
+        priceOnOtherPlatforms: f.priceOnOtherPlatforms || null,
+        otherPlatformGst: f.otherPlatformGst ?? null,
+        // Same variant shape as the restaurant menu API, so list screens (e.g. Under 250) can show and
+        // add dishes from this one response without loading every restaurant's menu separately.
+        variants: serializeFoodVariants(f.variants).map((v) => ({ ...v, price: applyFoodMarkup(v.price, markupMultiplier) })),
+        variations: serializeFoodVariants(f.variants).map((v) => ({ ...v, price: applyFoodMarkup(v.price, markupMultiplier) })),
         image: resolveStoredUploadPath(f.image || ''),
         foodType: f.foodType || 'Non-Veg',
+        preparationTime: f.preparationTime || '',
         isAvailable: f.isAvailable !== false,
         approvalStatus: f.approvalStatus || 'approved'
     }));

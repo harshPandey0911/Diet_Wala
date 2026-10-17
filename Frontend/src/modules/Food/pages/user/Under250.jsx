@@ -15,7 +15,7 @@ import PageNavbar from "@food/components/user/PageNavbar"
 import offerImage from "@food/assets/offerimage.png"
 import AddToCartAnimation from "@food/components/user/AddToCartAnimation"
 import OptimizedImage from "@food/components/OptimizedImage"
-import api, { restaurantAPI, adminAPI, getPublicLandingSettings } from "@food/api"
+import api, { restaurantAPI, adminAPI, getPublicLandingSettings, getPublicFoods } from "@food/api"
 import { isModuleAuthenticated } from "@food/utils/auth"
 import { flattenMenuItems, getMenuFromResponse } from "@food/utils/menuItems"
 import { calculateDistance, formatDistance } from "@food/utils/common"
@@ -320,6 +320,8 @@ export default function Under250() {
   // Always show scan animation on page load, even if cached, because user likes the animation
   const [showScanAnimation, setShowScanAnimation] = useState(true)
   const navigate = useNavigate()
+  // dishes of every restaurant, loaded with ONE request (restaurantId -> dishes). null = use per-restaurant menus.
+  const foodsByRestaurantRef = useRef(null)
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart } = useCart()
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -686,7 +688,26 @@ export default function Under250() {
           params.lat = location.latitude
           params.lng = location.longitude
         }
-        const response = await restaurantAPI.getRestaurants(params)
+        // One request for the restaurants and one for ALL their dishes, in parallel. Before, the page waited
+        // for the list and then opened every restaurant's menu with a separate request.
+        const [response, foodsData] = await Promise.all([
+          restaurantAPI.getRestaurants(params),
+          getPublicFoods(zoneId ? { zoneId, limit: 1000 } : { limit: 1000 }).catch(() => null),
+        ])
+        if (!cancelled) {
+          if (foodsData && Array.isArray(foodsData.foods)) {
+            const byRestaurant = new Map()
+            foodsData.foods.forEach((food) => {
+              const key = String(food?.restaurantId || "")
+              if (!key) return
+              if (!byRestaurant.has(key)) byRestaurant.set(key, [])
+              byRestaurant.get(key).push(food)
+            })
+            foodsByRestaurantRef.current = byRestaurant
+          } else {
+            foodsByRestaurantRef.current = null
+          }
+        }
         const restaurantsRaw = (Array.isArray(response?.data?.data?.restaurants)
           ? response.data.data.restaurants
           : [])
@@ -753,9 +774,17 @@ export default function Under250() {
             if (!restaurantId) return null
 
             try {
-              const menuResponse = await restaurantAPI.getMenuByRestaurantId(restaurantId)
-              const menu = getMenuFromResponse(menuResponse)
-              const menuItems = flattenMenuItems(menu)
+              // Dishes come from the single foods request when it worked; otherwise fall back to this
+              // restaurant's own menu request.
+              const preloadedFoods = foodsByRestaurantRef.current
+              let allMenuItems
+              if (preloadedFoods) {
+                allMenuItems = preloadedFoods.get(String(restaurantId)) || []
+              } else {
+                const menuResponse = await restaurantAPI.getMenuByRestaurantId(restaurantId)
+                allMenuItems = flattenMenuItems(getMenuFromResponse(menuResponse))
+              }
+              const menuItems = allMenuItems
                 .filter((item) => Number(item?.price || 0) <= under250PriceLimit && item?.isAvailable !== false)
                 .map((item) => {
                   const foodType = String(item?.foodType || "").toLowerCase()
