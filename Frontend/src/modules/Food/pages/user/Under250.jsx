@@ -15,6 +15,7 @@ import PageNavbar from "@food/components/user/PageNavbar"
 import offerImage from "@food/assets/offerimage.png"
 import AddToCartAnimation from "@food/components/user/AddToCartAnimation"
 import OptimizedImage from "@food/components/OptimizedImage"
+import { getMediaUrl, getThumbUrl } from "@/shared/utils/media.js"
 import api, { restaurantAPI, adminAPI, getPublicLandingSettings, getPublicFoods } from "@food/api"
 import { isModuleAuthenticated } from "@food/utils/auth"
 import { flattenMenuItems, getMenuFromResponse } from "@food/utils/menuItems"
@@ -168,7 +169,7 @@ const HorizontalMenuScroller = ({ restaurant, quantities, isClosed, handleItemCl
                   alt={item.name}
                   className="w-full h-full"
                   objectFit="cover"
-                  sizes="(max-width: 640px) 200px, (max-width: 768px) 220px, 100vw"
+                  sizes="(max-width: 640px) 200px, (max-width: 768px) 220px, 300px"
                   placeholder="blur"
                   priority={itemIndex < 4}
                 />
@@ -317,7 +318,7 @@ export default function Under250() {
   const { location, zoneId, zoneStatus, isInService, isOutOfService, serviceUnavailableMessage } = useAppLocation()
   // Initialize state from cache if zoneId matches
   const isCacheValid = pageCache.zoneId === zoneId;
-  // Always show scan animation on page load, even if cached, because user likes the animation
+  // Scan animation on page load; it fades out as soon as the dishes are ready (2.2 s at most)
   const [showScanAnimation, setShowScanAnimation] = useState(true)
   const navigate = useNavigate()
   // dishes of every restaurant, loaded with ONE request (restaurantId -> dishes). null = use per-restaurant menus.
@@ -606,8 +607,9 @@ export default function Under250() {
 
     bannerImages.forEach((src) => {
       if (!src) return
+      // Same URL the banner <OptimizedImage> picks (full width), so the picture is not downloaded twice.
       const img = new window.Image()
-      img.src = src
+      img.src = getThumbUrl(getMediaUrl(src), 1200)
     })
   }, [bannerImages])
 
@@ -1311,6 +1313,7 @@ export default function Under250() {
       {showScanAnimation && (
         <MenuScanAnimation
           duration={2200}
+          ready={!loadingRestaurants && (allRawRestaurants.length === 0 || under250Restaurants.length > 0 || !hasMore)}
           onComplete={() => setShowScanAnimation(false)}
         />
       )}

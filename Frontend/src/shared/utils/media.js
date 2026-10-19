@@ -127,10 +127,11 @@ export const getMediaUrl = (path) => {
 
 
 // ---- Thumbnails -------------------------------------------------------------------------------
-// The backend can resize our own uploaded pictures on the fly: /uploads/<file>?w=400 returns a small
-// cached WebP. Use getThumbUrl() for pictures shown small (cards, lists, icons) so the phone downloads
-// ~10-20 KB instead of the full 200+ KB original. Anything that is not one of our uploads, or that
-// already has a width, is returned unchanged.
+// The backend can resize our own uploaded pictures on the fly: /api/thumbs/400/<file> returns a small
+// cached WebP of /uploads/<file>. Use getThumbUrl() for pictures shown small (cards, lists, icons) so the
+// phone downloads ~10-20 KB instead of the full 200+ KB original. The /api path is used (not
+// /uploads/<file>?w=) because the live nginx serves /uploads itself and never passes it to the backend.
+// Anything that is not one of our uploads, or that already has a width, is returned unchanged.
 const THUMB_WIDTHS = [100, 150, 200, 300, 400, 600, 800, 1200];
 
 export const isOwnUploadUrl = (value) => {
@@ -150,5 +151,15 @@ export const isOwnUploadUrl = (value) => {
 export const getThumbUrl = (value, width = 400) => {
   if (!isOwnUploadUrl(value)) return value;
   const w = THUMB_WIDTHS.find((candidate) => candidate >= width) || THUMB_WIDTHS[THUMB_WIDTHS.length - 1];
-  return `${value}${value.includes('?') ? '&' : '?'}w=${w}`;
+  const clean = value.split(/[?#]/)[0];
+  const file = clean.slice(clean.indexOf('/uploads/') + '/uploads/'.length);
+  let origin = '';
+  if (/^https?:\/\//i.test(clean)) {
+    try {
+      origin = new URL(clean).origin;
+    } catch {
+      return value;
+    }
+  }
+  return `${origin}/api/thumbs/${w}/${file}`;
 };

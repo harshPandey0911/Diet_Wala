@@ -1,24 +1,40 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { RestaurantDetailSkeleton } from "@food/components/ui/loading-skeletons"
 
-export default function MenuScanAnimation({ onComplete, duration = 3000 }) {
+const FADE_MS = 300
+
+/**
+ * Full-screen skeleton shown while a page loads.
+ * - `duration`: the longest it stays (ms).
+ * - `ready` (optional): when it becomes true the overlay fades out right away, so it never covers a page
+ *   whose data has already arrived. Leave it undefined to always wait the full `duration`.
+ */
+export default function MenuScanAnimation({ onComplete, duration = 3000, ready }) {
   const [visible, setVisible] = useState(true)
+  // The parent usually passes a new arrow function on every render; keep the latest one in a ref so
+  // re-renders do not restart the timers (that kept the overlay up longer than `duration`).
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
+  const finishedRef = useRef(false)
+
+  const finish = (delay) => {
+    if (finishedRef.current) return
+    finishedRef.current = true
+    setVisible(false)
+    setTimeout(() => onCompleteRef.current?.(), delay)
+  }
 
   useEffect(() => {
-    const hideTimer = setTimeout(() => {
-      setVisible(false)
-    }, duration - 400) // start fade out
+    const timer = setTimeout(() => finish(FADE_MS), Math.max(0, duration - FADE_MS))
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duration])
 
-    const doneTimer = setTimeout(() => {
-      onComplete?.()
-    }, duration)
-
-    return () => {
-      clearTimeout(hideTimer)
-      clearTimeout(doneTimer)
-    }
-  }, [duration, onComplete])
+  useEffect(() => {
+    if (ready) finish(FADE_MS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready])
 
   return (
     <AnimatePresence>
@@ -27,7 +43,7 @@ export default function MenuScanAnimation({ onComplete, duration = 3000 }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: FADE_MS / 1000 }}
           className="fixed inset-0 z-[9999] bg-white overflow-hidden"
         >
           <RestaurantDetailSkeleton />
