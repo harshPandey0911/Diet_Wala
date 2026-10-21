@@ -7,10 +7,13 @@ import { Button } from "@food/components/ui/button"
 import api from "@food/api"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import { API_ENDPOINTS } from "@food/api/config"
+import { useLegalContext } from "@food/utils/legalContent"
+import LegalIdentityBox from "@food/components/LegalIdentityBox"
 
 export default function Terms() {
   const navigate = useNavigate()
   const goBack = useAppBackNavigation()
+  const legal = useLegalContext("user")
   const [loading, setLoading] = useState(true)
   const [termsData, setTermsData] = useState({
     title: 'Terms of Service',
@@ -82,6 +85,7 @@ export default function Terms() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-[#111] rounded-[2rem] p-6 md:p-10 shadow-sm border border-gray-50 dark:border-gray-900"
         >
+          <LegalIdentityBox appName={legal.appName} company={legal.company} address={legal.address} email={legal.email} className="mb-6" />
           {termsData.content ? (
             <div
               className="prose prose-slate dark:prose-invert max-w-none
@@ -90,7 +94,7 @@ export default function Terms() {
                 prose-strong:text-gray-900 dark:prose-strong:text-white
                 prose-a:text-[#CB202D] dark:prose-a:text-primary
                 prose-li:text-gray-600 dark:prose-li:text-gray-400"
-              dangerouslySetInnerHTML={{ __html: termsData.content }}
+              dangerouslySetInnerHTML={{ __html: legal.fill(termsData.content) }}
             />
           ) : (
             <div className="text-center py-20">

@@ -3,18 +3,24 @@ import { useNavigate } from "react-router-dom"
 import useRestaurantBackNavigation from "@food/hooks/useRestaurantBackNavigation"
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
-import api, { API_ENDPOINTS } from "@food/api"
+import api from "@food/api"
+import { useLegalContext } from "@food/utils/legalContent"
+import LegalIdentityBox from "@food/components/LegalIdentityBox"
 
 export default function TermsAndConditionsPage() {
   const navigate = useNavigate()
   const goBack = useRestaurantBackNavigation()
+  const legal = useLegalContext("restaurant")
   const [loading, setLoading] = useState(true)
   const [termsData, setTermsData] = useState({ title: "Terms and Conditions", content: "", updatedAt: "" })
 
   useEffect(() => {
     const fetchTerms = async () => {
       try {
-        const response = await api.get(API_ENDPOINTS.ADMIN.TERMS_PUBLIC)
+        // The restaurant app has its own terms; the generic "terms" page is the customer text.
+        let response = null
+        try { response = await api.get("/food/pages/terms_restaurant") } catch { /* fall through */ }
+        if (!response?.data?.data?.content) response = await api.get("/food/pages/terms")
         if (response?.data?.success) {
           const payload = response?.data?.data || {}
           setTermsData({
@@ -58,6 +64,7 @@ export default function TermsAndConditionsPage() {
             <p className="text-sm text-gray-600">
               Last updated: {(termsData.updatedAt ? new Date(termsData.updatedAt) : new Date()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
+            <LegalIdentityBox appName={legal.appName} company={legal.company} address={legal.address} email={legal.email} />
           </div>
 
           {loading ? (
@@ -65,7 +72,7 @@ export default function TermsAndConditionsPage() {
           ) : termsData.content ? (
             <div
               className="prose prose-sm max-w-none text-sm text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: termsData.content }}
+              dangerouslySetInnerHTML={{ __html: legal.fill(termsData.content) }}
             />
           ) : (
             <p className="text-sm text-gray-500">No terms content available.</p>

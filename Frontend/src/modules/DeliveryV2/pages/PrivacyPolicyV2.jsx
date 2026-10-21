@@ -3,9 +3,12 @@ import { useState, useEffect } from "react"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { publicAPI } from "@food/api"
 import useDeliveryBackNavigation from "../hooks/useDeliveryBackNavigation"
+import { useLegalContext } from "@food/utils/legalContent"
+import LegalIdentityBox from "@food/components/LegalIdentityBox"
 
 export default function PrivacyPolicyV2() {
   const goBack = useDeliveryBackNavigation()
+  const legal = useLegalContext("delivery")
   const [loading, setLoading] = useState(true)
   const [content, setContent] = useState("")
   const [lastUpdated, setLastUpdated] = useState("")
@@ -63,9 +66,10 @@ export default function PrivacyPolicyV2() {
             </div>
           ) : (
             <div>
+              <LegalIdentityBox appName={legal.appName} company={legal.company} address={legal.address} email={legal.email} className="mb-6" />
               <div
                 className="prose prose-sm prose-orange dark:prose-invert max-w-none text-gray-700 dark:text-gray-300"
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: legal.fill(content) }}
               />
               {lastUpdated && (
                 <div className="mt-12 pt-6 border-t border-gray-100">

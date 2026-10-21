@@ -3,7 +3,8 @@ import useRestaurantBackNavigation from "@food/hooks/useRestaurantBackNavigation
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import api from "@food/api"
-import { loadBusinessSettings, getCachedSettings } from "@food/utils/businessSettings"
+import { useLegalContext } from "@food/utils/legalContent"
+import LegalIdentityBox from "@food/components/LegalIdentityBox"
 
 // Shown only when the admin has not written a restaurant-specific policy yet (Admin > Legal > Privacy > Restaurant).
 const DEFAULT_SECTIONS = (appName, company, supportEmail) => [
@@ -68,7 +69,7 @@ export default function PrivacyPolicyPage() {
   const goBack = useRestaurantBackNavigation()
   const [loading, setLoading] = useState(true)
   const [privacyData, setPrivacyData] = useState({ title: "", content: "", updatedAt: "" })
-  const [business, setBusiness] = useState(() => getCachedSettings() || {})
+  const legal = useLegalContext("restaurant")
 
   useEffect(() => {
     let cancelled = false
@@ -87,8 +88,6 @@ export default function PrivacyPolicyPage() {
         if (!cancelled && payload) {
           setPrivacyData({ title: payload.title || "", content: payload.content || "", updatedAt: payload.updatedAt || "" })
         }
-        const settings = await loadBusinessSettings()
-        if (!cancelled && settings) setBusiness(settings)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -96,10 +95,7 @@ export default function PrivacyPolicyPage() {
     return () => { cancelled = true }
   }, [])
 
-  const company = business?.companyName || "DietVala"
-  const appName = `${company} Restaurant Partner`
-  const supportEmail = business?.supportEmail || business?.email || ""
-  const address = [business?.address, business?.state, business?.pincode].filter(Boolean).join(", ")
+  const { company, appName, email: supportEmail, address } = legal
   const updated = (privacyData.updatedAt ? new Date(privacyData.updatedAt) : new Date())
     .toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
 
@@ -122,13 +118,7 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-gray-900">{privacyData.title || `Privacy Policy - ${appName}`}</h2>
             <p className="text-sm text-gray-600">Last updated: {updated}</p>
-            {/* Identifies the app and the developer exactly as the store listing must match them */}
-            <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm text-gray-800 space-y-1">
-              <p><span className="font-semibold">App:</span> {appName}</p>
-              <p><span className="font-semibold">Developer / legal entity:</span> {company}</p>
-              {address ? <p><span className="font-semibold">Address:</span> {address}</p> : null}
-              {supportEmail ? <p><span className="font-semibold">Contact:</span> {supportEmail}</p> : null}
-            </div>
+            <LegalIdentityBox appName={appName} company={company} address={address} email={supportEmail} />
           </div>
 
           {loading ? (
@@ -136,7 +126,7 @@ export default function PrivacyPolicyPage() {
           ) : privacyData.content ? (
             <div
               className="prose prose-sm max-w-none text-sm text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: privacyData.content }}
+              dangerouslySetInnerHTML={{ __html: legal.fill(privacyData.content) }}
             />
           ) : (
             <div className="space-y-5 text-sm text-gray-700 leading-relaxed">
