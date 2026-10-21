@@ -179,7 +179,7 @@ export default function DesktopNavbar({ showLogo = true }) {
         >
             {/* Top Row: Location - Search - Icons */}
             <div className="w-full border-b border-gray-100 dark:border-gray-800/60 py-2">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
                     <div className="flex items-center justify-between min-h-14 h-auto py-0.5 gap-6">
                         {/* Left: Logo & Location */}
                         <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
@@ -318,7 +318,7 @@ export default function DesktopNavbar({ showLogo = true }) {
 
             {/* Bottom Row: Navigation Tabs */}
             <div className={`w-full ${(isBannerRoute && !hasScrolledPastBanner) ? "bg-transparent" : "bg-white dark:bg-gray-900"}`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
                     <div className="flex items-center justify-center h-10">
                         {/* Navigation Tabs - Centered with spacing */}
                         <div className="flex items-center space-x-16 lg:space-x-24">

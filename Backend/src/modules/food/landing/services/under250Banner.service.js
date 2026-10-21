@@ -23,6 +23,7 @@ export const createUnder250BannersFromFiles = async (files, meta = {}) => {
                 ctaText: meta.ctaText,
                 ctaLink: meta.ctaLink,
                 zoneId: meta.zoneId,
+                bannerType: ['app', 'web', 'all'].includes(meta.bannerType) ? meta.bannerType : 'app',
                 sortOrder: meta.sortOrder ?? 0,
                 isActive: true,
             });

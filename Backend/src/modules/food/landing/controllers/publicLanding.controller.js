@@ -66,7 +66,8 @@ export const getPublicHeroBannersController = async (req, res, next) => {
 
 export const getPublicUnder250BannersController = async (req, res, next) => {
     try {
-        const { zoneId } = req.query;
+        const { zoneId, device, bannerType } = req.query;
+        const targetDevice = String(bannerType || device || '').toLowerCase().trim();
         const query = { isActive: true };
         if (zoneId) {
             query.$or = [
@@ -76,7 +77,17 @@ export const getPublicUnder250BannersController = async (req, res, next) => {
             ];
         }
         const docs = await FoodUnder250Banner.find(query).sort({ sortOrder: 1, createdAt: -1 }).lean();
-        return sendResponse(res, 200, 'Under 250 banners fetched', { banners: docs });
+        const forApp = (b) => !b.bannerType || b.bannerType === 'app' || b.bannerType === 'all';
+        const forWeb = (b) => b.bannerType === 'web' || b.bannerType === 'all';
+        let banners = docs;
+        if (targetDevice === 'app') {
+            banners = docs.filter(forApp);
+        } else if (targetDevice === 'web') {
+            // The website uses its own banners; until one is uploaded it shows the app banners instead of nothing.
+            const web = docs.filter(forWeb);
+            banners = web.length ? web : docs.filter(forApp);
+        }
+        return sendResponse(res, 200, 'Under 250 banners fetched', { banners });
     } catch (error) {
         next(error);
     }

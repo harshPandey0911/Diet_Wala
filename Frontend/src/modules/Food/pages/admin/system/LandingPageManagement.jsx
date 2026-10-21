@@ -53,6 +53,7 @@ export default function LandingPageManagement() {
   const [under250BannersUploadProgress, setUnder250BannersUploadProgress] = useState({ current: 0, total: 0 })
   const [under250BannersDeleting, setUnder250BannersDeleting] = useState(null)
   const under250BannersFileInputRef = useRef(null)
+  const [under250Target, setUnder250Target] = useState('app') // 'app' (Mobile App) or 'web' (Website Desktop)
 
   // Dining Banners
   const [diningBanners, setDiningBanners] = useState([])
@@ -896,6 +897,7 @@ export default function LandingPageManagement() {
         // Backend expects field name "files" (upload.array('files'))
         formData.append('files', file)
       })
+      formData.append('bannerType', under250Target)
 
       const response = await api.post('/food/hero-banners/under-250/multiple', formData, getAuthConfig({
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -1559,9 +1561,9 @@ export default function LandingPageManagement() {
                     <div>
                       <span className="text-slate-500 font-medium">Recommended Size: </span>
                       <span className="font-bold text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded border border-purple-300">
-                        1600 x 500 px
+                        1200 x 900 px
                       </span>
-                      <span className="text-[11px] text-slate-500 ml-1.5">(Aspect Ratio ~3.2:1 / Wide)</span>
+                      <span className="text-[11px] text-slate-500 ml-1.5">(4:3 - shown as the big picture on the right of the website home; keep the food on the right)</span>
                     </div>
                     <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
                       ✓ Shows only on Website
@@ -1579,7 +1581,7 @@ export default function LandingPageManagement() {
                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                     bannerTarget === 'app' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
                   }`}>
-                    {bannerTarget === 'app' ? '800 x 400 px' : '1600 x 500 px'}
+                    {bannerTarget === 'app' ? '800 x 400 px' : '1200 x 900 px'}
                   </span>
                 </h2>
                 <div className="text-xs text-slate-500 hidden sm:block">
@@ -1643,7 +1645,7 @@ export default function LandingPageManagement() {
                       <span className="text-slate-600"> or drag and drop</span>
                     </div>
                     <p className="text-xs text-slate-500">
-                      <strong>Recommended: {bannerTarget === 'app' ? '800 x 400 px (2:1)' : '1600 x 500 px (~3.2:1)'}</strong> • PNG, JPG, WEBP up to 5MB (Max 25 images)
+                      <strong>Recommended: {bannerTarget === 'app' ? '800 x 400 px (2:1)' : '1200 x 900 px (4:3)'}</strong> • PNG, JPG, WEBP up to 5MB (Max 25 images)
                     </p>
                   </div>
                 )}
@@ -1733,7 +1735,7 @@ export default function LandingPageManagement() {
                                     : 'bg-blue-600 text-white'
                                 }`}>
                                   {isWeb ? <Monitor className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
-                                  {isWeb ? 'Website (1600x500)' : 'App (800x400)'}
+                                  {isWeb ? 'Website (1200x900)' : 'App (800x400)'}
                                 </span>
                                 <span className="px-2 py-1 rounded text-xs font-medium bg-black/60 text-white backdrop-blur-xs">
                                   #{banner.order ?? index + 1}
@@ -1828,6 +1830,29 @@ export default function LandingPageManagement() {
             {/* Upload Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
               <h2 className="text-lg font-bold text-slate-900 mb-4">Upload New Banner(s)</h2>
+              <div className="grid sm:grid-cols-2 gap-3 mb-4">
+                {[
+                  { id: 'app', label: '📱 Mobile App Banner', size: '1200 x 500 px', note: '12:5 - wide strip, text kept away from the edges' },
+                  { id: 'web', label: '💻 Website Banner (Desktop)', size: '2400 x 480 px', note: '5:1 fills the whole strip. Any other shape is also shown fully (never cropped), with blurred sides' },
+                ].map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setUnder250Target(option.id)}
+                    className={`text-left rounded-lg border-2 p-3 transition-colors ${under250Target === option.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                  >
+                    <div className="font-bold text-sm text-slate-900">{option.label}</div>
+                    <div className="mt-1 text-xs text-slate-600">
+                      Recommended size: <span className="font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">{option.size}</span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">{option.note}</div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mb-3">
+                Uploading as: <strong className="text-slate-800">{under250Target === 'app' ? 'Mobile App only' : 'Website (Desktop) only'}</strong>.
+                If no Website banner is uploaded, the website shows the Mobile App banners.
+              </p>
               <div
                 className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center bg-blue-50/30 cursor-pointer transition-colors hover:border-blue-400 hover:bg-blue-50/50"
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -1910,6 +1935,9 @@ export default function LandingPageManagement() {
                         </div>
                         <div className="absolute top-2 left-2">
                           <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">Order: {banner.order}</span>
+                          <span className={`ml-1 px-2 py-1 rounded text-xs font-medium ${banner.bannerType === 'web' ? 'bg-purple-100 text-purple-800' : banner.bannerType === 'all' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}`}>
+                            {banner.bannerType === 'web' ? '💻 Website' : banner.bannerType === 'all' ? 'App + Website' : '📱 App'}
+                          </span>
                         </div>
                       </div>
                       <div className="p-4 bg-white">

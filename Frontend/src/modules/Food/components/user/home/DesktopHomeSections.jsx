@@ -141,8 +141,8 @@ export default function DesktopHomeSections({
       {/* HERO */}
       <section className="relative overflow-hidden bg-[#FFFBEA] dark:bg-[#14120a]">
         {hasBanner ? <HeroImage images={heroImages} loading={heroLoading} /> : null}
-        <div className="relative max-w-[1240px] mx-auto px-6 py-14 lg:min-h-[480px] flex items-center pointer-events-none">
-          <div className="lg:max-w-[52%] pointer-events-auto">
+        <div className="relative max-w-[1600px] mx-auto px-6 lg:px-10 py-14 lg:min-h-[480px] flex items-center pointer-events-none">
+          <div className="lg:max-w-[44%] pointer-events-auto">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-gray-800 dark:text-gray-200">
               {(c.hero?.tags || []).map((tag, i) => (
                 <span key={`${tag}-${i}`} className="flex items-center gap-3">
@@ -198,7 +198,7 @@ export default function DesktopHomeSections({
       {/* WHY CHOOSE */}
       {c.why?.visible !== false ? (
         <section className="bg-[#FFFBEA] dark:bg-[#14120a] border-t border-black/5 dark:border-white/5">
-          <div className="max-w-[1240px] mx-auto px-6 py-10 grid lg:grid-cols-[250px_1fr] gap-8 items-center">
+          <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-10 grid lg:grid-cols-[250px_1fr] gap-8 items-center">
             <div>
               <h2 className="text-[30px] font-extrabold leading-[1.1] text-gray-900 dark:text-white">
                 {c.why?.title}
@@ -224,7 +224,7 @@ export default function DesktopHomeSections({
       {/* OUR MENU: the real categories */}
       {c.menu?.visible !== false && categories.length > 0 ? (
         <section id="dv-menu" className="scroll-mt-44 bg-white dark:bg-[#0a0a0a]">
-          <div className="max-w-[1240px] mx-auto px-6 py-10 grid lg:grid-cols-[250px_1fr] gap-8 items-center">
+          <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-10 grid lg:grid-cols-[250px_1fr] gap-8 items-center">
             <div>
               <SectionTitle eyebrow={c.menu?.eyebrow} title={c.menu?.title} highlight={c.menu?.highlight} subtitle={c.menu?.subtitle} />
               <Link
@@ -257,7 +257,7 @@ export default function DesktopHomeSections({
       {/* POPULAR: the real restaurants with their starting price */}
       {c.popular?.visible !== false && popular.length > 0 ? (
         <section className="bg-white dark:bg-[#0a0a0a]">
-          <div className="max-w-[1240px] mx-auto px-6 pb-10">
+          <div className="max-w-[1600px] mx-auto px-6 lg:px-10 pb-10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[24px] font-extrabold text-gray-900 dark:text-white">{c.popular?.title}</h2>
               <Link to="/food/user/under-250" className="inline-flex items-center gap-1 text-[13px] font-bold text-[#D97706] hover:underline">
@@ -301,7 +301,7 @@ export default function DesktopHomeSections({
       {/* HOW IT WORKS */}
       {c.how?.visible !== false ? (
         <section className="bg-[#FFF8DC] dark:bg-[#14120a]">
-          <div className="max-w-[1240px] mx-auto px-6 py-10">
+          <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-10">
             <h2 className="text-[26px] font-extrabold text-gray-900 dark:text-white">{c.how?.title}</h2>
             <p className="mt-1 text-[13px] text-gray-700 dark:text-gray-300">{c.how?.subtitle}</p>
             <div className="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-6">

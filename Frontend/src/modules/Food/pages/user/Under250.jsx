@@ -558,7 +558,7 @@ export default function Under250() {
     }
     let cancelled = false
     setLoadingBanner(true)
-    api.get('/food/hero-banners/under-250/public', { params: { zoneId } })
+    api.get('/food/hero-banners/under-250/public', { params: { zoneId, bannerType: window.matchMedia?.('(min-width: 768px)')?.matches ? 'web' : 'app' } })
       .then((res) => {
         if (cancelled) return
         const data = res?.data?.data
@@ -1342,12 +1342,12 @@ export default function Under250() {
       <div
         ref={bannerShellRef}
         data-banner-shell="true"
-        className="relative w-full min-h-[41vw] sm:min-h-0 sm:aspect-[21/9] lg:aspect-[3/1] md:max-h-[320px]"
+        className="relative w-full min-h-[41vw] md:min-h-0 md:h-[clamp(180px,19vw,300px)]"
       >
         {/* Floating Back Button (tablet / desktop) */}
         <button 
           onClick={() => navigate(-1)} 
-          className="hidden md:flex absolute top-4 left-4 md:top-48 md:left-8 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
+          className="hidden md:flex absolute top-4 left-4 md:top-1/2 md:-translate-y-1/2 md:left-6 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -1355,7 +1355,7 @@ export default function Under250() {
         {/* Floating Search Button (tablet / desktop) */}
         <button 
           onClick={() => setShowSearch(true)} 
-          className="hidden md:flex absolute top-4 right-4 md:top-48 md:right-8 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
+          className="hidden md:flex absolute top-4 right-4 md:top-1/2 md:-translate-y-1/2 md:right-6 z-40 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-lg transition-transform active:scale-95"
         >
           <Search className="w-5 h-5" />
         </button>
@@ -1407,7 +1407,7 @@ export default function Under250() {
         {/* Banner Image */}
         {bannerImages.length > 0 && (
           <div
-            className="w-full sm:h-full relative z-0 overflow-hidden"
+            className="w-full md:h-full relative z-0 overflow-hidden"
             onTouchStart={handleBannerTouchStart}
             onTouchMove={handleBannerTouchMove}
             onTouchEnd={handleBannerTouchEnd}
@@ -1429,22 +1429,22 @@ export default function Under250() {
             </div>
 
             <div
-              className="flex w-full sm:h-full transition-transform duration-500 ease-out"
+              className="flex w-full md:h-full transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentBannerIndex * 100}%)` }}
             >
               {bannerImages.map((bannerImage, index) => (
-                <div key={`${bannerImage}-${index}`} className="relative w-full shrink-0 sm:h-full">
-                  {/* Phones show the whole banner at its own proportions (nothing is cropped); wider screens fill the strip */}
+                <div key={`${bannerImage}-${index}`} className="relative w-full shrink-0 md:h-full">
+                  {/* Phones show the whole banner at its own proportions; the website shows a full-width strip (as before), cropped top/bottom to fit */}
                   <img
                     src={getThumbUrl(getMediaUrl(bannerImage), 1200)}
                     alt={`Under 250 Banner ${index + 1}`}
-                    className="block w-full h-auto sm:h-full sm:object-cover"
+                    className="block w-full h-auto md:h-full md:object-cover"
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchPriority={index === 0 ? "high" : "auto"}
                     decoding="async"
                   />
-                  {/* Subtle Gradient Overlay for depth */}
-                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                  {/* Dark fade only on phones, where the buttons sit on the banner; on the website it greyed the bottom of the picture */}
+                  <div className="md:hidden absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                 </div>
               ))}
             </div>
@@ -1452,7 +1452,7 @@ export default function Under250() {
           </div>
         )}
         {bannerImages.length === 0 && !loadingBanner && (
-          <div className="w-full h-full relative z-0 bg-gradient-to-br from-[#fcf4f9] to-[#f5e8f1] dark:from-[#3c0f3d] dark:to-secondary overflow-hidden rounded-b-[2rem] md:rounded-b-none" />
+          <div className="w-full h-full min-h-[41vw] md:min-h-[200px] relative z-0 bg-gradient-to-br from-[#fcf4f9] to-[#f5e8f1] dark:from-[#3c0f3d] dark:to-secondary overflow-hidden rounded-b-[2rem] md:rounded-none" />
         )}
       </div>
 

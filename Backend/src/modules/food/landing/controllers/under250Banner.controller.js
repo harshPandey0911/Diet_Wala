@@ -28,6 +28,7 @@ export const uploadUnder250BannersController = async (req, res, next) => {
             ctaText: req.body.ctaText,
             ctaLink: req.body.ctaLink,
             zoneId: req.body.zoneId,
+            bannerType: String(req.body.bannerType || 'app').toLowerCase(),
         };
 
         const results = await createUnder250BannersFromFiles(req.files, meta);

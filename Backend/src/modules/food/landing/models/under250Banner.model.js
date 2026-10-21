@@ -23,6 +23,12 @@ const foodUnder250BannerSchema = new mongoose.Schema(
         zoneId: {
             type: String
         },
+        // Where the banner is shown: the phone app, the website (desktop), or both. Older banners have no value.
+        bannerType: {
+            type: String,
+            enum: ['app', 'web', 'all'],
+            default: 'app'
+        },
         sortOrder: {
             type: Number,
             default: 0,
