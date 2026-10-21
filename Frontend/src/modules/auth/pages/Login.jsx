@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { authAPI, userAPI } from "@food/api"
 import { setAuthData } from "@food/utils/auth"
 import DietValaLogo from "@/shared/components/DietValaLogo"
+import { useAppLogo } from "@food/hooks/useAppLogo"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ export default function UnifiedOTPFastLogin() {
   const [tempAuth, setTempAuth] = useState(null)
   const [pendingVerify, setPendingVerify] = useState(null)
   const navigate = useNavigate()
+  const userAppLogo = useAppLogo("user_app")
   const submitting = useRef(false)
 
   const normalizedPhone = () => {
@@ -321,9 +323,14 @@ export default function UnifiedOTPFastLogin() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-md shadow-primary/20 border-4 border-white dark:border-[#141414] mb-8 flex items-center justify-center bg-white p-2"
+            className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-md shadow-primary/20 border-4 border-white dark:border-[#141414] mb-8 flex items-center justify-center bg-white overflow-hidden"
           >
-            <DietValaLogo size="md" showTagline={false} stacked={true} />
+            {/* The logo fills the whole circle (no inner padding) */}
+            {userAppLogo ? (
+              <img src={userAppLogo} alt="DietVala" className="w-full h-full object-contain scale-90" />
+            ) : (
+              <DietValaLogo size="lg" showTagline={false} stacked={true} />
+            )}
           </motion.div>
 
           <motion.div
