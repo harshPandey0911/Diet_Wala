@@ -101,6 +101,7 @@ import HeroBanner from "@food/components/user/home/HeroBanner";
 import RestaurantGrid from "@food/components/user/home/RestaurantGrid";
 import ExploreMoreSection from "@food/components/user/home/ExploreMoreSection";
 import RestaurantImageCarousel from "@food/components/user/home/RestaurantImageCarousel";
+import DesktopHomeSections from "@food/components/user/home/DesktopHomeSections";
 import QuickSection from "@food/components/user/home/QuickSection";
 import PromoRow from "@food/components/user/home/PromoRow";
 import FestBanner from "@food/components/user/home/FestBanner";
@@ -2253,6 +2254,20 @@ export default function Home() {
                 className="bg-transparent dark:bg-transparent"
               >
 
+                {/* Website (md and up): new desktop look built from the same real data */}
+                <DesktopHomeSections
+                  categories={displayCategories}
+                  restaurants={filteredRestaurants?.length ? filteredRestaurants : (restaurantsData || [])}
+                  startingPriceByRestaurant={startingPriceByRestaurant}
+                  heroImages={heroBannerImages}
+                  heroBannersData={heroBannersData}
+                  heroLoading={loadingBanners}
+                  backendOrigin={BACKEND_ORIGIN}
+                  slugifyCategory={slugifyCategory}
+                />
+
+                {/* Phone layout (below md): unchanged */}
+                <div className="md:hidden">
                 {/* 1. Admin / DietVala Hero Banner */}
                 <HeroBanner
                   images={heroBannerImages}
@@ -2463,6 +2478,7 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
+                </div>
                 </div>
 
                 {/* Filters Sticky Sidebar Header */}

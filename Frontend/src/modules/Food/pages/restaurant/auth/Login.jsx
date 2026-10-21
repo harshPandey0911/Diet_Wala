@@ -17,6 +17,7 @@ export default function RestaurantLogin() {
   const phoneInputRef = useRef(null)
   const [phone, setPhone] = useState(() => sessionStorage.getItem("restaurantLoginPhone") || "")
   const [loading, setLoading] = useState(false)
+  const [phoneError, setPhoneError] = useState("")
   const submitting = useRef(false)
   const dynamicLogo = useAppLogo("restaurant_app")
   const logoToDisplay = dynamicLogo || logoNew
@@ -46,9 +47,16 @@ export default function RestaurantLogin() {
   const handleSendOTP = async (e) => {
     if (e) e.preventDefault()
     if (!validatePhone(phone)) {
-      toast.error("Please enter a valid 10-digit mobile number")
+      // The button is always tappable: tell the user what is wrong instead of silently doing nothing.
+      const message = phone.length < 10
+        ? `Please enter all 10 digits of your mobile number (${phone.length}/10 entered)`
+        : "Please enter a valid 10-digit mobile number"
+      setPhoneError(message)
+      toast.error(message)
+      phoneInputRef.current?.focus()
       return
     }
+    setPhoneError("")
     if (submitting.current) return
     submitting.current = true
     setLoading(true)
@@ -170,21 +178,23 @@ export default function RestaurantLogin() {
                   <input
                     ref={phoneInputRef}
                     type="tel"
-                    required
+                    inputMode="numeric"
+                    autoComplete="tel-national"
                     autoFocus
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    onChange={(e) => { setPhoneError(""); setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)) }}
                     maxLength={10}
                     className="block w-full pl-16 pr-6 py-4 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white border-2 border-transparent focus:border-primary/50 rounded-2xl outline-none transition-all placeholder:text-gray-300 font-bold text-lg shadow-sm"
                     placeholder="00000 00000"
                   />
                 </div>
+                {phoneError ? <p role="alert" className="ml-1 text-xs font-semibold text-red-600">{phoneError}</p> : null}
               </div>
 
               <button
                 type="submit"
-                disabled={loading || phone.length < 10}
-                className="w-full py-4.5 bg-primary hover:bg-[#6a2f56] disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 text-white rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group overflow-hidden relative"
+                disabled={loading}
+                className="w-full py-4.5 bg-primary hover:bg-[#6a2f56] disabled:opacity-70 text-white rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group overflow-hidden relative"
               >
                 {loading ? (
                   <Loader2 className="w-6 h-6 animate-spin" />

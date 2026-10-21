@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import AppRoutes from './routes'
 import PageLoader from '@/shared/components/PageLoader.jsx'
+import ConnectionGuard from '@/shared/components/ConnectionGuard.jsx'
 
 import { ThemeProvider } from '@food/context/ThemeContext'
 import { cleanupExpiredScopedEntries } from '@food/utils/appStorage'
@@ -27,10 +28,10 @@ function App() {
 
   return (
     <ThemeProvider>
-      <>
+      <ConnectionGuard>
         <PageLoader />
         <AppRoutes />
-      </>
+      </ConnectionGuard>
     </ThemeProvider>
   )
 }

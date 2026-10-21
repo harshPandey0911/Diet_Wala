@@ -15,6 +15,7 @@ import * as loyaltyController from '../../loyalty/controllers/loyalty.controller
 import { upload } from '../../../../middleware/upload.js';
 import menuBulkRoutes from './menuBulk.routes.js';
 import subscriptionAdminRoutes from '../../subscription/routes/subscriptionAdmin.routes.js';
+import { adminWebsiteRouter } from '../../website/routes/website.routes.js';
 
 const router = express.Router();
 
@@ -256,5 +257,9 @@ router.patch('/app-intro-ads/order', appIntroAdController.updateAppIntroAdsOrder
 router.patch('/app-intro-ads/:id', upload.fields([{ name: 'media', maxCount: 1 }]), appIntroAdController.updateAppIntroAd);
 router.patch('/app-intro-ads/:id/toggle', appIntroAdController.toggleAppIntroAdStatus);
 router.delete('/app-intro-ads/:id', appIntroAdController.deleteAppIntroAd);
+
+
+// ----- Public website content + enquiries -----
+router.use('/', adminWebsiteRouter);
 
 export default router;

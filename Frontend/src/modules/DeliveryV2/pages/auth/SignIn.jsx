@@ -54,7 +54,10 @@ export default function DeliverySignIn() {
   const handleSendOTP = async (e) => {
     if (e) e.preventDefault()
     if (!validatePhone(phone)) {
-      toast.error("Please enter a valid 10-digit mobile number")
+      // Button stays tappable; explain what is missing instead of doing nothing.
+      toast.error(phone.length < 10
+        ? `Please enter all 10 digits of your mobile number (${phone.length}/10 entered)`
+        : "Please enter a valid 10-digit mobile number")
       return
     }
     if (submitting.current) return
@@ -183,7 +186,7 @@ export default function DeliverySignIn() {
                 {/* Input Field */}
                 <input
                   type="tel"
-                  required
+                  inputMode="numeric"
                   autoFocus
                   value={phone}
                   onChange={(e) => {
@@ -202,7 +205,7 @@ export default function DeliverySignIn() {
             {/* Gradient CTA Button */}
             <button
               type="submit"
-              disabled={loading || phone.length < 10}
+              disabled={loading}
               className="w-full py-3 bg-gradient-to-r from-[#4CB8C4] to-[#3CD3AD] hover:from-[#3BA0AB] hover:to-[#2BB896] disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white rounded-[2rem] font-bold text-base shadow-[0_15px_30px_-10px_rgba(76,184,196,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {loading ? (

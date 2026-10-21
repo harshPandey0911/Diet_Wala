@@ -130,6 +130,7 @@ const ReactSite = lazy(() => import("@food/pages/admin/system/ReactSite"));
 const CleanDatabase = lazy(() => import("@food/pages/admin/system/CleanDatabase"));
 const AddonActivation = lazy(() => import("@food/pages/admin/system/AddonActivation"));
 const LandingPageManagement = lazy(() => import("@food/pages/admin/system/LandingPageManagement"));
+const WebsiteContentManagement = lazy(() => import("@food/pages/admin/system/WebsiteContentManagement"));
 const AppIntroAds = lazy(() => import("@food/pages/admin/advertisement/AppIntroAds"));
 const EnvManagements = lazy(() => import("@food/pages/admin/system/EnvManagements"));
 const EditRestaurant = lazy(() => import("@food/pages/admin/restaurant/EditRestaurant"));
@@ -309,6 +310,7 @@ export default function AdminRouter() {
             <Route path="clean-database" element={<CleanDatabase />} />
             <Route path="addon-activation" element={<AddonActivation />} />
             <Route path="hero-banner-management" element={<LandingPageManagement />} />
+            <Route path="website-content" element={<WebsiteContentManagement />} />
             <Route path="app-intro-ads" element={<AppIntroAds />} />
           </Route>
 
