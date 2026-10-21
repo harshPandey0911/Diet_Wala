@@ -1320,8 +1320,8 @@ export default function Under250() {
       
       {/* Header removed */}
 
-      {/* Back / search row for phones: kept above the banner so the buttons never cover the banner text */}
-      <div className="md:hidden flex items-center justify-between px-3 py-2 bg-white dark:bg-[#0a0a0a]">
+      {/* Back / search row for phones: kept above the banner so the buttons never cover the banner text; the top padding keeps it clear of the notch / status bar */}
+      <div className="md:hidden flex items-center justify-between px-3 pb-2 pt-[calc(env(safe-area-inset-top,0px)+12px)] bg-white dark:bg-[#0a0a0a]">
         <button
           onClick={() => navigate(-1)}
           aria-label="Back"
@@ -1342,7 +1342,7 @@ export default function Under250() {
       <div
         ref={bannerShellRef}
         data-banner-shell="true"
-        className="relative w-full aspect-[12/5] sm:aspect-[21/9] lg:aspect-[3/1] md:max-h-[320px]"
+        className="relative w-full min-h-[41vw] sm:min-h-0 sm:aspect-[21/9] lg:aspect-[3/1] md:max-h-[320px]"
       >
         {/* Floating Back Button (tablet / desktop) */}
         <button 
@@ -1407,7 +1407,7 @@ export default function Under250() {
         {/* Banner Image */}
         {bannerImages.length > 0 && (
           <div
-            className="w-full h-full relative z-0 overflow-hidden rounded-b-[2rem] md:rounded-b-none"
+            className="w-full sm:h-full relative z-0 overflow-hidden"
             onTouchStart={handleBannerTouchStart}
             onTouchMove={handleBannerTouchMove}
             onTouchEnd={handleBannerTouchEnd}
@@ -1429,18 +1429,19 @@ export default function Under250() {
             </div>
 
             <div
-              className="flex h-full w-full transition-transform duration-500 ease-out"
+              className="flex w-full sm:h-full transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentBannerIndex * 100}%)` }}
             >
               {bannerImages.map((bannerImage, index) => (
-                <div key={`${bannerImage}-${index}`} className="relative h-full w-full shrink-0">
-                  <OptimizedImage
-                    src={bannerImage}
+                <div key={`${bannerImage}-${index}`} className="relative w-full shrink-0 sm:h-full">
+                  {/* Phones show the whole banner at its own proportions (nothing is cropped); wider screens fill the strip */}
+                  <img
+                    src={getThumbUrl(getMediaUrl(bannerImage), 1200)}
                     alt={`Under 250 Banner ${index + 1}`}
-                    className="w-full h-full"
-                    objectFit="cover"
-                    priority={index === 0}
-                    sizes="100vw"
+                    className="block w-full h-auto sm:h-full sm:object-cover"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    decoding="async"
                   />
                   {/* Subtle Gradient Overlay for depth */}
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
