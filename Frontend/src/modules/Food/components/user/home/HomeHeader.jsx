@@ -115,7 +115,7 @@ export default function HomeHeader({
 
   return (
     <>
-      <div id="home-header-loc-row" className="relative pt-0.5 pb-2 px-3.5 transition-all duration-500 bg-[#FFFBEB] dark:bg-[#18150c] md:hidden">
+      <div id="home-header-loc-row" className="relative pt-[calc(env(safe-area-inset-top,0px)+10px)] pb-2 px-3.5 transition-all duration-500 bg-[#FFFBEB] dark:bg-[#18150c] md:hidden">
         <div className="relative z-10 space-y-2">
           
           {/* Row 1: Top Navigation - DietVala Logo & Tagline in Center, Bell Notification Icon on Right */}
@@ -125,7 +125,7 @@ export default function HomeHeader({
 
             {/* Center: DietVala Branding Logo */}
             <Link to="/food/user/" className="flex flex-col items-center justify-center group justify-self-center">
-              <DietValaLogo size="lg" showTagline={true} stacked={true} />
+              <DietValaLogo size="md" showTagline={true} stacked={true} />
             </Link>
 
             {/* Right: White Circle Notification Bell */}
