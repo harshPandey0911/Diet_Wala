@@ -560,16 +560,26 @@ export const sendNotificationToOwner = async ({ ownerType, ownerId, payload, pla
             .map((item) => item.token)
             .filter(Boolean);
         if (invalidTokens.length > 0) {
-            const model = getOwnerModel(ownerType);
-            const doc = model ? await model.findById(ownerId) : null;
-            if (doc) {
-                const fieldNames = platform
-                    ? [getTokenFieldForPlatform(platform)]
-                    : [OWNER_TOKEN_FIELDS.web, OWNER_TOKEN_FIELDS.mobile];
-                for (const field of fieldNames) {
-                    doc[field] = normalizeTokenList((Array.isArray(doc[field]) ? doc[field] : []).filter((t) => !invalidTokens.includes(t)));
+            try {
+                const model = getOwnerModel(ownerType);
+                if (model) {
+                    const fieldNames = platform
+                        ? [getTokenFieldForPlatform(platform)]
+                        : [OWNER_TOKEN_FIELDS.web, OWNER_TOKEN_FIELDS.mobile];
+                    const pull = Object.fromEntries(
+                        fieldNames.map((field) => [field, { $in: invalidTokens }])
+                    );
+                    pull.pushDevices = { fcmToken: { $in: invalidTokens } };
+
+                    // Use an atomic update instead of saving the complete owner document.
+                    // Token cleanup must not fail because an unrelated legacy profile field
+                    // no longer passes current schema validation.
+                    await model.updateOne({ _id: ownerId }, { $pull: pull });
                 }
-                await doc.save();
+            } catch (cleanupError) {
+                logger.warn(
+                    `FCM invalid-token cleanup failed for ${ownerType}:${ownerId}: ${cleanupError.message}`
+                );
             }
         }
         logger.info(

@@ -208,11 +208,25 @@ export default function NotificationBroadcast() {
       const data = response?.data?.data || {};
       const total = data.recipientCount ?? data.targetPreview?.length ?? 0;
       const reach = data.pushReachable;
-      toast.success(
-        reach === null || reach === undefined
-          ? `Notification sent to ${total} recipient(s)`
-          : `Notification sent to ${total} recipient(s). ${reach} of them have push enabled; the rest will see it in their in-app notifications.`
-      );
+      const delivery = data.delivery || {};
+      const delivered = Number(delivery.successCount || 0);
+      const failed = Number(delivery.failureCount || 0);
+
+      if (delivery.mode === "direct" && delivered === 0 && (reach || failed)) {
+        toast.warning(
+          `In-app notification saved for ${total} recipient(s), but no device push was delivered. Please check the registered device tokens or Firebase configuration.`
+        );
+      } else if (delivery.mode === "direct") {
+        toast.success(
+          `Notification saved for ${total} recipient(s). Device push delivered to ${delivered}${failed ? `; ${failed} failed` : ""}.`
+        );
+      } else {
+        toast.success(
+          reach === null || reach === undefined
+            ? `Notification queued for ${total} recipient(s)`
+            : `Notification queued for ${total} recipient(s). ${reach} of them have push enabled; the rest will see it in their in-app notifications.`
+        );
+      }
       setForm(EMPTY_FORM);
       setSelected([]);
       setSearch("");

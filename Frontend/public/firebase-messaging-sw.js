@@ -15,6 +15,7 @@ self.addEventListener("activate", (event) => {
 const sanitize = (value) => String(value || "").trim().replace(/^['"]|['"]$/g, "");
 const PUSH_DEBUG_PREFIX = "[push-sw]";
 const pushDebugLog = (...args) => console.log(...args);
+let firebaseMessagingReady = false;
 const getNotificationKey = (payload) => {
   const fcmId = payload?.messageId || payload?.data?.messageId || payload?.data?.notificationId;
   if (fcmId) return String(fcmId);
@@ -88,6 +89,40 @@ async function hasVisibleClientForTarget(payload = {}) {
     })),
   });
   return Boolean(visibleClient);
+}
+
+async function showBackgroundNotification(payload = {}, source = "firebase") {
+  const visibleClient = await hasVisibleClientForTarget(payload);
+  if (visibleClient) return false;
+
+  const title = payload?.notification?.title || payload?.data?.title || "New Notification";
+  const body = payload?.notification?.body || payload?.data?.body || "";
+  const image =
+    payload?.notification?.image ||
+    payload?.data?.image ||
+    payload?.data?.imageUrl ||
+    undefined;
+  const notificationKey = getNotificationKey(payload);
+
+  pushDebugLog(PUSH_DEBUG_PREFIX, `Showing ${source} background notification`, {
+    title,
+    body,
+    image,
+    notificationKey,
+  });
+
+  await self.registration.showNotification(title, {
+    body,
+    icon: "/logo.png?v=2",
+    image,
+    tag: notificationKey,
+    renotify: true,
+    silent: false,
+    requireInteraction: true,
+    vibrate: [200, 100, 200, 100, 300],
+    data: payload?.data || {},
+  });
+  return true;
 }
 
 async function loadFirebaseWebConfig() {
@@ -176,6 +211,7 @@ async function loadFirebaseWebConfig() {
     // Always notify clients regardless of visibility
     await notifyOpenClients(payload);
   });
+  firebaseMessagingReady = true;
 })();
 
 self.addEventListener("push", (event) => {
@@ -184,9 +220,17 @@ self.addEventListener("push", (event) => {
   try {
     const payload = event.data.json();
     pushDebugLog(PUSH_DEBUG_PREFIX, "Received raw push event", { payload });
-    // No client relay here. onBackgroundMessage handles delivery, and relaying in both
-    // places can produce duplicate notifications in web clients.
-    event.waitUntil(Promise.resolve());
+    // A cold-started worker can receive this event before the async config request above
+    // has registered Firebase's listener. Keep the event alive and render the notification
+    // ourselves in that case. Once ready, Firebase handles it and we avoid a duplicate.
+    if (!firebaseMessagingReady) {
+      event.waitUntil(
+        Promise.all([
+          showBackgroundNotification(payload, "cold-start fallback"),
+          notifyOpenClients(payload),
+        ])
+      );
+    }
   } catch {
     // Ignore malformed payloads.
   }

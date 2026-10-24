@@ -281,6 +281,17 @@ const deliverBroadcastNotificationsNow = async ({ targets = [], voipTokens = [],
     return { pushResults, voipResult };
 };
 
+const summarizePushResults = (pushResults = []) => {
+    const results = Array.isArray(pushResults) ? pushResults.filter(Boolean) : [];
+    return results.reduce(
+        (summary, result) => ({
+            successCount: summary.successCount + Number(result?.successCount || 0),
+            failureCount: summary.failureCount + Number(result?.failureCount || 0)
+        }),
+        { successCount: 0, failureCount: 0 }
+    );
+};
+
 const enqueueBroadcastDelivery = async ({ broadcast, resolvedTargets = [], voipTokens = [], pushPayload = {} } = {}) => {
     const jobPayload = {
         type: 'admin-broadcast-delivery',
@@ -319,19 +330,21 @@ const enqueueBroadcastDelivery = async ({ broadcast, resolvedTargets = [], voipT
         logger.warn(`Failed to queue admin broadcast delivery ${String(broadcast?._id || '')}: ${error.message}`);
     }
 
-    setImmediate(() => {
-        deliverBroadcastNotificationsNow({
-            targets: jobPayload.targets,
-            voipTokens,
-            pushPayload
-        }).catch((error) => {
-            logger.warn(`Async admin broadcast delivery failed for ${String(broadcast?._id || '')}: ${error.message}`);
-        });
+    // Do not detach this work from the request. In environments where the queue is disabled
+    // (or no worker is running), the process/request can be suspended before a setImmediate
+    // callback finishes. That left the inbox record in MongoDB but silently dropped the FCM
+    // push, which is most visible when the app is closed.
+    const result = await deliverBroadcastNotificationsNow({
+        targets: jobPayload.targets,
+        voipTokens,
+        pushPayload
     });
 
     return {
         queued: false,
-        mode: 'background'
+        mode: 'direct',
+        ...summarizePushResults(result.pushResults),
+        voipDelivered: Boolean(result.voipResult)
     };
 };
 
