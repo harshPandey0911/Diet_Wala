@@ -188,11 +188,15 @@ const buildMessagePayload = (payload = {}, token) => {
 
     message.data = data;
 
+    // Only target a channel when the native app has explicitly provided one.
+    // Hard-coding an arbitrary channel can prevent Android from presenting the
+    // notification when that channel has not been created by the installed app.
+    const androidChannelId = sanitizeString(payload.androidChannelId || data.androidChannelId);
     message.android = {
         priority: 'high',
         notification: {
-            channel_id: 'default',
-            // sound: 'default',
+            ...(androidChannelId ? { channel_id: androidChannelId } : {}),
+            sound: sanitizeString(payload.sound) || 'default',
             default_vibrate_timings: true,
             default_light_settings: true
         }

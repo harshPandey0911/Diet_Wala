@@ -214,11 +214,11 @@ export default function NotificationBroadcast() {
 
       if (delivery.mode === "direct" && delivered === 0 && (reach || failed)) {
         toast.warning(
-          `In-app notification saved for ${total} recipient(s), but no device push was delivered. Please check the registered device tokens or Firebase configuration.`
+          `In-app notification saved for ${total} recipient(s), but Firebase accepted no device push. Please check the registered device tokens or Firebase configuration.`
         );
       } else if (delivery.mode === "direct") {
         toast.success(
-          `Notification saved for ${total} recipient(s). Device push delivered to ${delivered}${failed ? `; ${failed} failed` : ""}.`
+          `Notification saved for ${total} recipient(s). Firebase accepted push for ${delivered} device(s)${failed ? `; ${failed} failed` : ""}.`
         );
       } else {
         toast.success(
