@@ -38,6 +38,7 @@ import * as dispatchService from './order-dispatch.service.js';
 import { clearDeliveryOffersForOrder } from './order-dispatch.firebase.js';
 import * as deliveryService from './order-delivery.service.js';
 import * as paymentService from './order-payment.service.js';
+import { assertDeliveryLocationServiceable } from './delivery-location.service.js';
 import {
   enqueueOrderEvent,
   haversineKm,
@@ -272,6 +273,12 @@ export async function createOrder(userId, dto) {
       `Food order: distance not available, rider earning set to 0`,
     );
   }
+
+  await assertDeliveryLocationServiceable({
+    restaurantZoneId: restaurant.zoneId,
+    deliveryCoordinates: dto.address?.location?.coordinates,
+    distanceKm,
+  });
 
   let riderEarning = await getRiderEarning(distanceKm);
   

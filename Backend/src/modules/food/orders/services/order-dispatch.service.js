@@ -45,6 +45,7 @@ function isPointInPolygon(lat, lng, polygon) {
 // An accepted order untouched for this long is abandoned (never delivered/cancelled);
 // it must not keep its rider "busy" forever and block every new offer.
 const BUSY_ORDER_STALE_MS = 6 * 60 * 60 * 1000;
+const RESUMABLE_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 async function getBusyDeliveryPartnerIds() {
   const busyPartners = await FoodOrder.distinct('dispatch.deliveryPartnerId', {
@@ -638,6 +639,7 @@ export async function cancelPendingDispatchJob(orderId) {
 export async function resumeStuckDispatches() {
   const dispatchableStatuses = ['confirmed', 'preparing', 'ready_for_pickup', 'ready', 'picked_up'];
   const staleLockCutoff = new Date(Date.now() - 90000);
+  const resumableOrderCutoff = new Date(Date.now() - RESUMABLE_ORDER_MAX_AGE_MS);
 
   // A crash between setting 'dispatch.dispatchingAt' and the finally-block that
   // clears it leaves that lock set forever, permanently blocking tryAutoAssign's
@@ -645,6 +647,7 @@ export async function resumeStuckDispatches() {
   await FoodOrder.updateMany(
     {
       orderStatus: { $in: dispatchableStatuses },
+      createdAt: { $gte: resumableOrderCutoff },
       'dispatch.status': { $ne: 'accepted' },
       'dispatch.dispatchingAt': { $lt: staleLockCutoff },
     },
@@ -653,6 +656,7 @@ export async function resumeStuckDispatches() {
 
   const stuckOrders = await FoodOrder.find({
     orderStatus: { $in: dispatchableStatuses },
+    createdAt: { $gte: resumableOrderCutoff },
     'dispatch.status': 'unassigned',
     'dispatch.dispatchingAt': { $exists: false },
   })

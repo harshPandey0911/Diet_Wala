@@ -10,6 +10,7 @@ import { ValidationError } from '../../../../core/auth/errors.js';
 import { haversineKm } from './order.helpers.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
 import { computePointsRedemption } from '../../loyalty/services/loyalty.service.js';
+import { assertDeliveryLocationServiceable } from './delivery-location.service.js';
 
 function isOfferEndDateValid(endDate, now = new Date()) {
   if (!endDate) return true;
@@ -107,6 +108,12 @@ export async function calculateOrderPricing(userId, dto) {
   }
   let deliveryFee = 0;
   let deliveryFeeBreakdown = null;
+  await assertDeliveryLocationServiceable({
+    restaurantZoneId: restaurant.zoneId,
+    deliveryCoordinates: dto?.deliveryAddress?.location?.coordinates,
+    distanceKm,
+  });
+
   if (
     Number.isFinite(freeUpTo) &&
     freeUpTo > 0 &&
