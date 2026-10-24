@@ -10,3 +10,17 @@ const websiteContentSchema = new mongoose.Schema(
 );
 
 export const FoodWebsiteContent = mongoose.model('FoodWebsiteContent', websiteContentSchema);
+
+// Messages sent from the contact form of the public website.
+const websiteEnquirySchema = new mongoose.Schema(
+    {
+        name: { type: String, required: true, maxlength: 100 },
+        phone: { type: String, required: true, maxlength: 20 },
+        message: { type: String, required: true, maxlength: 1500 },
+        status: { type: String, enum: ['new', 'read'], default: 'new', index: true },
+        ip: { type: String, default: '' }
+    },
+    { collection: 'food_website_enquiries', timestamps: true }
+);
+
+export const FoodWebsiteEnquiry = mongoose.model('FoodWebsiteEnquiry', websiteEnquirySchema);

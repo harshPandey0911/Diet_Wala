@@ -1,4 +1,4 @@
-import { FoodWebsiteContent } from '../models/website.model.js';
+import { FoodWebsiteContent, FoodWebsiteEnquiry } from '../models/website.model.js';
 import { WEBSITE_DEFAULTS } from '../websiteDefaults.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 
@@ -6,7 +6,7 @@ const MAX_TEXT = 2000;
 const MAX_ITEMS = 30;
 const MAX_DEPTH = 6;
 const KEY_PATTERN = /^[A-Za-z0-9_]{1,40}$/;
-const URL_KEY_PATTERN = /(href|url|image|logo|avatar)$/i;
+const URL_KEY_PATTERN = /(href|url|image|logo|avatar|instagram|facebook|youtube)$/i;
 
 const isPlainObject = (value) => Object.prototype.toString.call(value) === '[object Object]';
 
@@ -75,3 +75,35 @@ export const saveWebsiteContent = async (payload) => {
 };
 
 export const getWebsiteDefaults = () => WEBSITE_DEFAULTS;
+
+// ----- Messages sent through the contact form of the public website -----
+const text = (value, max) => String(value ?? '').replace(/\u0000/g, '').trim().slice(0, max);
+
+export const createEnquiry = async ({ name, phone, message }, meta = {}) => {
+    const cleanName = text(name, 100);
+    const cleanPhone = text(phone, 20);
+    const cleanMessage = text(message, 1500);
+    if (cleanName.length < 2) throw new ValidationError('Please enter your name');
+    if (!/^[0-9+\-\s()]{8,20}$/.test(cleanPhone)) throw new ValidationError('Please enter a valid phone number');
+    if (cleanMessage.length < 2) throw new ValidationError('Please write your message');
+    const doc = await FoodWebsiteEnquiry.create({
+        name: cleanName,
+        phone: cleanPhone,
+        message: cleanMessage,
+        ip: text(meta.ip, 64)
+    });
+    return { id: String(doc._id) };
+};
+
+export const listEnquiries = async () => FoodWebsiteEnquiry.find().sort({ createdAt: -1 }).limit(300).lean();
+export const countNewEnquiries = async () => FoodWebsiteEnquiry.countDocuments({ status: 'new' });
+
+export const setEnquiryStatus = async (id, status) => {
+    if (!['new', 'read'].includes(status)) throw new ValidationError('Invalid status');
+    return FoodWebsiteEnquiry.findByIdAndUpdate(id, { status }, { new: true }).lean();
+};
+
+export const deleteEnquiry = async (id) => {
+    const res = await FoodWebsiteEnquiry.findByIdAndDelete(id);
+    return { deleted: Boolean(res) };
+};
