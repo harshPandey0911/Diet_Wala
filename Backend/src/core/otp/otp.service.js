@@ -5,6 +5,11 @@ import { config } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 import { ValidationError } from '../auth/errors.js';
 
+// Numbers that always get OTP 123456 (no SMS sent), plus everyone when USE_DEFAULT_OTP=true
+const DEFAULT_OTP_PHONES = ['9755633147', '8624862400', '7879363299'];
+const isDefaultOtpPhone = (phone) =>
+    config.useDefaultOtp || DEFAULT_OTP_PHONES.some((p) => String(phone || '').endsWith(p));
+
 const generateOtpCode = () => {
     const code = crypto.randomInt(100000, 999999);
     return String(code);
@@ -71,7 +76,6 @@ const sendSmsViaSmsIndiaHub = async (phone, otp) => {
         const missing = [
             ['SMSINDIAHUB_API_KEY', smsIndiaHubApiKey],
             ['SMSINDIAHUB_SENDER_ID', smsIndiaHubSenderId],
-            ['SMSINDIAHUB_ROUTE', smsIndiaHubRoute],
             ['SMSINDIAHUB_TEMPLATE_ID', smsIndiaHubTemplateId],
             ['SMSINDIAHUB_OTP_TEXT', smsIndiaHubOtpText],
         ].filter(([, value]) => !value).map(([name]) => name);
@@ -82,7 +86,10 @@ const sendSmsViaSmsIndiaHub = async (phone, otp) => {
 
         const digits = String(phone || '').replace(/\D/g, '');
         const msisdn = digits.length === 10 ? `91${digits}` : (digits.startsWith('91') ? digits : `91${digits}`);
-        const text = String(smsIndiaHubOtpText).replace(/\{#var#\}|\{otp\}/gi, otp);
+        // {app} = brand name variable(s), {otp}/{#var#} = the OTP (a template may hold several variables)
+        const text = String(smsIndiaHubOtpText)
+            .replace(/\{app\}/gi, process.env.SMSINDIAHUB_APP_NAME || 'DietVala')
+            .replace(/\{#var#\}|\{otp\}/gi, otp);
 
         const body = {
             Account: {
@@ -91,7 +98,7 @@ const sendSmsViaSmsIndiaHub = async (phone, otp) => {
                 Channel: String(smsIndiaHubChannel),
                 DCS: 0,
                 FlashMessage: 0,
-                Route: Number(smsIndiaHubRoute),
+                ...(smsIndiaHubRoute ? { Route: Number(smsIndiaHubRoute) } : {}),
                 ...(smsIndiaHubEntityId ? { EntityId: smsIndiaHubEntityId } : {}),
             },
             Messages: [
@@ -155,7 +162,7 @@ export const createOrUpdateOtp = async (phone) => {
     }
 
     let otp;
-    if (config.useDefaultOtp || phone.endsWith('9755633147') || phone.endsWith('8624862400')) {
+    if (isDefaultOtpPhone(phone)) {
         otp = '123456';
         logger.info(`Default OTP mode enabled – OTP is ${otp} for phone ${phone}`);
     } else {
@@ -190,7 +197,7 @@ export const createOrUpdateOtp = async (phone) => {
     }
 
     // Only send SMS if not in default OTP mode
-    if (!config.useDefaultOtp && !phone.endsWith('9755633147') && !phone.endsWith('8624862400')) {
+    if (!isDefaultOtpPhone(phone)) {
         await sendOtpSms(phone, otp);
     }
 

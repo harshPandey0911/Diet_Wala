@@ -441,7 +441,7 @@ export default function WebsiteLanding() {
                       <div className="text-[13px] font-bold leading-tight">{item.name}</div>
                       <div className="mt-0.5 text-[10.5px] text-[#666] leading-snug">{item.subtitle}</div>
                       <div className="mt-auto pt-2">
-                        <div className="rounded-md bg-[#FFF4C2] border border-[#FFD21F] px-1 py-1 text-center text-[9.5px] font-bold text-[#222] whitespace-nowrap">{item.prices}</div>
+                        <div className="rounded-md bg-[#FFF4C2] border border-[#FFD21F] px-1.5 py-1 text-center text-[10px] leading-snug font-bold text-[#222] break-words">{item.prices}</div>
                       </div>
                     </div>
                   </div>
