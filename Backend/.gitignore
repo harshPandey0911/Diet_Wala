@@ -22,7 +22,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
-uploads/
+/uploads/
 
 # IDE - VSCode
 .vscode/*
