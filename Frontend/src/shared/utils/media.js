@@ -1,0 +1,165 @@
+import { API_BASE_URL } from '../../services/api/config.js';
+
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const FILE_LIKE_REGEX = /\.(png|jpe?g|webp|gif|bmp|svg|pdf|mp4|webm|mov|avi|mkv|bin)(\?.*)?$/i;
+const UPLOADS_SEGMENT_REGEX = /(?:^|\/)(?:api\/v\d+\/)?uploads\//i;
+
+const escapeSvgText = (value) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+export const getPlaceholderImage = ({ width = 40, height = 40, text = 'Image' } = {}) => {
+  const safeWidth = Number.isFinite(Number(width)) ? Number(width) : 40;
+  const safeHeight = Number.isFinite(Number(height)) ? Number(height) : 40;
+  const safeText = escapeSvgText(text).slice(0, 24) || 'Image';
+  const fontSize = Math.max(10, Math.round(Math.min(safeWidth, safeHeight) * 0.24));
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${safeWidth}" height="${safeHeight}" viewBox="0 0 ${safeWidth} ${safeHeight}">
+      <rect width="100%" height="100%" fill="#e2e8f0" />
+      <text x="50%" y="50%" dy="0.35em" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" fill="#64748b">${safeText}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.replace(/\s+/g, ' ').trim())}`;
+};
+
+export const PLACEHOLDER_URL = getPlaceholderImage();
+
+const getBackendOrigin = () => {
+  try {
+    if (API_BASE_URL && API_BASE_URL.startsWith('http')) {
+      return new URL(API_BASE_URL).origin;
+    }
+  } catch {}
+
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000';
+  }
+
+  return '';
+};
+
+const isFileLikePath = (value) => {
+  const normalized = String(value || '').trim().split('#')[0];
+  if (!normalized) return false;
+  const pathname = normalized.split('?')[0];
+  const fileName = pathname.split('/').filter(Boolean).pop() || '';
+  return FILE_LIKE_REGEX.test(fileName);
+};
+
+const toUploadsPath = (rawPath) => {
+  const trimmed = String(rawPath || '').trim();
+  if (!trimmed) return '';
+
+  const [withoutHash] = trimmed.split('#');
+  const [pathnamePart, query = ''] = withoutHash.split('?');
+  const normalizedPath = pathnamePart.replace(/\\/g, '/');
+
+  if (normalizedPath.includes('var/www/uploads/')) {
+    const fileName = normalizedPath.split('var/www/uploads/').pop();
+    return `/uploads/${fileName}${query ? `?${query}` : ''}`;
+  }
+
+  const uploadsMatch = normalizedPath.match(UPLOADS_SEGMENT_REGEX);
+
+  if (uploadsMatch) {
+    const uploadIndex = uploadsMatch.index + uploadsMatch[0].lastIndexOf('uploads/');
+    const uploadPath = `/${normalizedPath.slice(uploadIndex).replace(/^\/+/, '')}`;
+    return `${uploadPath}${query ? `?${query}` : ''}`;
+  }
+
+  // If path starts with slash or asset path (frontend static asset), do NOT convert to backend /uploads/
+  if (
+    normalizedPath.startsWith('/') ||
+    normalizedPath.startsWith('assets/') ||
+    normalizedPath.startsWith('src/') ||
+    normalizedPath.includes('@food/')
+  ) {
+    return '';
+  }
+
+  const fileName = normalizedPath.split('/').filter(Boolean).pop();
+  if (!fileName || !FILE_LIKE_REGEX.test(fileName)) {
+    return '';
+  }
+
+  return `/uploads/${fileName}${query ? `?${query}` : ''}`;
+};
+
+export const getMediaUrl = (path) => {
+  if (!path || typeof path !== 'string') return PLACEHOLDER_URL;
+
+  const trimmed = path.trim();
+  if (!trimmed) return PLACEHOLDER_URL;
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return trimmed;
+
+  let normalizedUploadsPath = '';
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      const url = new URL(trimmed);
+      const isLocalHost = LOCAL_HOSTS.has(url.hostname);
+      const looksLikeUpload = UPLOADS_SEGMENT_REGEX.test(url.pathname);
+      if (!isLocalHost && !looksLikeUpload) {
+        return trimmed;
+      }
+      normalizedUploadsPath = toUploadsPath(`${url.pathname}${url.search}`);
+      if (!normalizedUploadsPath) {
+        return trimmed;
+      }
+    } catch {
+      return trimmed;
+    }
+  } else {
+    normalizedUploadsPath = toUploadsPath(trimmed);
+    if (!normalizedUploadsPath) {
+      return trimmed;
+    }
+  }
+
+  const backendOrigin = getBackendOrigin();
+  return backendOrigin ? `${backendOrigin}${normalizedUploadsPath}` : normalizedUploadsPath;
+};
+
+
+// ---- Thumbnails -------------------------------------------------------------------------------
+// The backend can resize our own uploaded pictures on the fly: /api/thumbs/400/<file> returns a small
+// cached WebP of /uploads/<file>. Use getThumbUrl() for pictures shown small (cards, lists, icons) so the
+// phone downloads ~10-20 KB instead of the full 200+ KB original. The /api path is used (not
+// /uploads/<file>?w=) because the live nginx serves /uploads itself and never passes it to the backend.
+// Anything that is not one of our uploads, or that already has a width, is returned unchanged.
+const THUMB_WIDTHS = [100, 150, 200, 300, 400, 600, 800, 1200];
+
+export const isOwnUploadUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  if (!/\/uploads\/[^?#]+\.(webp|png|jpe?g)(\?[^#]*)?$/i.test(value)) return false;
+  if (/[?&]w=/.test(value)) return false;
+  if (value.startsWith('/')) return true;
+  try {
+    const host = new URL(value).hostname;
+    const pageHost = typeof window !== 'undefined' ? window.location.hostname : '';
+    return host === pageHost || /(^|\.)dietvala\.com$/i.test(host) || LOCAL_HOSTS.has(host);
+  } catch {
+    return false;
+  }
+};
+
+export const getThumbUrl = (value, width = 400) => {
+  if (!isOwnUploadUrl(value)) return value;
+  const w = THUMB_WIDTHS.find((candidate) => candidate >= width) || THUMB_WIDTHS[THUMB_WIDTHS.length - 1];
+  const clean = value.split(/[?#]/)[0];
+  const file = clean.slice(clean.indexOf('/uploads/') + '/uploads/'.length);
+  let origin = '';
+  if (/^https?:\/\//i.test(clean)) {
+    try {
+      origin = new URL(clean).origin;
+    } catch {
+      return value;
+    }
+  }
+  return `${origin}/api/thumbs/${w}/${file}`;
+};

@@ -1,0 +1,54 @@
+import mongoose from 'mongoose';
+
+const foodHeroBannerSchema = new mongoose.Schema(
+    {
+        imageUrl: {
+            type: String,
+            required: true
+        },
+        publicId: {
+            type: String,
+            required: false,
+            default: null
+        },
+        title: {
+            type: String
+        },
+        ctaText: {
+            type: String
+        },
+        ctaLink: {
+            type: String
+        },
+        linkedRestaurantIds: {
+            type: [mongoose.Schema.Types.ObjectId],
+            ref: 'FoodRestaurant',
+            default: []
+        },
+        sortOrder: {
+            type: Number,
+            default: 0,
+            index: true
+        },
+        bannerType: {
+            type: String,
+            enum: ['app', 'web', 'all'],
+            default: 'app',
+            index: true
+        },
+        isActive: {
+            type: Boolean,
+            default: true,
+            index: true
+        }
+    },
+    {
+        collection: 'food_hero_banners',
+        timestamps: true
+    }
+);
+
+foodHeroBannerSchema.index({ isActive: 1, sortOrder: 1 });
+
+export const FoodHeroBanner = mongoose.model('FoodHeroBanner', foodHeroBannerSchema);
+

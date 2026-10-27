@@ -1,0 +1,201 @@
+import mongoose from 'mongoose';
+
+const userAddressSchema = new mongoose.Schema(
+    {
+        label: {
+            type: String,
+            enum: ['Home', 'Office', 'Other'],
+            default: 'Home',
+            index: true
+        },
+        street: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        additionalDetails: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        city: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        state: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        zipCode: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        phone: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        location: {
+            type: {
+                type: String,
+                enum: ['Point'],
+                default: 'Point'
+            },
+            coordinates: {
+                // [lng, lat]
+                type: [Number],
+                default: undefined,
+                validate: {
+                    validator: (v) =>
+                        v === undefined ||
+                        (Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number' && Number.isFinite(n))),
+                    message: 'location.coordinates must be [lng, lat]'
+                }
+            }
+        },
+        isDefault: {
+            type: Boolean,
+            default: false,
+            index: true
+        }
+    },
+    { _id: true, timestamps: true }
+);
+
+const userSchema = new mongoose.Schema(
+    {
+        phone: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        countryCode: {
+            type: String,
+            default: '+91'
+        },
+        // Optional second contact number (can be added from profile or at checkout).
+        alternatePhone: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        name: {
+            type: String
+        },
+        email: {
+            type: String
+        },
+        profileImage: {
+            type: String,
+            default: ''
+        },
+        fcmTokens: {
+            type: [String],
+            default: []
+        },
+        fcmTokenMobile: {
+            type: [String],
+            default: []
+        },
+        pushDevices: {
+            type: [{
+                fcmToken: { type: String, trim: true },
+                voipToken: { type: String, trim: true },
+                pushPlatform: { type: String, enum: ["web", "mobile"], default: "mobile" },
+                devicePlatform: { type: String, enum: ["ios", "android", "web", "unknown"], default: "unknown" },
+                appRole: { type: String, trim: true },
+                deviceId: { type: String, trim: true },
+                lastSeenAt: { type: Date, default: Date.now }
+            }],
+            default: []
+        },
+        dateOfBirth: {
+            type: Date,
+            default: null
+        },
+        anniversary: {
+            type: Date,
+            default: null
+        },
+        gender: {
+            type: String,
+            enum: ['male', 'female', 'other', 'prefer-not-to-say', ''],
+            default: ''
+        },
+        referralCode: {
+            type: String
+        },
+        referredBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'FoodUser',
+            default: null,
+            index: true
+        },
+        referralCount: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+        isVerified: {
+            type: Boolean,
+            default: false
+        },
+        isActive: {
+            type: Boolean,
+            default: true,
+            index: true
+        },
+        passcodeHash: {
+            type: String,
+            select: false,
+            default: null
+        },
+        hasPasscode: {
+            type: Boolean,
+            default: false
+        },
+        passcodeFailedAttempts: { type: Number, default: 0, select: false },
+        passcodeLockedUntil: { type: Date, default: null, select: false },
+        role: {
+            type: String,
+            default: 'USER'
+        },
+        addresses: {
+            type: [userAddressSchema],
+            default: []
+        },
+        lastKnownLocation: {
+            type: {
+                type: String,
+                enum: ['Point'],
+                default: 'Point'
+            },
+            coordinates: {
+                type: [Number],
+                default: undefined
+            },
+            latitude: { type: Number },
+            longitude: { type: Number },
+            address: { type: String, trim: true, default: '' },
+            formattedAddress: { type: String, trim: true, default: '' },
+            city: { type: String, trim: true, default: '' },
+            state: { type: String, trim: true, default: '' },
+            area: { type: String, trim: true, default: '' },
+            accuracy: { type: Number },
+            updatedAt: { type: Date }
+        }
+    },
+    {
+        collection: 'food_users',
+        timestamps: true
+    }
+);
+
+userSchema.index({ phone: 1 }, { unique: true });
+userSchema.index({ 'addresses.location': '2dsphere' });
+
+export const FoodUser = mongoose.model('FoodUser', userSchema);
+
