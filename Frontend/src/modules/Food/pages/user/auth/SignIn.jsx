@@ -122,8 +122,8 @@ export default function SignIn() {
   }
 
   if (passcodePhone) return <AnimatedPage className="min-h-screen bg-[#FFFBF5] dark:bg-[#121212] flex items-center justify-center p-5"><PasscodeEntry phone={passcodePhone} api={authAPI} onBack={() => setPasscodePhone("")} onUseOtp={async () => {
-    await authAPI.sendOTP(passcodePhone, "login", null)
-    sessionStorage.setItem("userAuthData", JSON.stringify({ method: "phone", phone: passcodePhone, isSignUp: false, module: "user" }))
+    await authAPI.sendOTP(passcodePhone, "passcode_reset", null)
+    sessionStorage.setItem("userAuthData", JSON.stringify({ method: "phone", phone: passcodePhone, isSignUp: false, purpose: "passcode_reset", module: "user" }))
     navigate("/food/user/auth/otp")
   }} onSuccess={async (data) => {
     setAuthData("user", data.accessToken, data.user, data.refreshToken)

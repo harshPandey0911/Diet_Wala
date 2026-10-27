@@ -50,7 +50,14 @@ export const loginWithPasscodeController = async (req, res, next) => {
 export const updatePasscodeController = async (req, res, next) => {
   try {
     const data = validatePasscodeUpdateDto(req.body);
-    const result = await setOrUpdatePasscode(req.user.userId, req.user.role, data.newPasscode, data.confirmPasscode, data.currentPasscode);
+    const result = await setOrUpdatePasscode(
+      req.user.userId,
+      req.user.role,
+      data.newPasscode,
+      data.confirmPasscode,
+      data.currentPasscode,
+      req.user.passcodeResetVerified === true,
+    );
     return sendResponse(res, 200, "Passcode saved successfully", result);
   } catch (error) { next(error); }
 };

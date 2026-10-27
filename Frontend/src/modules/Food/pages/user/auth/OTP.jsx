@@ -178,7 +178,7 @@ export default function OTP() {
     try {
       const phone = authData?.method === "phone" ? authData.phone : null
       const email = authData?.method === "email" ? authData.email : null
-      const purpose = authData?.isSignUp ? "register" : "login"
+      const purpose = authData?.purpose || (authData?.isSignUp ? "register" : "login")
       const providedName = authData?.isSignUp ? authData?.name || null : null
       const referralCode = authData?.referralCode || null
 
@@ -234,8 +234,8 @@ export default function OTP() {
       sessionStorage.removeItem("userAuthData")
 
       setUserAuthData("user", accessToken, user, refreshToken)
-      if (data.requiresPasscodeSetup === true || user.hasPasscode !== true) {
-        setPendingPasscodeLogin({ accessToken, refreshToken, user })
+      if (data.requiresPasscodeSetup === true || user.hasPasscode !== true || purpose === "passcode_reset") {
+        setPendingPasscodeLogin({ accessToken, refreshToken, user, isPasscodeReset: purpose === "passcode_reset" })
         return
       }
       // Register this device for push (offers, broadcasts) right after login.
@@ -291,7 +291,7 @@ export default function OTP() {
     try {
       const phone = authData?.method === "phone" ? authData.phone : null
       const email = authData?.method === "email" ? authData.email : null
-      const purpose = authData?.isSignUp ? "register" : "login"
+      const purpose = authData?.purpose || (authData?.isSignUp ? "register" : "login")
       const referralCode = authData?.referralCode || null
 
       // Second call with name to auto-register and login
@@ -323,8 +323,8 @@ export default function OTP() {
       sessionStorage.removeItem("userAuthData")
 
       setUserAuthData("user", accessToken, user, refreshToken)
-      if (data.requiresPasscodeSetup === true || user.hasPasscode !== true) {
-        setPendingPasscodeLogin({ accessToken, refreshToken, user })
+      if (data.requiresPasscodeSetup === true || user.hasPasscode !== true || purpose === "passcode_reset") {
+        setPendingPasscodeLogin({ accessToken, refreshToken, user, isPasscodeReset: purpose === "passcode_reset" })
         return
       }
       // Register this device for push (offers, broadcasts) right after login.
@@ -354,7 +354,7 @@ export default function OTP() {
     try {
       const phone = authData?.method === "phone" ? authData.phone : null
       const email = authData?.method === "email" ? authData.email : null
-      const purpose = authData?.isSignUp ? "register" : "login"
+      const purpose = authData?.purpose || (authData?.isSignUp ? "register" : "login")
 
       // Call backend to resend OTP
       await authAPI.sendOTP(phone, purpose, email)
@@ -395,7 +395,7 @@ export default function OTP() {
 
   return (
     <AnimatedPage className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex items-center justify-center p-4">
-      {pendingPasscodeLogin && <PasscodeSetupModal api={authAPI} required onSaved={() => {
+      {pendingPasscodeLogin && <PasscodeSetupModal api={authAPI} required resetMode={pendingPasscodeLogin.isPasscodeReset} onSaved={() => {
         setUserAuthData("user", pendingPasscodeLogin.accessToken, { ...pendingPasscodeLogin.user, hasPasscode: true }, pendingPasscodeLogin.refreshToken)
         sessionStorage.removeItem("userAuthData")
         window.dispatchEvent(new Event("userAuthChanged"))

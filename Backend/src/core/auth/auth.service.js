@@ -277,7 +277,11 @@ export const verifyUserOtpAndLogin = async (
   }
 
   const user = userDoc.toObject();
-  const payload = { userId: user._id.toString(), role: user.role || "USER" };
+  const payload = {
+    userId: user._id.toString(),
+    role: user.role || "USER",
+    ...(purpose === "passcode_reset" ? { passcodeResetVerified: true } : {}),
+  };
 
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
@@ -297,7 +301,7 @@ export const verifyUserOtpAndLogin = async (
     refreshToken,
     user: sanitizeUserForAuthResponse(user),
     isNewUser,
-    requiresPasscodeSetup: !userDoc.hasPasscode,
+    requiresPasscodeSetup: purpose === "passcode_reset" || !userDoc.hasPasscode,
   };
 };
 
@@ -822,7 +826,7 @@ export const loginWithPasscode = async (moduleName, phone, passcode) => {
   return createPasscodeSession(moduleName, account, role);
 };
 
-export const setOrUpdatePasscode = async (userId, role, newPasscode, confirmPasscode, currentPasscode) => {
+export const setOrUpdatePasscode = async (userId, role, newPasscode, confirmPasscode, currentPasscode, passcodeResetVerified = false) => {
   if (!/^\d{4}$/.test(String(newPasscode || ""))) throw new ValidationError("Passcode must be exactly 4 digits");
   if (newPasscode !== confirmPasscode) throw new ValidationError("Passcodes do not match");
   const moduleName = role === ROLES.USER ? "user" : role === ROLES.RESTAURANT ? "restaurant" : role === ROLES.DELIVERY_PARTNER ? "delivery" : null;
@@ -831,7 +835,7 @@ export const setOrUpdatePasscode = async (userId, role, newPasscode, confirmPass
   const account = await model.findById(userId).select("+passcodeHash");
   if (!account) throw new AuthError("Account is not available");
   ensureAccountCanLogin(moduleName, account);
-  if (account.hasPasscode) {
+  if (account.hasPasscode && !passcodeResetVerified) {
     const currentValid = /^\d{4}$/.test(String(currentPasscode || "")) && await bcrypt.compare(String(currentPasscode), account.passcodeHash || "");
     if (!currentValid) throw new AuthError("Current passcode is incorrect");
   }
