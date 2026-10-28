@@ -49,6 +49,21 @@ const toClientShape = (doc) => {
     return map;
 };
 
+// Timings derived from the onboarding details when no explicit outlet timings were saved.
+const buildTimingsFromRestaurant = ({ openDays, openingTime, closingTime } = {}) => {
+    const hasOpenDays = Array.isArray(openDays) && openDays.length > 0;
+    return DAY_NAMES.map((day) => {
+        const abbr = day.substring(0, 3);
+        const isOpen = hasOpenDays ? (openDays.includes(day) || openDays.includes(abbr)) : true;
+        return {
+            day,
+            isOpen,
+            openingTime: isOpen ? normalizeTime(openingTime, '09:00') : '',
+            closingTime: isOpen ? normalizeTime(closingTime, '22:00') : ''
+        };
+    });
+};
+
 export async function getOutletTimingsForRestaurant(restaurantId) {
     if (!restaurantId || !mongoose.Types.ObjectId.isValid(String(restaurantId))) {
         throw new ValidationError('Invalid restaurant id');
@@ -58,27 +73,103 @@ export async function getOutletTimingsForRestaurant(restaurantId) {
         // Fallback to onboarding details
         const { FoodRestaurant } = await import('../models/restaurant.model.js');
         const restaurant = await FoodRestaurant.findById(restaurantId).lean();
-        
+
         if (restaurant) {
-            const { openDays, openingTime, closingTime } = restaurant;
-            const hasOpenDays = Array.isArray(openDays) && openDays.length > 0;
-            
-            const timings = DAY_NAMES.map((day) => {
-                const abbr = day.substring(0, 3);
-                const isOpen = hasOpenDays ? (openDays.includes(day) || openDays.includes(abbr)) : true;
-                return {
-                    day,
-                    isOpen,
-                    openingTime: isOpen ? normalizeTime(openingTime, '09:00') : '',
-                    closingTime: isOpen ? normalizeTime(closingTime, '22:00') : ''
-                };
-            });
-            return { outletTimings: toClientShape({ timings }) };
+            return { outletTimings: toClientShape({ timings: buildTimingsFromRestaurant(restaurant) }) };
         }
-        
+
         return { outletTimings: toClientShape({ timings: defaultTimings() }) };
     }
     return { outletTimings: toClientShape(doc) };
+}
+
+const timeToMinutes = (value) => {
+    const m = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
+// Business hours are IST regardless of the server's TZ.
+const getIstDayAndMinutes = (date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+    }).formatToParts(date);
+    const get = (type) => parts.find((p) => p.type === type)?.value;
+    return { day: get('weekday'), minutes: Number(get('hour')) * 60 + Number(get('minute')) };
+};
+
+const isOpenAt = (outletTimings, at) => {
+    const { day, minutes } = getIstDayAndMinutes(at);
+    const today = outletTimings?.[day];
+    if (!today) return true;
+    if (today.isOpen === false) return false;
+
+    const open = timeToMinutes(today.openingTime);
+    const close = timeToMinutes(today.closingTime);
+    if (open === null || close === null || open === close) return true;
+    if (close > open) return minutes >= open && minutes < close;
+    return minutes >= open || minutes < close;
+};
+
+/**
+ * Whether the restaurant's outlet timings allow an order at `at` (default: now).
+ * Overnight windows (e.g. 18:00-02:00) are supported. Missing/partial timings => open.
+ */
+export async function isRestaurantWithinOutletTimings(restaurantId, at = new Date()) {
+    const { outletTimings } = await getOutletTimingsForRestaurant(restaurantId);
+    return isOpenAt(outletTimings, at);
+}
+
+const outletTimingsFor = (restaurant, docByRestaurant) => {
+    const doc = docByRestaurant.get(String(restaurant._id));
+    return doc?.timings?.length
+        ? toClientShape(doc)
+        : toClientShape({ timings: buildTimingsFromRestaurant(restaurant) });
+};
+
+const loadTimingDocs = async (restaurants) => {
+    const docs = await FoodRestaurantOutletTimings.find({ restaurantId: { $in: restaurants.map((r) => r._id) } })
+        .select('restaurantId timings')
+        .lean();
+    return new Map(docs.map((doc) => [String(doc.restaurantId), doc]));
+};
+
+/**
+ * Switches off the "accepting orders" toggle of every online restaurant that is outside its
+ * outlet timings. It only turns restaurants OFF; going back online is up to the restaurant,
+ * during its opening hours. Returns how many restaurants were closed.
+ */
+export async function closeRestaurantsOutsideOutletTimings(at = new Date()) {
+    const { FoodRestaurant } = await import('../models/restaurant.model.js');
+    const restaurants = await FoodRestaurant.find({ status: 'approved', isAcceptingOrders: { $ne: false } })
+        .select('_id openDays openingTime closingTime')
+        .lean();
+    if (!restaurants.length) return 0;
+
+    const docs = await FoodRestaurantOutletTimings.find({ restaurantId: { $in: restaurants.map((r) => r._id) } })
+        .select('restaurantId timings')
+        .lean();
+    const docByRestaurant = new Map(docs.map((doc) => [String(doc.restaurantId), doc]));
+
+    const closedIds = restaurants
+        .filter((restaurant) => {
+            const doc = docByRestaurant.get(String(restaurant._id));
+            const outletTimings = doc?.timings?.length
+                ? toClientShape(doc)
+                : toClientShape({ timings: buildTimingsFromRestaurant(restaurant) });
+            return !isOpenAt(outletTimings, at);
+        })
+        .map((restaurant) => restaurant._id);
+    if (!closedIds.length) return 0;
+
+    const result = await FoodRestaurant.updateMany(
+        { _id: { $in: closedIds }, isAcceptingOrders: { $ne: false } },
+        { $set: { isAcceptingOrders: false, acceptingOrdersUpdatedAt: new Date() } }
+    );
+    return result.modifiedCount || 0;
 }
 
 export async function upsertOutletTimingsForRestaurant(restaurantId, outletTimings) {
@@ -108,4 +199,3 @@ export async function upsertOutletTimingsForRestaurant(restaurantId, outletTimin
 
     return { outletTimings: toClientShape(doc) };
 }
-

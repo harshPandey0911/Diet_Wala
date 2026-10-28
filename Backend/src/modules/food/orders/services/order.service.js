@@ -39,6 +39,7 @@ import { clearDeliveryOffersForOrder } from './order-dispatch.firebase.js';
 import * as deliveryService from './order-delivery.service.js';
 import * as paymentService from './order-payment.service.js';
 import { assertDeliveryLocationServiceable } from './delivery-location.service.js';
+import { isRestaurantWithinOutletTimings } from '../../restaurant/services/outletTimings.service.js';
 import {
   enqueueOrderEvent,
   haversineKm,
@@ -157,6 +158,15 @@ export async function createOrder(userId, dto) {
   if (restaurant.isAcceptingOrders === false)
     throw new ValidationError("This restaurant is offline right now and not accepting orders. Please try again later.");
 
+  // Respect the restaurant's configured opening hours (for scheduled orders, at the scheduled time).
+  const orderAt = dto.scheduledAt ? new Date(dto.scheduledAt) : new Date();
+  if (!(await isRestaurantWithinOutletTimings(dto.restaurantId, orderAt))) {
+    throw new ValidationError(
+      dto.scheduledAt
+        ? "This restaurant is closed at the selected time. Please choose a time within its opening hours."
+        : "This restaurant is closed right now. Please try again during its opening hours.",
+    );
+  }
 
   const settings = await getDispatchSettings();
   const dispatchMode = settings.dispatchMode;

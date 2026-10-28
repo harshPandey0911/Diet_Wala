@@ -308,7 +308,8 @@ export default function Cart() {
       const isToday = targetStr === nowStr
       const currentHour = now.getHours()
 
-      for (let h = openingHour; h <= closingHour; h++) {
+      // The backend treats the closing time as exclusive, so don't offer a slot exactly at closing.
+      for (let h = openingHour; h < closingHour; h++) {
         const actualHour = h % 24
         // Skip past hours if today. Add 1 hour buffer so they can't order right at the boundary
         if (isToday && h <= currentHour) continue

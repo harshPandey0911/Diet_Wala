@@ -3,6 +3,7 @@ import {
     createBroadcastNotification,
     getBroadcastNotifications,
     deleteBroadcastNotification,
+    resendBroadcastNotification,
     searchBroadcastRecipients
 } from '../services/notificationBroadcast.service.js';
 
@@ -25,7 +26,12 @@ export const createBroadcastNotificationController = async (req, res) => {
             body: req.body,
             adminId: req.user?.userId
         });
-        return sendResponse(res, 201, 'Broadcast notification created successfully', data);
+        return sendResponse(
+            res,
+            201,
+            data.scheduled ? 'Broadcast notification scheduled successfully' : 'Broadcast notification created successfully',
+            data
+        );
     } catch (error) {
         return sendError(res, error.statusCode || 500, error.message || 'Failed to create broadcast notification');
     }
@@ -40,6 +46,18 @@ export const getBroadcastNotificationsController = async (req, res) => {
         return sendResponse(res, 200, 'Broadcast notifications fetched successfully', data);
     } catch (error) {
         return sendError(res, error.statusCode || 500, error.message || 'Failed to fetch broadcast notifications');
+    }
+};
+
+export const resendBroadcastNotificationController = async (req, res) => {
+    try {
+        const data = await resendBroadcastNotification({
+            broadcastId: req.params?.id,
+            adminId: req.user?.userId
+        });
+        return sendResponse(res, 201, 'Broadcast notification resent successfully', data);
+    } catch (error) {
+        return sendError(res, error.statusCode || 500, error.message || 'Failed to resend broadcast notification');
     }
 };
 

@@ -149,11 +149,10 @@ export const getRestaurantAvailabilityStatus = (restaurant, now = new Date(), op
   }
 
   const ignoreOperationalStatus = options?.ignoreOperationalStatus === true
-  // `isAcceptingOrders` is also the backend's order-placement source of truth.
-  // Timings remain useful metadata (for closing labels), but must not contradict a
-  // restaurant that has explicitly switched itself online. Callers that need a
-  // schedule-only view can opt in with { enforceTimings: true }.
-  const enforceTimings = options?.enforceTimings === true
+  // The backend rejects orders outside outlet timings, so the UI must treat a
+  // restaurant outside its opening hours as closed. Pass { enforceTimings: false }
+  // to ignore the schedule.
+  const enforceTimings = options?.enforceTimings !== false
   const isActive = restaurant.isActive !== false
   const isAcceptingOrders = restaurant.isAcceptingOrders !== false
 

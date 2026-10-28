@@ -351,40 +351,39 @@ const enqueueBroadcastDelivery = async ({ broadcast, resolvedTargets = [], voipT
     };
 };
 
-export const createBroadcastNotification = async ({ body = {}, adminId } = {}) => {
-    const title = normalizeText(body?.title, 'title');
-    const message = normalizeText(body?.message, 'message');
-    const link = normalizeText(body?.link, 'link', false);
-    const image = normalizeImageUrl(body?.image);
-    const targetType = normalizeTargetType(body?.targetType);
-    const voipTokens = normalizeVoipTokens(body?.voipToken || body?.voipTokens);
-    const resolvedTargets = await resolveTargets({
-        targetType,
-        targetIds: body?.targetIds,
-        targets: body?.targets
-    });
+const MIN_SCHEDULE_LEAD_MS = 60 * 1000;
 
-    if (!resolvedTargets.length) {
-        throw new ValidationError(`No recipients found for ${targetType.toLowerCase()} broadcast`);
+const parseScheduledAt = (value) => {
+    if (value === undefined || value === null || value === '') return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        throw new ValidationError('scheduledAt is invalid');
     }
+    if (date.getTime() < Date.now() + MIN_SCHEDULE_LEAD_MS) {
+        throw new ValidationError('Scheduled time must be at least 1 minute in the future');
+    }
+    return date;
+};
 
-    const targetIds = resolvedTargets.map((target) => toObjectId(target.ownerId, 'targetId'));
+const toTargetPayload = (target) => ({
+    ownerType: target.ownerType,
+    ownerId: toObjectId(target.ownerId, 'ownerId'),
+    label: target.label || '',
+    subLabel: target.subLabel || ''
+});
 
-    const broadcast = await BroadcastNotification.create({
-        title,
-        message,
-        targetType,
-        targetIds: targetType === 'CUSTOM' ? targetIds : [],
-        targets: resolvedTargets.map((target) => ({
-            ownerType: target.ownerType,
-            ownerId: toObjectId(target.ownerId, 'ownerId'),
-            label: target.label || '',
-            subLabel: target.subLabel || ''
-        })),
-        link,
-        createdBy: toObjectId(adminId, 'createdBy'),
-        targetCount: resolvedTargets.length
-    });
+const storedTargetsToResolved = (targets = []) =>
+    dedupeTargets(targets.map((target) => ({
+        ownerType: target.ownerType,
+        ownerId: String(target.ownerId),
+        label: target.label,
+        subLabel: target.subLabel
+    })));
+
+/** Writes inbox rows, realtime events and push for an already-saved broadcast. */
+const dispatchBroadcast = async (broadcast, resolvedTargets) => {
+    const { title, message, link, image } = broadcast;
+    const voipTokens = broadcast.voipTokens || [];
 
     await createInboxNotifications({
         notifications: resolvedTargets.map((target) =>
@@ -423,6 +422,143 @@ export const createBroadcastNotification = async ({ body = {}, adminId } = {}) =
         recipientCount: resolvedTargets.length,
         pushReachable
     };
+};
+
+const createAndSendBroadcast = async ({ content, targetType, resolvedTargets, adminId, resentFrom = null }) => {
+    if (!resolvedTargets.length) {
+        throw new ValidationError(`No recipients found for ${targetType.toLowerCase()} broadcast`);
+    }
+
+    const broadcast = await BroadcastNotification.create({
+        ...content,
+        targetType,
+        targetIds: targetType === 'CUSTOM' ? resolvedTargets.map((target) => toObjectId(target.ownerId, 'targetId')) : [],
+        targets: resolvedTargets.map(toTargetPayload),
+        createdBy: toObjectId(adminId, 'createdBy'),
+        targetCount: resolvedTargets.length,
+        status: 'sent',
+        sentAt: new Date(),
+        resentFrom
+    });
+
+    return dispatchBroadcast(broadcast, resolvedTargets);
+};
+
+export const createBroadcastNotification = async ({ body = {}, adminId } = {}) => {
+    const content = {
+        title: normalizeText(body?.title, 'title'),
+        message: normalizeText(body?.message, 'message'),
+        link: normalizeText(body?.link, 'link', false),
+        image: normalizeImageUrl(body?.image),
+        voipTokens: normalizeVoipTokens(body?.voipToken || body?.voipTokens)
+    };
+    const targetType = normalizeTargetType(body?.targetType);
+    const scheduledAt = parseScheduledAt(body?.scheduledAt);
+
+    if (scheduledAt) {
+        // Everyone/Users/etc. are resolved when the broadcast fires so that people who joined
+        // in the meantime are included. Specific recipients are fixed now.
+        const customTargets = targetType === 'CUSTOM'
+            ? await resolveTargets({ targetType, targetIds: body?.targetIds, targets: body?.targets })
+            : [];
+        if (targetType === 'CUSTOM' && !customTargets.length) {
+            throw new ValidationError('No recipients found for custom broadcast');
+        }
+
+        const broadcast = await BroadcastNotification.create({
+            ...content,
+            targetType,
+            targetIds: targetType === 'CUSTOM' ? customTargets.map((target) => toObjectId(target.ownerId, 'targetId')) : [],
+            targets: customTargets.map(toTargetPayload),
+            createdBy: toObjectId(adminId, 'createdBy'),
+            targetCount: customTargets.length,
+            status: 'scheduled',
+            scheduledAt
+        });
+
+        return { broadcast, scheduled: true, scheduledAt, recipientCount: customTargets.length };
+    }
+
+    const resolvedTargets = await resolveTargets({
+        targetType,
+        targetIds: body?.targetIds,
+        targets: body?.targets
+    });
+
+    return createAndSendBroadcast({ content, targetType, resolvedTargets, adminId });
+};
+
+/** Sends a previously sent (or failed) broadcast again, as a new history entry. */
+export const resendBroadcastNotification = async ({ broadcastId, adminId } = {}) => {
+    const original = await BroadcastNotification.findById(toObjectId(broadcastId, 'broadcastId')).lean();
+    if (!original) {
+        throw new NotFoundError('Broadcast notification not found');
+    }
+    if (original.status === 'scheduled' || original.status === 'sending') {
+        throw new ValidationError('This notification has not been sent yet');
+    }
+
+    const resolvedTargets = original.targetType === 'CUSTOM'
+        ? storedTargetsToResolved(original.targets)
+        : await resolveTargets({ targetType: original.targetType });
+
+    return createAndSendBroadcast({
+        content: {
+            title: original.title,
+            message: original.message,
+            link: original.link || '',
+            image: original.image || '',
+            voipTokens: original.voipTokens || []
+        },
+        targetType: original.targetType,
+        resolvedTargets,
+        adminId,
+        resentFrom: original._id
+    });
+};
+
+const failBroadcast = (broadcastId, error) => {
+    logger.error(`Scheduled broadcast ${String(broadcastId)} failed: ${error.message}`);
+    return BroadcastNotification.updateOne({ _id: broadcastId }, { $set: { status: 'failed' } });
+};
+
+/**
+ * Sends every scheduled broadcast whose time has come. Each one is claimed atomically
+ * (scheduled -> sending) so concurrent scheduler instances never double-send.
+ */
+export const processDueScheduledBroadcasts = async () => {
+    let processed = 0;
+    for (;;) {
+        const broadcast = await BroadcastNotification.findOneAndUpdate(
+            { status: 'scheduled', scheduledAt: { $lte: new Date() } },
+            { $set: { status: 'sending' } },
+            { sort: { scheduledAt: 1 }, new: true }
+        );
+        if (!broadcast) break;
+
+        try {
+            const resolvedTargets = broadcast.targetType === 'CUSTOM'
+                ? storedTargetsToResolved(broadcast.targets)
+                : await resolveTargets({ targetType: broadcast.targetType });
+
+            if (!resolvedTargets.length) {
+                await failBroadcast(broadcast._id, new Error('No recipients found'));
+                continue;
+            }
+
+            broadcast.targets = resolvedTargets.map(toTargetPayload);
+            broadcast.targetCount = resolvedTargets.length;
+            broadcast.status = 'sent';
+            broadcast.sentAt = new Date();
+            await broadcast.save();
+
+            await dispatchBroadcast(broadcast, resolvedTargets);
+            processed += 1;
+        } catch (error) {
+            await failBroadcast(broadcast._id, error);
+        }
+    }
+    return processed;
 };
 
 export const getBroadcastNotifications = async ({ page = 1, limit = 10 } = {}) => {

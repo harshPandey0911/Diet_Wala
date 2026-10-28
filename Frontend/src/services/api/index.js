@@ -393,6 +393,8 @@ export const adminAPI = {
     adminClient.get("/food/admin/notifications/broadcast/recipients", { params }),
   getBroadcastNotifications: (params = {}) =>
     adminClient.get("/food/admin/notifications/broadcast", { params }),
+  resendBroadcastNotification: (id) =>
+    adminClient.post(`/food/admin/notifications/broadcast/${String(id)}/resend`),
   deleteBroadcastNotification: (id) =>
     adminClient.delete(`/food/admin/notifications/broadcast/${String(id)}`),
   /** List restaurants for admin. Requires admin auth. */

@@ -15,6 +15,8 @@ import { initializeFirebaseRealtime } from './src/config/firebase.js';
 import { loadEnvFromDb } from './src/config/envLoader.js';
 import { initSocket, initRedisEmitter, getIO } from './src/config/socket.js';
 import { logVoipConfigurationWarnings } from './src/core/notifications/voip.service.js';
+import { processDueScheduledBroadcasts } from './src/modules/food/admin/services/notificationBroadcast.service.js';
+import { closeRestaurantsOutsideOutletTimings } from './src/modules/food/restaurant/services/outletTimings.service.js';
 import { resumeStuckDispatches } from './src/modules/food/orders/services/order-dispatch.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
@@ -140,7 +142,28 @@ const startServer = async () => {
             logger.error(`[Bootstrap] resumeStuckDispatches failed: ${err.message}`);
         });
 
-        // Schedulers (expire offers, fssai sync) are moved to scheduler-server.js
+        // Schedulers (expire offers, fssai sync) are moved to scheduler-server.js.
+        // Scheduled admin broadcasts are also polled here so they still go out when the
+        // separate scheduler process is not running. Each broadcast is claimed atomically,
+        // so running in every cluster instance and in the scheduler never double-sends.
+        const scheduledBroadcastTimer = setInterval(() => {
+            processDueScheduledBroadcasts().catch((err) => {
+                logger.error(`[Bootstrap] Scheduled broadcast poll failed: ${err.message}`);
+            });
+        }, 30 * 1000);
+        scheduledBroadcastTimer.unref();
+
+        // Switch the "accepting orders" toggle off for restaurants outside their outlet timings.
+        // Turning it back on is the restaurant's own choice. Idempotent, so every cluster
+        // instance can run it.
+        const autoCloseTimer = setInterval(() => {
+            closeRestaurantsOutsideOutletTimings()
+                .then((closed) => {
+                    if (closed > 0) logger.info(`[AutoClose] Switched off ${closed} restaurant(s) outside outlet timings`);
+                })
+                .catch((err) => logger.error(`[AutoClose] failed: ${err.message}`));
+        }, 60 * 1000);
+        autoCloseTimer.unref();
 
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

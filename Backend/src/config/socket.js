@@ -32,6 +32,30 @@ function maskToken(token) {
     return `${trimmed.slice(0, 12)}...${trimmed.slice(-6)}`;
 }
 
+// Latest rider state per order, so a customer who opens the tracking page after the rider
+// already pushed the route still receives the polyline/ETA immediately on join.
+const ORDER_TRACKING_CACHE_MAX = 500;
+const orderTrackingCache = new Map();
+
+const normalizePolyline = (value) => {
+    if (!value) return '';
+    return typeof value === 'string' ? value : String(value.points || value.encodedPath || '');
+};
+
+const rememberOrderTracking = (orderId, { payload, polyline, eta }) => {
+    const key = String(orderId);
+    const previous = orderTrackingCache.get(key) || {};
+    orderTrackingCache.delete(key);
+    orderTrackingCache.set(key, {
+        payload,
+        polyline: polyline || previous.polyline || '',
+        eta: eta != null && eta !== '' ? eta : previous.eta
+    });
+    if (orderTrackingCache.size > ORDER_TRACKING_CACHE_MAX) {
+        orderTrackingCache.delete(orderTrackingCache.keys().next().value);
+    }
+};
+
 const roomNames = {
     restaurant: (id) => `restaurant:${String(id)}`,
     user: (id) => `user:${String(id)}`,
@@ -206,6 +230,15 @@ export const initSocket = async (server) => {
             socket.join(room);
             logger.info(`Socket ${socket.id} (${role}:${userId}) joined tracking room ${room}`);
             socket.emit('tracking-room-joined', { room, orderId: String(orderId) });
+
+            const snapshot = orderTrackingCache.get(String(orderId));
+            if (snapshot) {
+                socket.emit('location-update', {
+                    ...snapshot.payload,
+                    ...(snapshot.polyline ? { polyline: snapshot.polyline } : {}),
+                    ...(snapshot.eta != null ? { eta: snapshot.eta } : {})
+                });
+            }
         });
 
         // Delivery partner emits live GPS location for an active order.
@@ -243,9 +276,14 @@ export const initSocket = async (server) => {
                     logger.error(`[SocketLocation] Error updating idle rider location in MongoDB: ${e.message}`);
                 }
             } else {
-                // Throttle: max one broadcast per 5s per orderId
+                const incomingPolyline = normalizePolyline(data.polyline);
+                const cachedPolyline = orderTrackingCache.get(String(data.orderId))?.polyline || '';
+                const polylineChanged = Boolean(incomingPolyline) && incomingPolyline !== cachedPolyline;
+
+                // Throttle: max one broadcast per 5s per orderId. A new route is never dropped,
+                // otherwise the one-off polyline push from the rider can be lost to this throttle.
                 const lastTS = _lastLocationBroadcast[data.orderId] || 0;
-                if (now - lastTS < 5000) return;
+                if (now - lastTS < 5000 && !polylineChanged) return;
                 _lastLocationBroadcast[data.orderId] = now;
 
                 // ── MINIFIED tracking payload (sent to users watching the map) ──
@@ -260,12 +298,25 @@ export const initSocket = async (server) => {
                     status: data.status || 'on_the_way',
                 };
 
-                // Send polyline/eta only every 30 seconds
+                // Send polyline/eta when the route changes, then at most every 30 seconds.
+                // The timer only advances when a polyline was actually sent; location-only updates
+                // used to consume the window and delay the route by up to 30s.
                 const lastPolyTS = _lastPolylineBroadcast[data.orderId] || 0;
-                if (now - lastPolyTS >= 30000) {
+                if (incomingPolyline && (polylineChanged || now - lastPolyTS >= 30000)) {
                     _lastPolylineBroadcast[data.orderId] = now;
-                    if (data.polyline) trackingPayload.polyline = data.polyline;
-                    if (data.eta != null && data.eta !== '') trackingPayload.eta = data.eta;
+                    trackingPayload.polyline = incomingPolyline;
+                }
+                if (data.eta != null && data.eta !== '' && (trackingPayload.polyline || now - lastPolyTS >= 30000)) {
+                    trackingPayload.eta = data.eta;
+                }
+
+                {
+                    const { polyline: sentPolyline, eta: sentEta, ...basePayload } = trackingPayload;
+                    rememberOrderTracking(data.orderId, {
+                        payload: basePayload,
+                        polyline: incomingPolyline,
+                        eta: data.eta
+                    });
                 }
 
                 logDeliverySocket('Location update received', {

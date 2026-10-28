@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
 import Promocode from '../../../../models/Promocode.js';
-import { upsertOutletTimingsForRestaurant } from './outletTimings.service.js';
+import { upsertOutletTimingsForRestaurant, isRestaurantWithinOutletTimings } from './outletTimings.service.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
 import { parseQueryLimit, parseQueryPage } from '../../../../utils/helpers.js';
 
@@ -608,6 +608,12 @@ export const updateRestaurantAcceptingOrders = async (restaurantId, isAcceptingO
     const before = await FoodRestaurant.findById(restaurantId).select('isAcceptingOrders restaurantName').lean();
     if (!before) throw new ValidationError('Restaurant not found');
     const wasAccepting = before.isAcceptingOrders !== false;
+
+    // Outside its opening hours a restaurant can't go online: it would be switched off again
+    // within a minute and orders are rejected anyway.
+    if (value && !wasAccepting && !(await isRestaurantWithinOutletTimings(restaurantId))) {
+        throw new ValidationError('You can only go online during your outlet timings. Update your timings to change this.');
+    }
 
     // Only availability changes here: this never touches `status`, so it needs no admin approval.
     const doc = await FoodRestaurant.findByIdAndUpdate(

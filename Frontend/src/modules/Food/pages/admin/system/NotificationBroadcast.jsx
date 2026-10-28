@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BellRing, Loader2, Search, Send, Trash2, X } from "lucide-react";
+import { BellRing, CalendarClock, Loader2, RotateCw, Search, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { adminAPI } from "@food/api";
 
@@ -50,7 +50,27 @@ const TEMPLATES = [
   },
 ];
 
-const EMPTY_FORM = { title: "", message: "", targetType: "USER", image: "", link: "", voipToken: "" };
+const EMPTY_FORM = {
+  title: "",
+  message: "",
+  targetType: "USER",
+  image: "",
+  link: "",
+  voipToken: "",
+  scheduleEnabled: false,
+  scheduledAt: "", // datetime-local value, admin's local time
+};
+
+const STATUS_STYLES = {
+  scheduled: "bg-amber-50 text-amber-700 border-amber-200",
+  sending: "bg-blue-50 text-blue-700 border-blue-200",
+  failed: "bg-red-50 text-red-700 border-red-200",
+  sent: "bg-emerald-50 text-emerald-700 border-emerald-200",
+};
+
+// Value for <input type="datetime-local" min=...> in local time.
+const toLocalInputValue = (date) =>
+  new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
 const toDateLabel = (value) => {
   const date = value ? new Date(value) : null;
@@ -75,6 +95,7 @@ export default function NotificationBroadcast() {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [resendingId, setResendingId] = useState(null);
 
   // Specific-people picker
   const [recipientType, setRecipientType] = useState("USER");
@@ -184,7 +205,24 @@ export default function NotificationBroadcast() {
 
     const audienceText =
       form.targetType === "CUSTOM" ? `${selected.length} selected people` : audienceLabel.toLowerCase();
-    if (!window.confirm(`Send "${title}" to ${audienceText}?`)) return;
+    let scheduledIso = "";
+    if (form.scheduleEnabled) {
+      const when = form.scheduledAt ? new Date(form.scheduledAt) : null;
+      if (!when || Number.isNaN(when.getTime())) {
+        toast.error("Pick the date and time to send");
+        return;
+      }
+      if (when.getTime() < Date.now() + 60 * 1000) {
+        toast.error("Scheduled time must be at least 1 minute from now");
+        return;
+      }
+      scheduledIso = when.toISOString();
+    }
+
+    const confirmText = scheduledIso
+      ? `Schedule "${title}" for ${toDateLabel(scheduledIso)} to ${audienceText}?`
+      : `Send "${title}" to ${audienceText}?`;
+    if (!window.confirm(confirmText)) return;
 
     try {
       setSubmitting(true);
@@ -195,6 +233,7 @@ export default function NotificationBroadcast() {
         link,
         targetType: form.targetType,
         voipToken: form.voipToken.trim(),
+        ...(scheduledIso ? { scheduledAt: scheduledIso } : {}),
         targets:
           form.targetType === "CUSTOM"
             ? selected.map((item) => ({
@@ -206,6 +245,14 @@ export default function NotificationBroadcast() {
             : [],
       });
       const data = response?.data?.data || {};
+      if (data.scheduled) {
+        toast.success(`Notification scheduled for ${toDateLabel(data.scheduledAt)}`);
+        setForm(EMPTY_FORM);
+        setSelected([]);
+        setSearch("");
+        await loadHistory();
+        return;
+      }
       const total = data.recipientCount ?? data.targetPreview?.length ?? 0;
       const reach = data.pushReachable;
       const delivery = data.delivery || {};
@@ -239,9 +286,31 @@ export default function NotificationBroadcast() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleResend = async (item) => {
+    if (!item?._id) return;
+    if (!window.confirm(`Send "${item.title}" again to ${item.targetLabel || item.targetType}?`)) return;
+    try {
+      setResendingId(item._id);
+      const response = await adminAPI.resendBroadcastNotification(item._id);
+      const total = response?.data?.data?.recipientCount ?? 0;
+      toast.success(`Notification sent again to ${total} recipient(s)`);
+      window.dispatchEvent(new Event("adminBroadcastUpdated"));
+      await loadHistory();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Resend failed");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleDelete = async (item) => {
+    const id = item?._id;
     if (!id) return;
-    if (!window.confirm("Delete this notification from history and from everyone's in-app inbox?")) return;
+    const prompt =
+      item.status === "scheduled"
+        ? "Cancel this scheduled notification?"
+        : "Delete this notification from history and from everyone's in-app inbox?";
+    if (!window.confirm(prompt)) return;
     try {
       await adminAPI.deleteBroadcastNotification(id);
       window.dispatchEvent(new Event("adminBroadcastUpdated"));
@@ -455,6 +524,34 @@ export default function NotificationBroadcast() {
                 </label>
               </details>
 
+              {/* Schedule */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.scheduleEnabled}
+                    onChange={(event) => setForm((prev) => ({ ...prev, scheduleEnabled: event.target.checked }))}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <CalendarClock className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-xs font-semibold text-slate-700">Schedule for later</span>
+                </label>
+                {form.scheduleEnabled && (
+                  <div className="mt-2">
+                    <input
+                      type="datetime-local"
+                      value={form.scheduledAt}
+                      min={toLocalInputValue(new Date(Date.now() + 60 * 1000))}
+                      onChange={(event) => setForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
+                      className={inputClass}
+                    />
+                    <span className="text-[10px] text-slate-400">
+                      Sent automatically at this time (your local time). Group audiences are picked at send time.
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Preview */}
               <div>
                 <span className="text-xs font-semibold text-slate-700">Preview</span>
@@ -481,7 +578,11 @@ export default function NotificationBroadcast() {
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition-all w-full"
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                {form.targetType === "CUSTOM" ? `Send to ${selected.length} selected` : `Send to ${audienceLabel}`}
+                {form.scheduleEnabled
+                  ? "Schedule notification"
+                  : form.targetType === "CUSTOM"
+                    ? `Send to ${selected.length} selected`
+                    : `Send to ${audienceLabel}`}
               </button>
             </form>
           </div>
@@ -506,6 +607,7 @@ export default function NotificationBroadcast() {
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Message</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Sent to</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Recipients</th>
+                      <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Status</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider">Date</th>
                       <th className="px-3 py-2 text-[10px] font-bold text-slate-700 uppercase tracking-wider text-right">Action</th>
                     </tr>
@@ -530,16 +632,44 @@ export default function NotificationBroadcast() {
                           </span>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          <span className="text-[11px] text-slate-500">{toDateLabel(item?.createdAt)}</span>
+                          <span
+                            className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold capitalize ${
+                              STATUS_STYLES[item?.status] || STATUS_STYLES.sent
+                            }`}
+                          >
+                            {item?.status || "sent"}
+                          </span>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className="text-[11px] text-slate-500">
+                            {item?.status === "scheduled"
+                              ? toDateLabel(item?.scheduledAt)
+                              : toDateLabel(item?.sentAt || item?.createdAt)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                          {item?.status !== "scheduled" && item?.status !== "sending" && (
+                            <button
+                              type="button"
+                              onClick={() => handleResend(item)}
+                              disabled={resendingId === item?._id}
+                              className="mr-1 inline-flex items-center gap-1 rounded-md border border-blue-200 px-2 py-1 text-[10px] font-semibold text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-60"
+                            >
+                              {resendingId === item?._id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RotateCw className="w-3 h-3" />
+                              )}
+                              Resend
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleDelete(item?._id)}
+                            onClick={() => handleDelete(item)}
                             className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-[10px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="w-3 h-3" />
-                            Delete
+                            {item?.status === "scheduled" ? "Cancel" : "Delete"}
                           </button>
                         </td>
                       </tr>

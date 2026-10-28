@@ -3,6 +3,7 @@ import { loadEnvFromDb } from './src/config/envLoader.js';
 import { logger } from './src/utils/logger.js';
 import { expireExpiredOffers } from './src/modules/food/admin/services/admin.service.js';
 import { syncExpiredFssaiNotifications } from './src/modules/food/restaurant/services/fssaiExpiry.service.js';
+import { processDueScheduledBroadcasts } from './src/modules/food/admin/services/notificationBroadcast.service.js';
 import { config } from './src/config/env.js';
 
 const startScheduler = async () => {
@@ -43,6 +44,18 @@ const startScheduler = async () => {
         runFssaiExpirySync();
         setInterval(runFssaiExpirySync, 60 * 60 * 1000);
         
+        // Send admin broadcast notifications whose scheduled time has arrived
+        const runScheduledBroadcasts = async () => {
+            try {
+                const sent = await processDueScheduledBroadcasts();
+                if (sent > 0) logger.info(`Sent ${sent} scheduled broadcast(s)`);
+            } catch (err) {
+                logger.error(`Scheduled broadcast error: ${err.message}`);
+            }
+        };
+        runScheduledBroadcasts();
+        setInterval(runScheduledBroadcasts, 30 * 1000);
+
         // Create a simple HTTP server for health checks
         const http = await import('http');
         const server = http.createServer((req, res) => {
