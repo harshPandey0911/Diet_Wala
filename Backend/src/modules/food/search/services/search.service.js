@@ -31,7 +31,8 @@ export const searchUnified = async (query = {}, options = {}) => {
     const markupMultiplier = await getFoodMarkupMultiplier();
 
     // 1. Initial Filter (approved status and basic conditions)
-    // Offline restaurants stay searchable; ordering is blocked in createOrder.$1    const restaurantFilter = { status: 'approved' };
+    // Offline restaurants stay searchable; ordering is blocked in createOrder.
+    const restaurantFilter = { status: 'approved' };
     
     console.log(`[Search-Service] Querying with term: "${term}", categoryId: "${categoryId}", zoneId: "${zoneId}"`);
 

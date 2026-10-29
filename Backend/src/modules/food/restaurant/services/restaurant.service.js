@@ -1285,7 +1285,8 @@ export const listApprovedRestaurants = async (query = {}) => {
     const page = parseQueryPage(query.page, 1);
     const skip = (page - 1) * limit;
 
-    // Offline restaurants stay listed (shown greyed out by the app); ordering is blocked in createOrder.$1    const filter = { status: 'approved' };
+    // Offline restaurants stay listed (shown greyed out by the app); ordering is blocked in createOrder.
+    const filter = { status: 'approved' };
 
     const locOr = [];
     if (query.city && String(query.city).trim()) {
