@@ -1285,8 +1285,7 @@ export const listApprovedRestaurants = async (query = {}) => {
     const page = parseQueryPage(query.page, 1);
     const skip = (page - 1) * limit;
 
-    // Offline restaurants (toggle off) are hidden from customers until they switch back on.
-    const filter = { status: 'approved', isAcceptingOrders: { $ne: false } };
+    // Offline restaurants stay listed (shown greyed out by the app); ordering is blocked in createOrder.$1    const filter = { status: 'approved' };
 
     const locOr = [];
     if (query.city && String(query.city).trim()) {
@@ -1848,8 +1847,6 @@ export const listPublicOffers = async () => {
         .lean();
 
     const allOffers = list
-        // Hide offers that belong to a restaurant that is offline right now.
-        .filter((o) => !(o.restaurantId && typeof o.restaurantId === 'object' && o.restaurantId.isAcceptingOrders === false))
         .map((o) => {
         const restaurant = o.restaurantId && typeof o.restaurantId === 'object' ? o.restaurantId : null;
         const restaurantSlug = restaurant?.restaurantNameNormalized || undefined;

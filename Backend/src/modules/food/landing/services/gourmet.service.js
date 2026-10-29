@@ -13,10 +13,7 @@ export const getPublicGourmetRestaurants = async () => {
 
     const restaurantMap = new Map(restaurants.map((r) => [r._id.toString(), r]));
 
-    // Skip restaurants that are offline right now (toggle off).
-    const offlineIds = new Set(restaurants.filter((r) => r.isAcceptingOrders === false).map((r) => r._id.toString()));
-
-    return docs.filter((item) => !offlineIds.has(item.restaurantId.toString())).map((item) => {
+    return docs.map((item) => {
         const r = restaurantMap.get(item.restaurantId.toString());
         return {
             ...item,
@@ -33,7 +30,8 @@ export const getPublicGourmetRestaurants = async () => {
                 pureVegRestaurant: r.pureVegRestaurant,
                 location: r.location,
                 estimatedDeliveryTime: r.estimatedDeliveryTime,
-                zoneId: r.zoneId
+                zoneId: r.zoneId,
+                isAcceptingOrders: r.isAcceptingOrders !== false
             } : null
         };
     });

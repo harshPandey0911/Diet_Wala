@@ -31,8 +31,7 @@ export const searchUnified = async (query = {}, options = {}) => {
     const markupMultiplier = await getFoodMarkupMultiplier();
 
     // 1. Initial Filter (approved status and basic conditions)
-    // Offline restaurants (toggle off) are hidden from search.
-    const restaurantFilter = { status: 'approved', isAcceptingOrders: { $ne: false } };
+    // Offline restaurants stay searchable; ordering is blocked in createOrder.$1    const restaurantFilter = { status: 'approved' };
     
     console.log(`[Search-Service] Querying with term: "${term}", categoryId: "${categoryId}", zoneId: "${zoneId}"`);
 
@@ -209,7 +208,7 @@ export const searchUnified = async (query = {}, options = {}) => {
                         distanceField: 'distanceMeters',
                         maxDistance: maxRadius * 1000,
                         spherical: true,
-                        query: { status: 'approved', isAcceptingOrders: { $ne: false } },
+                        query: { status: 'approved' },
                     },
                 },
                 { $project: { _id: 1, distanceMeters: 1 } },

@@ -508,8 +508,7 @@ export async function listPublicApprovedFoods(query = {}) {
         isAvailable: { $ne: false }
     };
 
-    // Only dishes of approved restaurants that are online right now (toggle on).
-    const restaurantFilter = { status: 'approved', isAcceptingOrders: { $ne: false } };
+    // Dishes of offline restaurants stay listed; ordering is blocked in createOrder.$1    const restaurantFilter = { status: 'approved' };
     const zoneIdRaw = String(query.zoneId || '').trim();
     if (zoneIdRaw && mongoose.Types.ObjectId.isValid(zoneIdRaw)) {
         restaurantFilter.zoneId = new mongoose.Types.ObjectId(zoneIdRaw);

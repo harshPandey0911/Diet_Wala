@@ -144,7 +144,6 @@ export const getPublicLandingSettingsController = async (req, res, next) => {
             const query = { 
                 _id: { $in: ids }, 
                 status: 'approved',
-                isAcceptingOrders: { $ne: false },
                 zoneId: new mongoose.Types.ObjectId(zoneId)
             };
             recommendedRestaurants = await FoodRestaurant.find(query)
