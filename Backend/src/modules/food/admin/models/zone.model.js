@@ -68,6 +68,13 @@ const zoneSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
+        // Zone-wise app control: manual OFF plus daily hours (IST). Customers in this zone see
+        // "app is closed" and cannot order while it is off.
+        appManualOff: { type: Boolean, default: false },
+        appTimingEnabled: { type: Boolean, default: false },
+        appOpeningTime: { type: String, default: '08:00' },
+        appClosingTime: { type: String, default: '23:00' },
+        appClosedMessage: { type: String, default: '' },
         isActive: {
             type: Boolean,
             default: true,

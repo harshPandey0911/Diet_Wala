@@ -1,5 +1,6 @@
 import { FoodBusinessSettings } from '../models/businessSettings.model.js';
-import { getAppAvailability, isValidAppTime } from '../services/appAvailability.service.js';
+import { getAppAvailability, getZoneAppAvailability, isValidAppTime, ZONE_APP_FIELDS } from '../services/appAvailability.service.js';
+import { FoodZone } from '../models/zone.model.js';
 
 // Applies the app on/off hours fields from a request body onto the settings doc.
 // Returns an error message when a time is malformed, otherwise null.
@@ -247,6 +248,60 @@ export async function updateBusinessToggles(req, res, next) {
         const plain = settings.toObject ? settings.toObject() : settings;
         const payload = { ...plain, appStatus: getAppAvailability(plain) };
         return sendResponse(res, 200, 'Toggle settings updated successfully', payload);
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ----- Zone-wise app ON/OFF -----
+export async function listZoneAppStatus(req, res, next) {
+    try {
+        const zones = await FoodZone.find({ isActive: true }).select(ZONE_APP_FIELDS).sort({ name: 1 }).lean();
+        const data = zones.map((zone) => ({
+            _id: zone._id,
+            name: zone.name,
+            appManualOff: zone.appManualOff === true,
+            appTimingEnabled: zone.appTimingEnabled === true,
+            appOpeningTime: zone.appOpeningTime || '08:00',
+            appClosingTime: zone.appClosingTime || '23:00',
+            appClosedMessage: zone.appClosedMessage || '',
+            appStatus: getZoneAppAvailability(zone)
+        }));
+        return sendResponse(res, 200, 'Zone app status fetched successfully', { zones: data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateZoneAppStatus(req, res, next) {
+    try {
+        const zone = await FoodZone.findById(req.params.id);
+        if (!zone) return res.status(404).json({ success: false, message: 'Zone not found' });
+
+        const { appManualOff, appTimingEnabled, appOpeningTime, appClosingTime, appClosedMessage } = req.body || {};
+        if (appOpeningTime !== undefined && !isValidAppTime(appOpeningTime)) {
+            return res.status(400).json({ success: false, message: 'App opening time must be in HH:mm format' });
+        }
+        if (appClosingTime !== undefined && !isValidAppTime(appClosingTime)) {
+            return res.status(400).json({ success: false, message: 'App closing time must be in HH:mm format' });
+        }
+        if (appManualOff !== undefined) zone.appManualOff = appManualOff === true || appManualOff === 'true';
+        if (appTimingEnabled !== undefined) zone.appTimingEnabled = appTimingEnabled === true || appTimingEnabled === 'true';
+        if (appOpeningTime !== undefined) zone.appOpeningTime = String(appOpeningTime).trim();
+        if (appClosingTime !== undefined) zone.appClosingTime = String(appClosingTime).trim();
+        if (appClosedMessage !== undefined) zone.appClosedMessage = String(appClosedMessage || '').trim().slice(0, 200);
+
+        await zone.save();
+        return sendResponse(res, 200, 'Zone app status updated successfully', {
+            _id: zone._id,
+            name: zone.name,
+            appManualOff: zone.appManualOff,
+            appTimingEnabled: zone.appTimingEnabled,
+            appOpeningTime: zone.appOpeningTime,
+            appClosingTime: zone.appClosingTime,
+            appClosedMessage: zone.appClosedMessage,
+            appStatus: getZoneAppAvailability(zone.toObject())
+        });
     } catch (error) {
         next(error);
     }

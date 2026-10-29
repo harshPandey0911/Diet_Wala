@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminAPI } from "@food/api";
+import ZoneAppControl from "./ZoneAppControl";
 import { setCachedSettings } from "@food/utils/businessSettings";
 import { getUploadApiBaseUrl, getUploadTarget, isVpsUploadTargetAvailable, setUploadTarget, UPLOAD_TARGET_CHANGED_EVENT, UPLOAD_TARGETS } from "@/services/api/uploadTarget";
 
@@ -313,8 +314,8 @@ export default function ToggleManagement() {
 
               <div className="flex items-center justify-between border border-slate-100 p-4 rounded-xl bg-slate-50/50">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">App OFF (manual)</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Turn ON to close the whole app for customers right now. They see "App is closed" and cannot order until you turn it OFF.</p>
+                  <p className="text-sm font-semibold text-slate-800">App OFF - ALL zones (manual)</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Turn ON to close the app in every zone for customers right now (use Zone-wise App Control below to close one zone only). They see "App is closed" and cannot order until you turn it OFF.</p>
                 </div>
                 <button
                   type="button"
@@ -336,10 +337,12 @@ export default function ToggleManagement() {
                 </button>
               </div>
 
+              <ZoneAppControl />
+
               <div className="md:col-span-2 border border-slate-100 p-4 rounded-xl bg-slate-50/50 space-y-3">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">App Timings (daily open / close)</p>
+                    <p className="text-sm font-semibold text-slate-800">App Timings - ALL zones (daily open / close)</p>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Outside these hours (IST) customers see "App is closed, opens at ..." and cannot order. Closes automatically at closing time; opens automatically at opening time.
                     </p>

@@ -3,7 +3,7 @@ import { FoodOrder } from '../models/order.model.js';
 import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { FoodFeeSettings } from '../../admin/models/feeSettings.model.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
-import { getAppAvailability } from '../../admin/services/appAvailability.service.js';
+import { assertAppOpenForZone } from '../../admin/services/appAvailability.service.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
 import { FoodOfferUsage } from '../../admin/models/offerUsage.model.js';
 import { FoodZone } from '../../admin/models/zone.model.js';
@@ -27,20 +27,8 @@ export async function calculateOrderPricing(userId, dto) {
     .lean();
   if (!restaurant) throw new ValidationError("Restaurant not found");
 
-  const businessSettings = await FoodBusinessSettings.findOne().select('maintenanceMode appTimingEnabled appOpeningTime appClosingTime appClosedMessage').lean();
-  const appAvailability = getAppAvailability(businessSettings);
-  if (!appAvailability.isOpen) {
-    let isIndore = false;
-    if (restaurant.zoneId) {
-      const zone = await FoodZone.findById(restaurant.zoneId).select('name').lean();
-      if (zone && zone.name && zone.name.toLowerCase() === 'indore') {
-        isIndore = true;
-      }
-    }
-    if (!isIndore) {
-      throw new ValidationError(appAvailability.message || 'The app is closed right now. Please try again later.');
-    }
-  }
+  // App ON/OFF: platform-wide switch/hours and the restaurant zone's own switch/hours.
+  await assertAppOpenForZone(restaurant.zoneId);
 
   if (restaurant.status !== "approved")
     throw new ValidationError("Restaurant not available");

@@ -44,7 +44,7 @@ import {
     getPublicGourmetController,
     getPublicLandingSettingsController
 } from '../controllers/publicLanding.controller.js';
-import { detectZonePublicController, listZonesPublicController, listZonesNearbyPublicController } from '../controllers/zonePublic.controller.js';
+import { detectZonePublicController, listZonesPublicController, listZonesNearbyPublicController, getZoneAppStatusPublicController } from '../controllers/zonePublic.controller.js';
 import { getPublicEnvController } from '../controllers/publicEnv.controller.js';
 import {
     listGourmetAdmin,
@@ -134,6 +134,7 @@ router.get('/landing/settings/public', getPublicLandingSettingsController);
 router.get('/location/reverse-geocode', reverseGeocodePublicController);
 router.post('/location/distance', computeDistancePublicController);
 router.get('/zones/detect', detectZonePublicController);
+router.get('/zones/app-status', getZoneAppStatusPublicController);
 router.get('/zones/nearby', listZonesNearbyPublicController);
 router.get('/zones/public', listZonesPublicController);
 router.get('/public/env', getPublicEnvController);

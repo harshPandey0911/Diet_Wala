@@ -1,19 +1,25 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Moon } from "lucide-react"
-import { loadBusinessSettings } from "@food/utils/businessSettings"
+import { zoneAPI } from "@food/api"
+import { readStoredZoneContext } from "@food/utils/locationPersistence"
 
-const POLL_MS = 60 * 1000
+const POLL_MS = 30 * 1000
 
 // Blocks the whole customer app with a "closed" screen while the admin has the app switched
-// off (manually or by daily timings). Status comes from the server so the clock is IST-correct.
+// off for the customer's zone (or platform-wide), manually or by daily timings. Status comes
+// from the server so the clock is IST-correct.
 // If settings cannot be loaded the app stays usable.
 export default function AppClosedGate({ children }) {
   const [status, setStatus] = useState(null)
+  const lastZoneRef = useRef(undefined)
 
   const refresh = useCallback(async () => {
     try {
-      const settings = await loadBusinessSettings({ force: true })
-      setStatus(settings?.appStatus || null)
+      // Platform-wide + the customer's zone (zone is persisted by useZone once detected).
+      const { zoneId } = readStoredZoneContext()
+      lastZoneRef.current = zoneId || null
+      const response = await zoneAPI.getAppStatus(zoneId || null)
+      setStatus(response?.data?.data?.appStatus || null)
     } catch {
       // keep the last known status
     }
@@ -22,6 +28,11 @@ export default function AppClosedGate({ children }) {
   useEffect(() => {
     refresh()
     const timer = setInterval(refresh, POLL_MS)
+    // Re-check right away when the customer's zone gets detected or changes.
+    const zoneWatch = setInterval(() => {
+      const current = readStoredZoneContext().zoneId || null
+      if (current !== lastZoneRef.current) refresh()
+    }, 2000)
     const onVisible = () => {
       if (document.visibilityState === "visible") refresh()
     }
@@ -29,6 +40,7 @@ export default function AppClosedGate({ children }) {
     window.addEventListener("focus", refresh)
     return () => {
       clearInterval(timer)
+      clearInterval(zoneWatch)
       document.removeEventListener("visibilitychange", onVisible)
       window.removeEventListener("focus", refresh)
     }

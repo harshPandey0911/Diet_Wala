@@ -753,6 +753,10 @@ export const adminAPI = {
   },
   updateBusinessToggles: (body) =>
     adminClient.patch("/food/admin/business-settings/toggles", body ?? {}),
+  /** Zone-wise app ON/OFF + daily hours */
+  getZoneAppStatus: () => adminClient.get("/food/admin/zones/app-status"),
+  updateZoneAppStatus: (zoneId, body) =>
+    adminClient.patch(`/food/admin/zones/${zoneId}/app-status`, body ?? {}),
 };
 
 /** Restaurant API - OTP login via new backend; no email/password. */
@@ -1992,6 +1996,11 @@ export const zoneAPI = {
   detectZone: (lat, lng) =>
     userClient.get("/food/zones/detect", {
       params: { lat, lng },
+    }),
+  /** Public: is the app open for customers in this zone (platform-wide + zone-wise). */
+  getAppStatus: (zoneId) =>
+    userClient.get("/food/zones/app-status", {
+      params: { ...(zoneId ? { zoneId } : {}), _t: Date.now() },
     }),
   /** Public: list active zones (for onboarding dropdowns). */
   getPublicZones: (params = {}, config = {}) =>

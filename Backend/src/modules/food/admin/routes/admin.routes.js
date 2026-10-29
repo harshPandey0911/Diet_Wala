@@ -226,6 +226,8 @@ router.patch('/delivery/:id/availability', adminController.updateDeliveryPartner
 router.delete('/delivery/:id', adminController.deleteDeliveryPartner);
 
 // ----- Zones -----
+router.get('/zones/app-status', businessSettingsController.listZoneAppStatus);
+router.patch('/zones/:id/app-status', businessSettingsController.updateZoneAppStatus);
 router.get('/zones', adminController.getZones);
 router.get('/zones/:id', adminController.getZoneById);
 router.post('/zones', adminController.createZone);
