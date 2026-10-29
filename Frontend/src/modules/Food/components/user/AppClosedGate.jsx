@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Moon } from "lucide-react"
+import { Loader2, Moon } from "lucide-react"
 import { zoneAPI } from "@food/api"
 import { readStoredZoneContext } from "@food/utils/locationPersistence"
 
@@ -11,6 +11,7 @@ const POLL_MS = 30 * 1000
 // If settings cannot be loaded the app stays usable.
 export default function AppClosedGate({ children }) {
   const [status, setStatus] = useState(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const lastZoneRef = useRef(undefined)
 
   const refresh = useCallback(async () => {
@@ -24,6 +25,14 @@ export default function AppClosedGate({ children }) {
       // keep the last known status
     }
   }, [])
+
+  // Manual refresh: show a short "checking" state, then reload the page so it feels like a real refresh.
+  const handleManualRefresh = useCallback(async () => {
+    if (isRefreshing) return
+    setIsRefreshing(true)
+    await Promise.all([refresh(), new Promise((resolve) => setTimeout(resolve, 900))])
+    window.location.reload()
+  }, [isRefreshing, refresh])
 
   useEffect(() => {
     refresh()
@@ -66,10 +75,12 @@ export default function AppClosedGate({ children }) {
       )}
       <button
         type="button"
-        onClick={refresh}
-        className="mt-6 px-5 py-2 rounded-full bg-[#FFC700] text-black text-sm font-extrabold active:scale-95 transition-transform"
+        onClick={handleManualRefresh}
+        disabled={isRefreshing}
+        className="mt-6 px-5 py-2 rounded-full bg-[#FFC700] text-black text-sm font-extrabold active:scale-95 transition-transform inline-flex items-center gap-2 disabled:opacity-80"
       >
-        Refresh
+        {isRefreshing && <Loader2 className="w-4 h-4 animate-spin" />}
+        {isRefreshing ? "Checking..." : "Refresh"}
       </button>
     </div>
   )
