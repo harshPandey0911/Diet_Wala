@@ -8,7 +8,8 @@ import { getUploadApiBaseUrl, getUploadTarget, isVpsUploadTargetAvailable, setUp
 const TOGGLE_LABELS = {
   onlinePaymentOnly: "Online payment only",
   razorpayDisabled: "Razorpay payments",
-  maintenanceMode: "Maintenance mode",
+  maintenanceMode: "App ON/OFF",
+  appHours: "App timings",
   northeastUserPreview: "Northeast preview for 7879363299",
   customerRegistration: "Customer registration",
   restaurantRegistration: "Restaurant registration",
@@ -26,6 +27,10 @@ export default function ToggleManagement() {
     razorpayDisabled: false,
     maxCodAmount: 0,
     maintenanceMode: false,
+    appTimingEnabled: false,
+    appOpeningTime: "08:00",
+    appClosingTime: "23:00",
+    appClosedMessage: "",
     northeastUserPreview: false,
     customerRegistration: true,
     restaurantRegistration: true,
@@ -65,6 +70,10 @@ export default function ToggleManagement() {
           razorpayDisabled: settings.razorpayDisabled === true,
           maxCodAmount: settings.maxCodAmount || 0,
           maintenanceMode: settings.maintenanceMode || false,
+          appTimingEnabled: settings.appTimingEnabled === true,
+          appOpeningTime: settings.appOpeningTime || "08:00",
+          appClosingTime: settings.appClosingTime || "23:00",
+          appClosedMessage: settings.appClosedMessage || "",
           northeastUserPreview: settings.northeastUserPreview === true,
           customerRegistration: settings.customerRegistration !== false,
           restaurantRegistration: settings.restaurantRegistration !== false,
@@ -304,8 +313,8 @@ export default function ToggleManagement() {
 
               <div className="flex items-center justify-between border border-slate-100 p-4 rounded-xl bg-slate-50/50">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">Maintenance Mode</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Suspend all customer ordering temporarily</p>
+                  <p className="text-sm font-semibold text-slate-800">App OFF (manual)</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Turn ON to close the whole app for customers right now. They see "App is closed" and cannot order until you turn it OFF.</p>
                 </div>
                 <button
                   type="button"
@@ -325,6 +334,89 @@ export default function ToggleManagement() {
                     />
                   )}
                 </button>
+              </div>
+
+              <div className="md:col-span-2 border border-slate-100 p-4 rounded-xl bg-slate-50/50 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">App Timings (daily open / close)</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Outside these hours (IST) customers see "App is closed, opens at ..." and cannot order. Closes automatically at closing time; opens automatically at opening time.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Toggle app timings"
+                    disabled={isSaving("appHours")}
+                    onClick={() => {
+                      const next = !toggles.appTimingEnabled;
+                      setToggles((prev) => ({ ...prev, appTimingEnabled: next }));
+                      persistToggles({ appTimingEnabled: next }, "appHours").catch(() => {});
+                    }}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-60 ${
+                      toggles.appTimingEnabled ? "bg-blue-600" : "bg-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        toggles.appTimingEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+                {toggles.appTimingEnabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="text-xs font-semibold text-slate-600">
+                      Opening time
+                      <input
+                        type="time"
+                        value={toggles.appOpeningTime}
+                        onChange={(e) => handleInputChange("appOpeningTime", e.target.value)}
+                        className="mt-1 block w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold text-slate-600">
+                      Closing time
+                      <input
+                        type="time"
+                        value={toggles.appClosingTime}
+                        onChange={(e) => handleInputChange("appClosingTime", e.target.value)}
+                        className="mt-1 block w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold text-slate-600 sm:col-span-2">
+                      Custom message (optional)
+                      <input
+                        type="text"
+                        maxLength={200}
+                        placeholder="e.g. We are closed for the night. See you in the morning!"
+                        value={toggles.appClosedMessage}
+                        onChange={(e) => handleInputChange("appClosedMessage", e.target.value)}
+                        className="mt-1 block w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <div className="sm:col-span-2">
+                      <button
+                        type="button"
+                        disabled={isSaving("appHours")}
+                        onClick={() =>
+                          persistToggles(
+                            {
+                              appTimingEnabled: true,
+                              appOpeningTime: toggles.appOpeningTime,
+                              appClosingTime: toggles.appClosingTime,
+                              appClosedMessage: toggles.appClosedMessage,
+                            },
+                            "appHours",
+                          ).catch(() => {})
+                        }
+                        className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                      >
+                        {isSaving("appHours") ? "Saving..." : "Save timings"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between border border-amber-200 p-4 rounded-xl bg-amber-50/50 gap-4">

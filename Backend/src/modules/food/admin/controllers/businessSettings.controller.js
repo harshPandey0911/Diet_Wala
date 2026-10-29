@@ -1,4 +1,18 @@
 import { FoodBusinessSettings } from '../models/businessSettings.model.js';
+import { getAppAvailability, isValidAppTime } from '../services/appAvailability.service.js';
+
+// Applies the app on/off hours fields from a request body onto the settings doc.
+// Returns an error message when a time is malformed, otherwise null.
+const applyAppHours = (settings, body) => {
+    const { appTimingEnabled, appOpeningTime, appClosingTime, appClosedMessage } = body || {};
+    if (appOpeningTime !== undefined && !isValidAppTime(appOpeningTime)) return 'App opening time must be in HH:mm format';
+    if (appClosingTime !== undefined && !isValidAppTime(appClosingTime)) return 'App closing time must be in HH:mm format';
+    if (appTimingEnabled !== undefined) settings.appTimingEnabled = appTimingEnabled === true || appTimingEnabled === 'true';
+    if (appOpeningTime !== undefined) settings.appOpeningTime = String(appOpeningTime).trim();
+    if (appClosingTime !== undefined) settings.appClosingTime = String(appClosingTime).trim();
+    if (appClosedMessage !== undefined) settings.appClosedMessage = String(appClosedMessage || '').trim().slice(0, 200);
+    return null;
+};
 import { clearRazorpayDisabledCache } from '../../orders/helpers/razorpay.helper.js';
 import { sendResponse } from '../../../../utils/response.js';
 import { uploadGenericImage, uploadFileBuffer } from '../../../../services/upload.service.js';
@@ -13,7 +27,7 @@ export async function getBusinessSettings(req, res, next) {
                 email: 'admin@dietvala.com'
             });
         }
-        return sendResponse(res, 200, 'Business settings fetched successfully', settings);
+        return sendResponse(res, 200, 'Business settings fetched successfully', { ...settings, appStatus: getAppAvailability(settings) });
     } catch (error) {
         next(error);
     }
@@ -131,6 +145,8 @@ export async function updateBusinessSettings(req, res, next) {
         if (maintenanceMode !== undefined) {
             settings.maintenanceMode = Boolean(maintenanceMode === 'true' || maintenanceMode === true);
         }
+        const appHoursError = applyAppHours(settings, data);
+        if (appHoursError) return res.status(400).json({ success: false, message: appHoursError });
         if (northeastUserPreview !== undefined) {
             settings.northeastUserPreview = Boolean(northeastUserPreview === 'true' || northeastUserPreview === true);
         }
@@ -211,6 +227,8 @@ export async function updateBusinessToggles(req, res, next) {
         if (maintenanceMode !== undefined) {
             settings.maintenanceMode = Boolean(maintenanceMode);
         }
+        const appHoursError = applyAppHours(settings, req.body);
+        if (appHoursError) return res.status(400).json({ success: false, message: appHoursError });
         if (northeastUserPreview !== undefined) {
             settings.northeastUserPreview = Boolean(northeastUserPreview);
         }
@@ -226,7 +244,8 @@ export async function updateBusinessToggles(req, res, next) {
 
         await settings.save();
         clearRazorpayDisabledCache();
-        const payload = settings.toObject ? settings.toObject() : settings;
+        const plain = settings.toObject ? settings.toObject() : settings;
+        const payload = { ...plain, appStatus: getAppAvailability(plain) };
         return sendResponse(res, 200, 'Toggle settings updated successfully', payload);
     } catch (error) {
         next(error);

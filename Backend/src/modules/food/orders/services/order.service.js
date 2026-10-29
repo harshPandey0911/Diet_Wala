@@ -8,6 +8,7 @@ import { FoodDeliveryPartner } from '../../delivery/models/deliveryPartner.model
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodFeeSettings } from '../../admin/models/feeSettings.model.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
+import { getAppAvailability } from '../../admin/services/appAvailability.service.js';
 import { ValidationError, ForbiddenError, NotFoundError } from '../../../../core/auth/errors.js';
 import { buildPaginationOptions, buildPaginatedResult, parseQueryLimit, parseQueryPage } from '../../../../utils/helpers.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
@@ -139,8 +140,9 @@ export async function createOrder(userId, dto) {
     .lean();
   if (!restaurant) throw new ValidationError("Restaurant not found");
 
-  const businessSettings = await FoodBusinessSettings.findOne().select('maintenanceMode').lean();
-  if (businessSettings?.maintenanceMode) {
+  const businessSettings = await FoodBusinessSettings.findOne().select('maintenanceMode appTimingEnabled appOpeningTime appClosingTime appClosedMessage').lean();
+  const appAvailability = getAppAvailability(businessSettings);
+  if (!appAvailability.isOpen) {
     let isIndore = false;
     if (restaurant.zoneId) {
       const zone = await FoodZone.findById(restaurant.zoneId).select('name').lean();
@@ -149,7 +151,7 @@ export async function createOrder(userId, dto) {
       }
     }
     if (!isIndore) {
-      throw new ValidationError('Ordering is temporarily unavailable due to maintenance. Please try again later.');
+      throw new ValidationError(appAvailability.message || 'The app is closed right now. Please try again later.');
     }
   }
 

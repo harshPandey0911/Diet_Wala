@@ -38,7 +38,13 @@ const businessSettingsSchema = new mongoose.Schema(
         // When true, no new Razorpay/online payment can be started anywhere on the platform.
         razorpayDisabled: { type: Boolean, default: false },
         maxCodAmount: { type: Number, default: 0 }, // 0 means no limit
+        // Manual "app OFF" switch: closes the whole app for customers until the admin turns it back on.
         maintenanceMode: { type: Boolean, default: false },
+        // Daily app hours (IST). When appTimingEnabled, the app is closed outside opening..closing.
+        appTimingEnabled: { type: Boolean, default: false },
+        appOpeningTime: { type: String, default: '08:00' },
+        appClosingTime: { type: String, default: '23:00' },
+        appClosedMessage: { type: String, default: '' },
         // Targeted catalogue preview used by the 7879363299 customer account.
         // This only changes the user-home data source; checkout keeps using the real address/zone.
         northeastUserPreview: { type: Boolean, default: false },

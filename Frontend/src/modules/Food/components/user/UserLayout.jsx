@@ -10,6 +10,7 @@ import { UserNotificationProvider } from "@food/context/UserNotificationContext"
 import { LocationProvider } from "@food/context/LocationProvider"
 import { useAppLocation } from "@food/hooks/useAppLocation"
 import LocationGuard from "./LocationGuard"
+import AppClosedGate from "./AppClosedGate"
 import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging"
 
 const debugWarn = (...args) => {}
@@ -157,7 +158,9 @@ export default function UserLayout() {
               <SearchOverlayProvider>
                 <LocationSelectorProvider>
                   <UserNotificationProvider>
-                    <UserLayoutShell />
+                    <AppClosedGate>
+                      <UserLayoutShell />
+                    </AppClosedGate>
                   </UserNotificationProvider>
                 </LocationSelectorProvider>
               </SearchOverlayProvider>

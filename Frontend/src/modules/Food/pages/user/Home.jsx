@@ -2377,9 +2377,10 @@ export default function Home() {
                       const restaurantSlug = restaurant.slug || (restaurant.name ? restaurant.name.toLowerCase().replace(/\s+/g, "-") : `res-${idx}`);
                       const restaurantRouteIdentifier = getRestaurantRouteIdentifier(restaurant, restaurantSlug);
                       const bgBadge = idx % 2 === 0 ? "Bestseller" : (idx % 3 === 0 ? "Popular" : null);
+                      const isOfflineCard = !getRestaurantAvailabilityStatus(restaurant, new Date()).isOpen;
 
                       return (
-                        <div key={restaurant.mongoId || restaurant.id || idx} className="min-w-[145px] max-w-[145px] sm:min-w-[165px] sm:max-w-[165px] bg-white dark:bg-[#161616] rounded-2xl border border-gray-100 dark:border-gray-800/80 shadow-xs overflow-hidden flex flex-col justify-between group">
+                        <div key={restaurant.mongoId || restaurant.id || idx} className={`min-w-[145px] max-w-[145px] sm:min-w-[165px] sm:max-w-[165px] bg-white dark:bg-[#161616] rounded-2xl border border-gray-100 dark:border-gray-800/80 shadow-xs overflow-hidden flex flex-col justify-between group ${isOfflineCard ? "grayscale opacity-75" : ""}`}>
                           <Link to={`/user/restaurants/${restaurantRouteIdentifier}`} className="block">
                             {/* Image Container with Badge */}
                             <div className="relative h-24 sm:h-28 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
@@ -2393,7 +2394,9 @@ export default function Home() {
                                   roundedClass="rounded-t-2xl"
                                 />
                               )}
-                              {bgBadge && (
+                              {isOfflineCard ? (
+                                <span className="absolute top-1.5 left-1.5 bg-gray-800 text-white font-black text-[9px] px-2 py-0.5 rounded-md shadow-xs z-10">Offline</span>
+                              ) : bgBadge && (
                                 <span className="absolute top-1.5 left-1.5 bg-[#FFC700] text-black font-black text-[9px] px-2 py-0.5 rounded-md shadow-xs z-10">
                                   {bgBadge}
                                 </span>
@@ -2416,7 +2419,9 @@ export default function Home() {
                             </span>
                             <Link 
                               to={`/user/restaurants/${restaurantRouteIdentifier}`}
-                              className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#FFC700] hover:bg-[#E6B800] text-black flex items-center justify-center shadow-xs active:scale-90 transition-transform"
+                              onClick={(e) => { if (isOfflineCard) e.preventDefault(); }}
+                              aria-disabled={isOfflineCard}
+                              className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#FFC700] hover:bg-[#E6B800] text-black flex items-center justify-center shadow-xs active:scale-90 transition-transform ${isOfflineCard ? "cursor-not-allowed" : ""}`}
                               aria-label="View meal details"
                             >
                               <Plus className="w-5 h-5 text-black" strokeWidth={3} />
