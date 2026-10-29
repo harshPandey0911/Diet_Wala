@@ -232,7 +232,7 @@ export default function useAdminNotifications(options = {}) {
         deliverySupportRes,
         fssaiExpiredRes,
         offlineRestaurantsRes,
-      ] = await Promise.all([
+      ] = (await Promise.allSettled([
         adminAPI.getPendingRestaurants(),
         adminAPI.getDeliveryPartnerJoinRequests({ page: 1, limit: 50 }),
         adminAPI.getPendingFoodApprovals({ page: 1, limit: 50 }),
@@ -240,7 +240,7 @@ export default function useAdminNotifications(options = {}) {
         adminAPI.getDeliverySupportTickets({ page: 1, limit: 50 }),
         adminAPI.getExpiredFssaiNotifications(),
         adminAPI.getOfflineRestaurants().catch(() => null),
-      ]);
+      ])).map((result) => result.status === "fulfilled" ? result.value : null);
 
       const restaurantRows =
         restaurantsRes?.data?.data ||
@@ -282,10 +282,13 @@ export default function useAdminNotifications(options = {}) {
   }, [loadNotifications]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      loadNotifications();
-    }, 5 * 60 * 1000);
-    return () => window.clearInterval(timer);
+    const refresh = () => loadNotifications();
+    const timer = window.setInterval(refresh, 20 * 1000);
+    window.addEventListener("adminBadgesRefresh", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("adminBadgesRefresh", refresh);
+    };
   }, [loadNotifications]);
 
   const dismissOne = useCallback((id) => {
