@@ -13,7 +13,7 @@ export const registerDeliveryPartner = async (payload, files) => {
         name, phone, email, countryCode, address, city, state, 
         vehicleType, vehicleName, vehicleNumber, drivingLicenseNumber, panNumber, aadharNumber,
         fcmToken, platform,
-        bankAccountHolderName, bankAccountNumber, bankIfscCode, bankName
+        bankAccountHolderName, bankAccountNumber, bankIfscCode, bankName, upiId
     } = payload;
     const refRaw = typeof payload?.ref === 'string' ? String(payload.ref).trim() : '';
 
@@ -76,6 +76,10 @@ export const registerDeliveryPartner = async (payload, files) => {
         images.rcPhoto = String(payload.rcPhoto).trim();
     }
 
+    if (files?.upiQrCode?.[0]) {
+        images.upiQrCode = await uploadDeliveryImage(files.upiQrCode[0].buffer);
+    }
+
     const partner = await FoodDeliveryPartner.create({
         name,
         phone,
@@ -94,6 +98,7 @@ export const registerDeliveryPartner = async (payload, files) => {
         bankAccountNumber,
         bankIfscCode: String(bankIfscCode || '').toUpperCase(),
         bankName,
+        upiId: upiId ? String(upiId).trim() : undefined,
         status: 'pending',
         ...images
     });
@@ -151,10 +156,11 @@ export const updateDeliveryPartnerProfile = async (userId, payload, files) => {
         name, countryCode, address, city, state,
         vehicleType, vehicleName, vehicleNumber, drivingLicenseNumber, panNumber, aadharNumber,
         fcmToken, platform,
-        bankAccountHolderName, bankAccountNumber, bankIfscCode, bankName
+        bankAccountHolderName, bankAccountNumber, bankIfscCode, bankName, upiId
     } = payload;
 
     if (name) partner.name = name;
+    if (upiId !== undefined) partner.upiId = String(upiId).trim();
     if (bankAccountHolderName) partner.bankAccountHolderName = bankAccountHolderName;
     if (bankAccountNumber) partner.bankAccountNumber = bankAccountNumber;
     if (bankIfscCode) partner.bankIfscCode = String(bankIfscCode).toUpperCase();
@@ -186,6 +192,9 @@ export const updateDeliveryPartnerProfile = async (userId, payload, files) => {
 
     if (files?.profilePhoto?.[0]) {
         partner.profilePhoto = await uploadDeliveryImage(files.profilePhoto[0].buffer);
+    }
+    if (files?.upiQrCode?.[0]) {
+        partner.upiQrCode = await uploadDeliveryImage(files.upiQrCode[0].buffer);
     }
 
     await partner.save();

@@ -40,6 +40,8 @@ const deliveryRegisterSchema = z.object({
         .trim()
         .regex(ifscRegex, 'Enter a valid IFSC code (e.g. SBIN0001234)'),
     bankName: z.string({ required_error: 'Bank name is required' }).trim().min(1, 'Bank name is required').max(100),
+    // UPI ID and QR code are optional extras.
+    upiId: z.string().trim().max(100).optional().or(z.literal('')),
     panNumber: z
         .string()
         .regex(panRegex, 'Invalid PAN format')
@@ -80,6 +82,7 @@ const deliveryProfileUpdateSchema = z.object({
     bankAccountNumber: z.string().trim().regex(bankAccountRegex, 'Enter a valid bank account number (9-18 digits)').optional().or(z.literal('')),
     bankIfscCode: z.string().trim().regex(ifscRegex, 'Enter a valid IFSC code (e.g. SBIN0001234)').optional().or(z.literal('')),
     bankName: z.string().trim().max(100).optional(),
+    upiId: z.string().trim().max(100).optional().or(z.literal('')),
     fcmToken: z.string().optional().nullable(),
     platform: z.enum(['web', 'mobile']).optional().default('web')
 });

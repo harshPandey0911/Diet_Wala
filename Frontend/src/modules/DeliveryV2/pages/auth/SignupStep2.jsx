@@ -17,7 +17,8 @@ const createEmptyUploadedDocs = () => ({
   panPhoto: null,
   drivingLicenseFrontPhoto: null,
   drivingLicenseBackPhoto: null,
-  rcPhoto: null
+  rcPhoto: null,
+  upiQrCode: null
 })
 
 // IndexedDB helpers for persistent file storage
@@ -109,7 +110,8 @@ const EMPTY_BANK = {
   accountHolderName: "",
   accountNumber: "",
   ifscCode: "",
-  bankName: ""
+  bankName: "",
+  upiId: ""
 }
 
 const getBankValidationError = (bank) => {
@@ -121,6 +123,10 @@ const getBankValidationError = (bank) => {
     return "Enter a valid IFSC code (e.g. SBIN0001234)"
   }
   if (!String(bank.bankName || "").trim()) return "Bank name is required"
+  // UPI ID is optional; only check the format when entered.
+  if (String(bank.upiId || "").trim() && !/^[A-Za-z0-9._-]{2,}@[A-Za-z0-9]{2,}$/.test(String(bank.upiId).trim())) {
+    return "Enter a valid UPI ID (e.g. name@upi)"
+  }
   return ""
 }
 
@@ -149,7 +155,8 @@ const sanitizeUploadedDocs = (docs) => ({
   panPhoto: sanitizeUploadedDocValue(docs?.panPhoto),
   drivingLicenseFrontPhoto: sanitizeUploadedDocValue(docs?.drivingLicenseFrontPhoto),
   drivingLicenseBackPhoto: sanitizeUploadedDocValue(docs?.drivingLicenseBackPhoto),
-  rcPhoto: sanitizeUploadedDocValue(docs?.rcPhoto)
+  rcPhoto: sanitizeUploadedDocValue(docs?.rcPhoto),
+  upiQrCode: sanitizeUploadedDocValue(docs?.upiQrCode)
 })
 
 const compressImageToWebP = (file, maxWidth = 1024, quality = 0.8) => {
@@ -226,7 +233,8 @@ export default function SignupStep2() {
     panPhoto: null,
     drivingLicenseFrontPhoto: null,
     drivingLicenseBackPhoto: null,
-    rcPhoto: null
+    rcPhoto: null,
+    upiQrCode: null
   })
   const [documents, setDocuments] = useState({
     profilePhoto: null,
@@ -235,7 +243,8 @@ export default function SignupStep2() {
     panPhoto: null,
     drivingLicenseFrontPhoto: null,
     drivingLicenseBackPhoto: null,
-    rcPhoto: null
+    rcPhoto: null,
+    upiQrCode: null
   })
   const [uploadedDocs, setUploadedDocs] = useState(() => {
     const saved = localStorage.getItem("deliverySignupDocs")
@@ -268,14 +277,15 @@ export default function SignupStep2() {
     document.body.scrollTop = 0
     
     const loadFiles = async () => {
-      const [prof, aadharFront, aadharBack, pan, dlFront, dlBack, rc] = await Promise.all([
+      const [prof, aadharFront, aadharBack, pan, dlFront, dlBack, rc, upiQr] = await Promise.all([
         getFileFromDB("profilePhoto"),
         getFileFromDB("aadharFrontPhoto"),
         getFileFromDB("aadharBackPhoto"),
         getFileFromDB("panPhoto"),
         getFileFromDB("drivingLicenseFrontPhoto"),
         getFileFromDB("drivingLicenseBackPhoto"),
-        getFileFromDB("rcPhoto")
+        getFileFromDB("rcPhoto"),
+        getFileFromDB("upiQrCode")
       ])
       
       setDocuments(prev => ({
@@ -286,7 +296,8 @@ export default function SignupStep2() {
         ...(pan && { panPhoto: pan }),
         ...(dlFront && { drivingLicenseFrontPhoto: dlFront }),
         ...(dlBack && { drivingLicenseBackPhoto: dlBack }),
-        ...(rc && { rcPhoto: rc })
+        ...(rc && { rcPhoto: rc }),
+        ...(upiQr && { upiQrCode: upiQr })
       }))
 
       setUploadedDocs(prev => ({
@@ -297,7 +308,8 @@ export default function SignupStep2() {
         ...(pan && { panPhoto: { file: true } }),
         ...(dlFront && { drivingLicenseFrontPhoto: { file: true } }),
         ...(dlBack && { drivingLicenseBackPhoto: { file: true } }),
-        ...(rc && { rcPhoto: { file: true } })
+        ...(rc && { rcPhoto: { file: true } }),
+        ...(upiQr && { upiQrCode: { file: true } })
       }))
     }
     loadFiles()
@@ -464,6 +476,7 @@ export default function SignupStep2() {
     formData.append("bankAccountNumber", bank.accountNumber.trim())
     formData.append("bankIfscCode", bank.ifscCode.trim().toUpperCase())
     formData.append("bankName", bank.bankName.trim())
+    if (bank.upiId.trim()) formData.append("upiId", bank.upiId.trim())
 
     const appendFileToForm = (formData, key, fileData, filename) => {
       if (!fileData) return;
@@ -489,6 +502,7 @@ export default function SignupStep2() {
     appendFileToForm(formData, "drivingLicenseFrontPhoto", documents.drivingLicenseFrontPhoto, "dl_front.webp");
     appendFileToForm(formData, "drivingLicenseBackPhoto", documents.drivingLicenseBackPhoto, "dl_back.webp");
     appendFileToForm(formData, "rcPhoto", documents.rcPhoto, "rc.webp");
+    appendFileToForm(formData, "upiQrCode", documents.upiQrCode, "upi_qr.webp");
 
     // Try to get FCM token before registering
     let fcmToken = null;
@@ -706,11 +720,12 @@ export default function SignupStep2() {
               { key: "accountHolderName", label: "Account Holder Name", placeholder: "Name as per bank account", inputMode: "text" },
               { key: "accountNumber", label: "Account Number", placeholder: "Bank account number", inputMode: "numeric" },
               { key: "ifscCode", label: "IFSC Code", placeholder: "e.g. SBIN0001234", inputMode: "text" },
-              { key: "bankName", label: "Bank Name", placeholder: "e.g. State Bank of India", inputMode: "text" }
+              { key: "bankName", label: "Bank Name", placeholder: "e.g. State Bank of India", inputMode: "text" },
+              { key: "upiId", label: "UPI ID (Optional)", placeholder: "e.g. name@upi", inputMode: "text", optional: true }
             ].map((field) => (
               <div key={field.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {field.label} <span className="text-red-500">*</span>
+                  {field.label} {!field.optional && <span className="text-red-500">*</span>}
                 </label>
                 <input
                   type="text"
@@ -719,12 +734,14 @@ export default function SignupStep2() {
                   onChange={(e) => handleBankChange(field.key, e.target.value)}
                   placeholder={field.placeholder}
                   autoComplete="off"
-                  required
+                  required={!field.optional}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00B761]/30 focus:border-[#00B761]"
                 />
               </div>
             ))}
           </div>
+
+          <DocumentUpload docType="upiQrCode" label="UPI QR Code (Optional)" required={false} />
 
           <DocumentUpload docType="drivingLicenseFrontPhoto" label="Driving License (Front) (Optional)" required={false} />
           <DocumentUpload docType="drivingLicenseBackPhoto" label="Driving License (Back) (Optional)" required={false} />
