@@ -12,7 +12,8 @@ export const registerDeliveryPartner = async (payload, files) => {
     const { 
         name, phone, email, countryCode, address, city, state, 
         vehicleType, vehicleName, vehicleNumber, drivingLicenseNumber, panNumber, aadharNumber,
-        fcmToken, platform 
+        fcmToken, platform,
+        bankAccountHolderName, bankAccountNumber, bankIfscCode, bankName
     } = payload;
     const refRaw = typeof payload?.ref === 'string' ? String(payload.ref).trim() : '';
 
@@ -89,6 +90,10 @@ export const registerDeliveryPartner = async (payload, files) => {
         drivingLicenseNumber,
         panNumber,
         aadharNumber,
+        bankAccountHolderName,
+        bankAccountNumber,
+        bankIfscCode: String(bankIfscCode || '').toUpperCase(),
+        bankName,
         status: 'pending',
         ...images
     });
@@ -145,10 +150,15 @@ export const updateDeliveryPartnerProfile = async (userId, payload, files) => {
     const {
         name, countryCode, address, city, state,
         vehicleType, vehicleName, vehicleNumber, drivingLicenseNumber, panNumber, aadharNumber,
-        fcmToken, platform
+        fcmToken, platform,
+        bankAccountHolderName, bankAccountNumber, bankIfscCode, bankName
     } = payload;
 
     if (name) partner.name = name;
+    if (bankAccountHolderName) partner.bankAccountHolderName = bankAccountHolderName;
+    if (bankAccountNumber) partner.bankAccountNumber = bankAccountNumber;
+    if (bankIfscCode) partner.bankIfscCode = String(bankIfscCode).toUpperCase();
+    if (bankName) partner.bankName = bankName;
     if (countryCode !== undefined) partner.countryCode = countryCode;
     if (address !== undefined) partner.address = address;
     if (city !== undefined) partner.city = city;

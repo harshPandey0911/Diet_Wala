@@ -105,6 +105,25 @@ const clearAllFilesFromDB = async () => {
   }
 }
 
+const EMPTY_BANK = {
+  accountHolderName: "",
+  accountNumber: "",
+  ifscCode: "",
+  bankName: ""
+}
+
+const getBankValidationError = (bank) => {
+  if (!String(bank.accountHolderName || "").trim()) return "Account holder name is required"
+  if (!/^[0-9]{9,18}$/.test(String(bank.accountNumber || "").trim())) {
+    return "Enter a valid bank account number (9-18 digits)"
+  }
+  if (!/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(String(bank.ifscCode || "").trim())) {
+    return "Enter a valid IFSC code (e.g. SBIN0001234)"
+  }
+  if (!String(bank.bankName || "").trim()) return "Bank name is required"
+  return ""
+}
+
 const sanitizeUploadedDocValue = (value) => {
   if (!value) return null
 
@@ -229,6 +248,15 @@ export default function SignupStep2() {
     }
     return createEmptyUploadedDocs()
   })
+  const [bank, setBank] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("deliverySignupBank") || "null")
+      if (saved && typeof saved === "object") return { ...EMPTY_BANK, ...saved }
+    } catch (e) {
+      debugError("Error parsing saved bank details:", e)
+    }
+    return { ...EMPTY_BANK }
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploading, setUploading] = useState({})
   const [isSuccess, setIsSuccess] = useState(false)
@@ -279,6 +307,23 @@ export default function SignupStep2() {
   useEffect(() => {
     localStorage.setItem("deliverySignupDocs", JSON.stringify(uploadedDocs))
   }, [uploadedDocs])
+
+  // Keep typed bank details if the user leaves and comes back during signup
+  useEffect(() => {
+    localStorage.setItem("deliverySignupBank", JSON.stringify(bank))
+  }, [bank])
+
+  const handleBankChange = (key, value) => {
+    setBank((prev) => ({
+      ...prev,
+      [key]:
+        key === "accountNumber"
+          ? value.replace(/\D/g, "").slice(0, 18)
+          : key === "ifscCode"
+            ? value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 11)
+            : value
+    }))
+  }
 
   // Removed incorrect URL.revokeObjectURL cleanup that was breaking image previews
 
@@ -392,6 +437,11 @@ export default function SignupStep2() {
       toast.error("PAN Card Photo is required")
       return
     }
+    const bankError = getBankValidationError(bank)
+    if (bankError) {
+      toast.error(bankError)
+      return
+    }
     const formData = new FormData()
     formData.append("name", details.name || "")
     formData.append("phone", String(details.phone || "").replace(/\D/g, "").slice(0, 15))
@@ -410,6 +460,10 @@ export default function SignupStep2() {
     }
     if (details.panNumber) formData.append("panNumber", details.panNumber)
     if (details.aadharNumber) formData.append("aadharNumber", details.aadharNumber)
+    formData.append("bankAccountHolderName", bank.accountHolderName.trim())
+    formData.append("bankAccountNumber", bank.accountNumber.trim())
+    formData.append("bankIfscCode", bank.ifscCode.trim().toUpperCase())
+    formData.append("bankName", bank.bankName.trim())
 
     const appendFileToForm = (formData, key, fileData, filename) => {
       if (!fileData) return;
@@ -480,6 +534,7 @@ export default function SignupStep2() {
       if (response?.data?.success) {
         localStorage.removeItem("deliverySignupDetails")
         localStorage.removeItem("deliverySignupDocs")
+        localStorage.removeItem("deliverySignupBank")
         await clearAllFilesFromDB()
         localStorage.removeItem("deliveryNeedsRegistration")
         setIsSuccess(true)
@@ -640,6 +695,37 @@ export default function SignupStep2() {
           <DocumentUpload docType="aadharBackPhoto" label="Aadhar Card (Back)" required={true} />
           <DocumentUpload docType="panPhoto" label="PAN Card Photo" required={true} />
           
+          <div className="bg-white rounded-lg p-4 border border-gray-200 space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">
+                Bank Details <span className="text-red-500">*</span>
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">Your earnings are paid to this account. Please enter it carefully.</p>
+            </div>
+            {[
+              { key: "accountHolderName", label: "Account Holder Name", placeholder: "Name as per bank account", inputMode: "text" },
+              { key: "accountNumber", label: "Account Number", placeholder: "Bank account number", inputMode: "numeric" },
+              { key: "ifscCode", label: "IFSC Code", placeholder: "e.g. SBIN0001234", inputMode: "text" },
+              { key: "bankName", label: "Bank Name", placeholder: "e.g. State Bank of India", inputMode: "text" }
+            ].map((field) => (
+              <div key={field.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode={field.inputMode}
+                  value={bank[field.key]}
+                  onChange={(e) => handleBankChange(field.key, e.target.value)}
+                  placeholder={field.placeholder}
+                  autoComplete="off"
+                  required
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00B761]/30 focus:border-[#00B761]"
+                />
+              </div>
+            ))}
+          </div>
+
           <DocumentUpload docType="drivingLicenseFrontPhoto" label="Driving License (Front) (Optional)" required={false} />
           <DocumentUpload docType="drivingLicenseBackPhoto" label="Driving License (Back) (Optional)" required={false} />
           

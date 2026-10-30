@@ -9,6 +9,8 @@ const phoneSchema = z
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 const aadharRegex = /^[0-9]{12}$/;
 const drivingLicenseRegex = /^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/;
+const bankAccountRegex = /^[0-9]{9,18}$/;
+const ifscRegex = /^[A-Za-z]{4}0[A-Za-z0-9]{6}$/;
 
 const deliveryRegisterSchema = z.object({
     name: z.string().min(1, 'Name is required'),
@@ -27,6 +29,17 @@ const deliveryRegisterSchema = z.object({
         .optional()
         .or(z.literal('')),
     ref: z.string().trim().max(64).optional().or(z.literal('')),
+    // Bank details are mandatory at signup (payouts/withdrawals need them).
+    bankAccountHolderName: z.string({ required_error: 'Account holder name is required' }).trim().min(1, 'Account holder name is required').max(100),
+    bankAccountNumber: z
+        .string({ required_error: 'Bank account number is required' })
+        .trim()
+        .regex(bankAccountRegex, 'Enter a valid bank account number (9-18 digits)'),
+    bankIfscCode: z
+        .string({ required_error: 'IFSC code is required' })
+        .trim()
+        .regex(ifscRegex, 'Enter a valid IFSC code (e.g. SBIN0001234)'),
+    bankName: z.string({ required_error: 'Bank name is required' }).trim().min(1, 'Bank name is required').max(100),
     panNumber: z
         .string()
         .regex(panRegex, 'Invalid PAN format')
@@ -63,6 +76,10 @@ const deliveryProfileUpdateSchema = z.object({
         .regex(drivingLicenseRegex, 'Invalid driving license format')
         .optional()
         .or(z.literal('')),
+    bankAccountHolderName: z.string().trim().max(100).optional(),
+    bankAccountNumber: z.string().trim().regex(bankAccountRegex, 'Enter a valid bank account number (9-18 digits)').optional().or(z.literal('')),
+    bankIfscCode: z.string().trim().regex(ifscRegex, 'Enter a valid IFSC code (e.g. SBIN0001234)').optional().or(z.literal('')),
+    bankName: z.string().trim().max(100).optional(),
     fcmToken: z.string().optional().nullable(),
     platform: z.enum(['web', 'mobile']).optional().default('web')
 });
