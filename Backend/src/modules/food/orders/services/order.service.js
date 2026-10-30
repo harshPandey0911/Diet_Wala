@@ -8,7 +8,7 @@ import { FoodDeliveryPartner } from '../../delivery/models/deliveryPartner.model
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodFeeSettings } from '../../admin/models/feeSettings.model.js';
 import { FoodBusinessSettings } from '../../admin/models/businessSettings.model.js';
-import { assertAppOpenForZone } from '../../admin/services/appAvailability.service.js';
+import { assertAppOpenForZone, assertOrderingAllowedForZone } from '../../admin/services/appAvailability.service.js';
 import { ValidationError, ForbiddenError, NotFoundError } from '../../../../core/auth/errors.js';
 import { buildPaginationOptions, buildPaginatedResult, parseQueryLimit, parseQueryPage } from '../../../../utils/helpers.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
@@ -142,6 +142,8 @@ export async function createOrder(userId, dto) {
 
   // App ON/OFF: platform-wide switch/hours and the restaurant zone's own switch/hours.
   await assertAppOpenForZone(restaurant.zoneId);
+  // Zone is in browse-only mode: everything is visible but orders cannot be placed.
+  await assertOrderingAllowedForZone(restaurant.zoneId);
 
   if (restaurant.status !== "approved")
     throw new ValidationError("Restaurant not accepting orders");

@@ -1,5 +1,5 @@
 import { FoodZone } from '../../admin/models/zone.model.js';
-import { loadEffectiveAppAvailability } from '../../admin/services/appAvailability.service.js';
+import { getZoneOrderingStatus, loadEffectiveAppAvailability } from '../../admin/services/appAvailability.service.js';
 
 const toFinite = (v) => {
     const n = typeof v === 'number' ? v : parseFloat(String(v));
@@ -153,8 +153,12 @@ export const getZoneAppStatusPublicController = async (req, res, next) => {
     try {
         const zoneId = String(req.query.zoneId || '').trim();
         const validZoneId = /^[0-9a-fA-F]{24}$/.test(zoneId) ? zoneId : null;
-        const { availability } = await loadEffectiveAppAvailability(validZoneId);
-        return res.status(200).json({ success: true, message: 'App status fetched', data: { appStatus: availability } });
+        const { zone, availability } = await loadEffectiveAppAvailability(validZoneId);
+        return res.status(200).json({
+            success: true,
+            message: 'App status fetched',
+            data: { appStatus: availability, ordering: getZoneOrderingStatus(zone) }
+        });
     } catch (error) {
         next(error);
     }

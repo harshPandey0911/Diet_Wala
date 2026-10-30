@@ -94,7 +94,19 @@ export function getAppAvailability(settings, now = new Date()) {
     return { ...base, isOpen: true, reason: null, title: '', message: '' };
 }
 
-export const ZONE_APP_FIELDS = 'name appManualOff appTimingEnabled appOpeningTime appClosingTime appClosedMessage';
+export const ZONE_APP_FIELDS = 'name appManualOff appTimingEnabled appOpeningTime appClosingTime appClosedMessage orderingPaused orderingPausedMessage';
+
+const DEFAULT_ORDERING_PAUSED_MESSAGE =
+    'Ordering is temporarily paused in your area. You can browse the menu, but orders cannot be placed right now.';
+
+// Browse-only mode for a zone: everything stays visible, only placing orders is blocked.
+export function getZoneOrderingStatus(zone) {
+    const paused = zone?.orderingPaused === true;
+    return {
+        paused,
+        message: paused ? String(zone?.orderingPausedMessage || '').trim() || DEFAULT_ORDERING_PAUSED_MESSAGE : ''
+    };
+}
 const SETTINGS_APP_FIELDS = 'maintenanceMode appTimingEnabled appOpeningTime appClosingTime appClosedMessage';
 
 // A zone keeps its own manual OFF switch (appManualOff) and daily hours, same shape as the global ones.
@@ -137,4 +149,12 @@ export async function assertAppOpenForZone(zoneId) {
     const { availability } = await loadEffectiveAppAvailability(zoneId);
     if (availability.isOpen) return;
     throw new ValidationError(availability.message || "The app is closed right now. Please try again later.");
+}
+
+// Throws when ordering is paused for this zone (checked when an order is placed, not when browsing or pricing a cart).
+export async function assertOrderingAllowedForZone(zoneId) {
+    if (!zoneId) return;
+    const zone = await FoodZone.findById(zoneId).select('name orderingPaused orderingPausedMessage').lean();
+    const ordering = getZoneOrderingStatus(zone);
+    if (ordering.paused) throw new ValidationError(ordering.message);
 }

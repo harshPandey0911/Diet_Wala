@@ -12,6 +12,7 @@ import { useProfile } from "@food/context/ProfileContext"
 import { useOrders } from "@food/context/OrdersContext"
 import { useAppLocation } from "@food/hooks/useAppLocation"
 import { useLocationSelector } from "@food/components/user/UserLayout"
+import { useOrderingStatus } from "@food/components/user/AppClosedGate"
 import { orderAPI, restaurantAPI, adminAPI, userAPI, publicAPI, API_ENDPOINTS } from "@food/api"
 import { API_BASE_URL } from "@food/api/config"
 import { initRazorpayPayment } from "@food/utils/razorpay"
@@ -1585,11 +1586,17 @@ export default function Cart() {
 
   // Restaurant switched itself offline: it takes no new orders until it is back online.
   const isRestaurantOfflineNow = restaurantData?.isAcceptingOrders === false
+  // Admin paused ordering for this zone: the customer can browse and fill a cart but not place orders.
+  const { paused: isOrderingPaused, message: orderingPausedMessage } = useOrderingStatus()
 
   const handlePlaceOrder = async () => {
     if (razorpayDisabled && selectedPaymentMethod === "razorpay") {
       toast.error("Online payment is currently unavailable. Please choose another payment method.")
       setSelectedPaymentMethod("cash")
+      return
+    }
+    if (isOrderingPaused) {
+      toast.error(orderingPausedMessage || "Ordering is temporarily paused in your area.")
       return
     }
     if (isRestaurantOfflineNow) {
@@ -3150,6 +3157,12 @@ export default function Cart() {
               </div>
             </div>
 
+            {isOrderingPaused && (
+              <p className="rounded-xl bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">
+                {orderingPausedMessage}
+              </p>
+            )}
+
             {isRestaurantOfflineNow && (
               <p className="rounded-xl bg-red-50 dark:bg-red-900/20 px-3 py-2 text-center text-xs font-semibold text-red-600 dark:text-red-400">
                 {restaurantData?.name || restaurantData?.restaurantName || "This restaurant"} is offline right now and not accepting orders.
@@ -3159,7 +3172,7 @@ export default function Cart() {
             {/* Place Order Button */}
             <button
               onClick={handlePlaceOrder}
-              disabled={isPlacingOrder || isRestaurantOfflineNow || (selectedPaymentMethod === "wallet" && walletBalance < total)}
+              disabled={isPlacingOrder || isOrderingPaused || isRestaurantOfflineNow || (selectedPaymentMethod === "wallet" && walletBalance < total)}
               className="w-full bg-primary hover:bg-primary/90 text-white px-6 h-12 md:h-14 rounded-2xl font-bold shadow-lg shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-transform active:scale-[0.98]"
             >
               {(selectedPaymentMethod === "razorpay" || selectedPaymentMethod === "wallet" || selectedPaymentMethod === "cash") && (
@@ -3171,6 +3184,8 @@ export default function Cart() {
               <div className="flex items-center gap-1 mx-auto text-sm md:text-lg tracking-wide">
                 {isPlacingOrder
                   ? "Processing..."
+                  : isOrderingPaused
+                    ? "Ordering paused"
                   : isRestaurantOfflineNow
                     ? "Restaurant offline"
                     : !hasSavedAddress

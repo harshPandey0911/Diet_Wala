@@ -75,6 +75,9 @@ const zoneSchema = new mongoose.Schema(
         appOpeningTime: { type: String, default: '08:00' },
         appClosingTime: { type: String, default: '23:00' },
         appClosedMessage: { type: String, default: '' },
+        // Ordering paused: customers still browse everything in the zone but cannot place orders.
+        orderingPaused: { type: Boolean, default: false },
+        orderingPausedMessage: { type: String, default: '' },
         isActive: {
             type: Boolean,
             default: true,

@@ -265,6 +265,8 @@ export async function listZoneAppStatus(req, res, next) {
             appOpeningTime: zone.appOpeningTime || '08:00',
             appClosingTime: zone.appClosingTime || '23:00',
             appClosedMessage: zone.appClosedMessage || '',
+            orderingPaused: zone.orderingPaused === true,
+            orderingPausedMessage: zone.orderingPausedMessage || '',
             appStatus: getZoneAppAvailability(zone)
         }));
         return sendResponse(res, 200, 'Zone app status fetched successfully', { zones: data });
@@ -278,7 +280,7 @@ export async function updateZoneAppStatus(req, res, next) {
         const zone = await FoodZone.findById(req.params.id);
         if (!zone) return res.status(404).json({ success: false, message: 'Zone not found' });
 
-        const { appManualOff, appTimingEnabled, appOpeningTime, appClosingTime, appClosedMessage } = req.body || {};
+        const { appManualOff, appTimingEnabled, appOpeningTime, appClosingTime, appClosedMessage, orderingPaused, orderingPausedMessage } = req.body || {};
         if (appOpeningTime !== undefined && !isValidAppTime(appOpeningTime)) {
             return res.status(400).json({ success: false, message: 'App opening time must be in HH:mm format' });
         }
@@ -290,6 +292,8 @@ export async function updateZoneAppStatus(req, res, next) {
         if (appOpeningTime !== undefined) zone.appOpeningTime = String(appOpeningTime).trim();
         if (appClosingTime !== undefined) zone.appClosingTime = String(appClosingTime).trim();
         if (appClosedMessage !== undefined) zone.appClosedMessage = String(appClosedMessage || '').trim().slice(0, 200);
+        if (orderingPaused !== undefined) zone.orderingPaused = orderingPaused === true || orderingPaused === 'true';
+        if (orderingPausedMessage !== undefined) zone.orderingPausedMessage = String(orderingPausedMessage || '').trim().slice(0, 200);
 
         await zone.save();
         return sendResponse(res, 200, 'Zone app status updated successfully', {
@@ -300,6 +304,8 @@ export async function updateZoneAppStatus(req, res, next) {
             appOpeningTime: zone.appOpeningTime,
             appClosingTime: zone.appClosingTime,
             appClosedMessage: zone.appClosedMessage,
+            orderingPaused: zone.orderingPaused === true,
+            orderingPausedMessage: zone.orderingPausedMessage || '',
             appStatus: getZoneAppAvailability(zone.toObject())
         });
     } catch (error) {
