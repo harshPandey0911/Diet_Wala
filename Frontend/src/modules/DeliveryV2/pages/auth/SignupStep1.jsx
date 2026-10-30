@@ -157,11 +157,8 @@ export default function SignupStep1() {
       newErrors.state = "State can contain letters only"
     }
 
-    const isBicycle = formData.vehicleType === "bicycle"
-
-    if (!isBicycle && !formData.vehicleNumber.trim()) {
-      newErrors.vehicleNumber = "Vehicle number is required"
-    } else if (formData.vehicleNumber.trim() && !VEHICLE_NUMBER_REGEX.test(formData.vehicleNumber)) {
+    // Vehicle number is optional for every vehicle type; only validate the format when entered.
+    if (formData.vehicleNumber.trim() && !VEHICLE_NUMBER_REGEX.test(formData.vehicleNumber)) {
       newErrors.vehicleNumber = "Invalid Indian vehicle number format (e.g., MH12AB1234)"
     }
 
@@ -371,7 +368,7 @@ export default function SignupStep1() {
           {/* Vehicle Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Vehicle Number {formData.vehicleType === "bicycle" ? "(Optional)" : <span className="text-red-500">*</span>}
+              Vehicle Number (Optional)
             </label>
             <input
               type="text"
