@@ -81,10 +81,10 @@ export async function topupCustomerWallet(req, res, next) {
 /** Admin manually credits or debits any actor's wallet, with a required reason for the audit trail. */
 export async function adjustEntityWallet(req, res, next) {
     try {
-        const { entityType, entityId, action, amount, reason } = req.body || {};
-        const adminId = req.user ? req.user.id : null;
+        const { entityType, entityId, action, amount, reason, markAsCash } = req.body || {};
+        const adminId = req.user ? (req.user.userId || req.user.id) : null;
 
-        const result = await adminAdjustWallet({ entityType, entityId, action, amount, reason, adminId });
+        const result = await adminAdjustWallet({ entityType, entityId, action, amount, reason, adminId, markAsCash: markAsCash === true });
         res.status(200).json({ success: true, message: `Wallet ${action}ed successfully`, data: result });
     } catch (error) {
         next(error);

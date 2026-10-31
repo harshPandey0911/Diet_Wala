@@ -145,7 +145,7 @@ export default function DeliveryBoyWallet() {
                 const totalLimit = Number(w.totalCashLimit || w.overallCashLimit || w.total_limit || 1500);
                 const remaining = Number(w.remainingCashLimit ?? w.availableCashLimit ?? w.available_cash_limit ?? w.remaining_limit ?? totalLimit);
                 const collected = Number(w.cashCollected ?? w.cashInHand ?? w.cash_collected ?? w.cash_in_hand ?? 0);
-                const cih = collected > 0 ? collected : (w.usedLimit || w.used_limit || (totalLimit - remaining));
+                const cih = w.cashInHand != null ? Number(w.cashInHand) : (collected > 0 ? collected : (w.usedLimit || w.used_limit || (totalLimit - remaining)));
                 return acc + cih;
               }, 0), 
               color: "text-rose-600", 
@@ -230,7 +230,7 @@ export default function DeliveryBoyWallet() {
                       
                       // User requirement: Cash In Hand should be the amount subtracted from 1500 (or total limit)
                       // If collected is 0 but remaining is less than total, we use the difference.
-                      const cashInHand = collected > 0 ? collected : (w.usedLimit || w.used_limit || (totalLimit - remaining));
+                      const cashInHand = w.cashInHand != null ? Number(w.cashInHand) : (collected > 0 ? collected : (w.usedLimit || w.used_limit || (totalLimit - remaining)));
 
                       return (
                         <tr key={w.walletId || w.deliveryId || i} className="hover:bg-slate-50 transition-colors">

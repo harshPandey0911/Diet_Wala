@@ -3,6 +3,8 @@ import { creditWallet, debitWallet, getWalletWithTransactions } from '../../../.
 import { FoodRestaurantWallet } from '../../restaurant/models/restaurantWallet.model.js';
 import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
+import { FoodDeliveryCashDeposit } from '../../delivery/models/foodDeliveryCashDeposit.model.js';
+import { getDeliveryPartnerWalletEnhanced } from '../../delivery/services/deliveryFinance.service.js';
 
 const ENTITY_TYPES = ['user', 'restaurant', 'deliveryBoy'];
 
@@ -20,7 +22,7 @@ function assertValidEntity(entityType, entityId) {
  * Every adjustment is recorded through the shared Transaction ledger with a full
  * audit trail (who did it, and why) via category + metadata.
  */
-export async function adminAdjustWallet({ entityType, entityId, action, amount, reason, adminId }) {
+export async function adminAdjustWallet({ entityType, entityId, action, amount, reason, adminId, markAsCash = false }) {
     assertValidEntity(entityType, entityId);
 
     if (!['credit', 'debit'].includes(action)) {
@@ -35,6 +37,36 @@ export async function adminAdjustWallet({ entityType, entityId, action, amount, 
     const trimmedReason = String(reason || '').trim();
     if (!trimmedReason) {
         throw new ValidationError('A reason is required for a manual wallet adjustment');
+    }
+
+    // Mark as cash: the rider handed this cash to the admin, so it comes off the rider's collected cash
+    // (shown on the rider's Pocket page). It is recorded as a completed cash deposit; no wallet balance is touched.
+    if (markAsCash === true) {
+        if (entityType !== 'deliveryBoy' || action !== 'debit') {
+            throw new ValidationError('Mark as cash is only available when deducting from a delivery partner');
+        }
+        const before = await getDeliveryPartnerWalletEnhanced(entityId);
+        if (numericAmount > before.cashInHand) {
+            throw new ValidationError(`Amount cannot exceed the rider's cash in hand (₹${before.cashInHand})`);
+        }
+        const deposit = await FoodDeliveryCashDeposit.create({
+            deliveryPartnerId: entityId,
+            amount: numericAmount,
+            paymentMethod: 'cash',
+            status: 'Completed',
+            adminId: adminId || undefined,
+            adminNote: trimmedReason,
+        });
+        const after = await getDeliveryPartnerWalletEnhanced(entityId);
+        return {
+            entityType,
+            entityId: String(entityId),
+            action,
+            amount: numericAmount,
+            markAsCash: true,
+            cashInHand: after.cashInHand,
+            transactionId: String(deposit._id),
+        };
     }
 
     const description = `Admin ${action === 'credit' ? 'credited' : 'debited'} wallet: ${trimmedReason}`;

@@ -514,8 +514,8 @@ export const adminAPI = {
   topupCustomerWallet: (id, amount, description) =>
     adminClient.post(`/food/admin/customers/${String(id)}/wallet-topup`, { amount: Number(amount), description }),
   /** Generic wallet control (user / restaurant / deliveryBoy) */
-  adjustEntityWallet: ({ entityType, entityId, action, amount, reason }) =>
-    adminClient.post(`/food/admin/wallets/adjust`, { entityType, entityId, action, amount: Number(amount), reason }),
+  adjustEntityWallet: ({ entityType, entityId, action, amount, reason, markAsCash }) =>
+    adminClient.post(`/food/admin/wallets/adjust`, { entityType, entityId, action, amount: Number(amount), reason, markAsCash: markAsCash === true }),
   getEntityWallet: (entityType, entityId, params = {}) =>
     adminClient.get(`/food/admin/wallets/${String(entityType)}/${String(entityId)}`, { params }),
   getRestaurantWallets: (params = {}) =>

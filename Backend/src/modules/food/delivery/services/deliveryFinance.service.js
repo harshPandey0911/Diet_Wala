@@ -62,14 +62,11 @@ export const getDeliveryPartnerWalletEnhanced = async (deliveryPartnerId) => {
 
     // ── Cash-in-Hand: COD collected SINCE last deposit ─────────────────────────
     // Find the most recent completed deposit date (cutoff point)
-    const lastDepositDoc = depositList?.find(d => String(d.status || '').toLowerCase() === 'completed');
-    const lastDepositAt = lastDepositDoc?.createdAt || null;
 
     // Sum COD orders delivered AFTER the last deposit (or all time if no deposit)
     const cashInHandMatchStage = {
         'dispatch.deliveryPartnerId': partnerId,
-        orderStatus: 'delivered',
-        ...(lastDepositAt ? { createdAt: { $gt: new Date(lastDepositAt) } } : {})
+        orderStatus: 'delivered'
     };
 
     const cashCollectedAgg = await FoodOrder.aggregate([
@@ -94,8 +91,13 @@ export const getDeliveryPartnerWalletEnhanced = async (deliveryPartnerId) => {
     ]);
 
     const totalEarned = Number(earningsAgg?.[0]?.totalEarned) || 0;
-    // Cash in hand = COD collected since last deposit (no subtraction needed - already scoped by date)
-    const cashInHand = Math.max(0, Number(cashCollectedAgg?.[0]?.cashCollected) || 0);
+    // Cash in hand = COD collected minus every completed deposit (rider deposits and admin cash deductions).
+    const depositedAgg = await FoodDeliveryCashDeposit.aggregate([
+        { $match: { deliveryPartnerId: partnerId, status: 'Completed' } },
+        { $group: { _id: null, deposited: { $sum: { $ifNull: ['$amount', 0] } } } }
+    ]);
+    const depositedCash = Number(depositedAgg?.[0]?.deposited) || 0;
+    const cashInHand = Math.max(0, (Number(cashCollectedAgg?.[0]?.cashCollected) || 0) - depositedCash);
     const totalBonus = Number(bonusAgg?.[0]?.total) || 0;
     const totalWithdrawn = Number(withdrawalAgg?.[0]?.totalWithdrawn) || 0;
     const pendingWithdrawals = Number(withdrawalAgg?.[0]?.pendingWithdrawals) || 0;

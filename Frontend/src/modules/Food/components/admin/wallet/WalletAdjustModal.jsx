@@ -14,13 +14,18 @@ export default function WalletAdjustModal({ open, onClose, entityType, entityId,
   const [action, setAction] = useState("credit")
   const [amount, setAmount] = useState("")
   const [reason, setReason] = useState("")
+  const [markAsCash, setMarkAsCash] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const reset = () => {
     setAction("credit")
     setAmount("")
     setReason("")
+    setMarkAsCash(false)
   }
+
+  // Only a debit on a delivery partner can be marked as cash handed over to the admin.
+  const canMarkAsCash = entityType === "deliveryBoy" && action === "debit"
 
   const handleClose = () => {
     if (submitting) return
@@ -47,9 +52,14 @@ export default function WalletAdjustModal({ open, onClose, entityType, entityId,
         action,
         amount: numericAmount,
         reason: reason.trim(),
+        markAsCash: canMarkAsCash && markAsCash,
       })
       if (response?.data?.success) {
-        toast.success(`Wallet ${action === "credit" ? "credited" : "debited"} successfully`)
+        toast.success(
+          canMarkAsCash && markAsCash
+            ? "Cash deducted from the rider's collected cash"
+            : `Wallet ${action === "credit" ? "credited" : "debited"} successfully`
+        )
         reset()
         onClose?.()
         onSuccess?.(response.data.data)
@@ -111,6 +121,23 @@ export default function WalletAdjustModal({ open, onClose, entityType, entityId,
               className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
+
+          {canMarkAsCash && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={markAsCash}
+                onChange={(e) => setMarkAsCash(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-slate-800">Mark as cash</span>
+                <span className="block text-xs text-slate-500">
+                  Rider handed this cash over. It is deducted from the rider's collected cash (Pocket page), not from the wallet balance.
+                </span>
+              </span>
+            </label>
+          )}
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-700">Reason</label>
