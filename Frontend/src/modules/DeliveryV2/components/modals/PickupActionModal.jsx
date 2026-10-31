@@ -34,7 +34,14 @@ export const PickupActionModal = ({
   const isAtPickup = status === 'REACHED_PICKUP';
   const restaurantName = order.restaurantName || order.restaurant_name || order.restaurantId?.restaurantName || order.restaurant?.restaurantName || 'Restaurant';
   const restaurantAddress = order.restaurantAddress || order.restaurant_address || order.restaurantLocation?.address || order.restaurantId?.address || 'Address not available';
-  const restaurantPhone = order.restaurantPhone || order.restaurant_phone || order.restaurantId?.phone || '';
+  const restaurantPhone = String(
+    order.restaurantPhone ||
+    order.restaurant_phone ||
+    order.restaurantId?.phone ||
+    order.restaurant?.phone ||
+    '',
+  ).trim();
+  const restaurantDialNumber = restaurantPhone.replace(/[^\d+]/g, '');
   const restaurantCoords =
     parseLatLng(order.restaurantLocation) ||
     parseLatLng(order.restaurantId?.location) ||
@@ -93,6 +100,16 @@ export const PickupActionModal = ({
               <p className="text-blue-600 text-[11px] font-black uppercase tracking-widest mt-0.5">
                 ORDER #{order.order_id || order.orderId || order._id}
               </p>
+              {restaurantPhone && (
+                <a
+                  href={`tel:${restaurantDialNumber}`}
+                  className="text-gray-600 text-xs font-semibold mt-1.5 inline-flex items-center gap-1.5"
+                  aria-label={`Call restaurant at ${restaurantPhone}`}
+                >
+                  <Phone className="w-3.5 h-3.5 text-green-600" />
+                  {restaurantPhone}
+                </a>
+              )}
               <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5">
                 {isAtPickup ? (
                   <span className="text-green-600">Reached Location √</span>
@@ -108,7 +125,8 @@ export const PickupActionModal = ({
           <div className="flex gap-2">
             {restaurantPhone && (
               <button
-                onClick={() => window.location.href = `tel:${restaurantPhone}`}
+                onClick={() => window.location.href = `tel:${restaurantDialNumber}`}
+                aria-label={`Call restaurant at ${restaurantPhone}`}
                 className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 border border-green-100"
               >
                 <Phone className="w-5 h-5" />
