@@ -113,6 +113,7 @@ const ShippingPolicy = lazy(() => import("@food/pages/admin/settings/ShippingPol
 const CancellationPolicy = lazy(() => import("@food/pages/admin/settings/CancellationPolicy"));
 const ReactRegistration = lazy(() => import("@food/pages/admin/settings/ReactRegistration"));
 const ToggleManagement = lazy(() => import("@food/pages/admin/settings/ToggleManagement"));
+const DevSettings = lazy(() => import("@food/pages/admin/settings/DevSettings"));
 // System Settings
 const ThirdParty = lazy(() => import("@food/pages/admin/system/ThirdParty"));
 const FirebaseNotification = lazy(() => import("@food/pages/admin/system/FirebaseNotification"));
@@ -280,6 +281,7 @@ export default function AdminRouter() {
             <Route path="business-setup" element={<BusinessSetup />} />
             <Route path="env-managements" element={<EnvManagements />} />
             <Route path="toggle-management" element={<ToggleManagement />} />
+            <Route path="dev-settings" element={<DevSettings />} />
             <Route path="email-template" element={<EmailTemplate />} />
             <Route path="theme-settings" element={<ThemeSettings />} />
             <Route path="gallery" element={<Gallery />} />

@@ -757,6 +757,10 @@ export const adminAPI = {
   getZoneAppStatus: () => adminClient.get("/food/admin/zones/app-status"),
   updateZoneAppStatus: (zoneId, body) =>
     adminClient.patch(`/food/admin/zones/${zoneId}/app-status`, body ?? {}),
+  /** Dev settings: per-section data cleanup (super admin only) */
+  getDevDataSections: () => adminClient.get("/food/admin/dev-data/sections"),
+  deleteDevData: (section, confirmText) =>
+    adminClient.delete(`/food/admin/dev-data/${section}`, { data: { confirmText } }),
 };
 
 /** Restaurant API - OTP login via new backend; no email/password. */

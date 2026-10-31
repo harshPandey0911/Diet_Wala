@@ -130,6 +130,47 @@ const SECTIONS = [
         ],
     },
     {
+        key: 'userWallets',
+        label: 'Customer Wallets',
+        description: 'Resets every customer wallet to ₹0 (balance, referral earnings) and clears wallet transaction history. Customer accounts stay.',
+        warning: 'Money customers added to their wallet is not refunded - balances simply become zero.',
+        targets: [
+            {
+                model: 'FoodUserWallet',
+                reset: { balance: 0, referralEarnings: 0, transactions: [] },
+            },
+        ],
+    },
+    {
+        key: 'deliveryWallets',
+        label: 'Delivery Partner Wallets',
+        description: 'Resets every rider wallet (balance, cash in hand, earnings, bonus, settled, deliveries count) to 0 and clears withdrawals, cash deposits and bonus history. Riders stay.',
+        warning: 'Cash in hand and pending payouts are wiped - nothing is paid or collected.',
+        targets: [
+            {
+                model: 'FoodDeliveryWallet',
+                reset: { balance: 0, lockedAmount: 0, cashInHand: 0, totalEarnings: 0, totalBonus: 0, totalSettled: 0, totalDeliveries: 0 },
+            },
+            { model: 'FoodDeliveryWithdrawal' },
+            { model: 'FoodDeliveryCashDeposit' },
+            { model: 'DeliveryBonusTransaction' },
+            { model: 'FoodEarningAddonHistory' },
+        ],
+    },
+    {
+        key: 'restaurantWallets',
+        label: 'Restaurant Wallets',
+        description: 'Resets every restaurant wallet (balance, locked, earnings, settled) to 0 and clears withdrawal history. Restaurants stay.',
+        warning: 'Pending restaurant payouts are wiped - nothing is paid.',
+        targets: [
+            {
+                model: 'FoodRestaurantWallet',
+                reset: { balance: 0, lockedAmount: 0, totalEarnings: 0, totalSettled: 0 },
+            },
+            { model: 'FoodRestaurantWithdrawal' },
+        ],
+    },
+    {
         key: 'supportTickets',
         label: 'Support Tickets & Reports',
         description: 'Customer, restaurant and rider support tickets plus safety emergency reports.',
@@ -208,7 +249,7 @@ async function countSection(section) {
         section.targets.map(async (target) => {
             const model = getModel(target.model);
             const count = model ? await model.countDocuments(buildTargetFilter(target, primaryIds)) : 0;
-            return { model: target.model, count };
+            return { model: target.model, count, reset: Boolean(target.reset) };
         }),
     );
     return {
@@ -245,7 +286,14 @@ export async function deleteDevDataSection(key, confirmText, admin = {}) {
             results.push({ model: target.model, deleted: 0, skipped: true });
             continue;
         }
-        const { deletedCount } = await model.deleteMany(buildTargetFilter(target, primaryIds));
+        const filter = buildTargetFilter(target, primaryIds);
+        if (target.reset) {
+            // Keep the document (e.g. a wallet) and only zero the listed fields.
+            const { matchedCount } = await model.updateMany(filter, { $set: target.reset });
+            results.push({ model: target.model, deleted: matchedCount || 0, reset: true });
+            continue;
+        }
+        const { deletedCount } = await model.deleteMany(filter);
         results.push({ model: target.model, deleted: deletedCount || 0 });
     }
 

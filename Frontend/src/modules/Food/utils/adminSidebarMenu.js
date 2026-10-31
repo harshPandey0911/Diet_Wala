@@ -254,6 +254,7 @@ export const adminSidebarMenu = [
       { type: "link", label: "Env Managements", path: "/admin/food/env-managements", icon: "Database" },
       { type: "link", label: "Broadcast Notification", path: "/admin/food/broadcast-notification", icon: "Bell" },
       { type: "link", label: "Toggle Management", path: "/admin/food/toggle-management", icon: "ToggleLeft" },
+      { type: "link", label: "Dev Settings", path: "/admin/food/dev-settings", icon: "Database" },
       { type: "link", label: "Business Setup", path: "/admin/food/business-setup", icon: "Settings" },
       { type: "link", label: "Theme Settings", path: "/admin/food/theme-settings", icon: "Palette" },
     ],
