@@ -458,7 +458,9 @@ export async function acceptOrderDelivery(orderId, deliveryPartnerId) {
   const partnerCapacity = await getPartnerCashCapacity(deliveryPartnerId);
   const hasAmountCapacity = Number(partnerCapacity.availableCashLimit || 0) >= orderAmount;
 
-  // Cash limit restriction removed. All riders can accept orders.
+  if (!canBypassCashLimit && (!partnerCapacity.hasCapacity || (isCashOrder && !hasAmountCapacity))) {
+    throw new ValidationError('Cash limit exceeded. Please deposit your cash in hand to accept new orders.');
+  }
 
   const now = new Date();
   const acceptedStatuses = ['confirmed', 'preparing', 'ready_for_pickup', 'picked_up'];

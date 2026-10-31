@@ -81,16 +81,39 @@ function upsertPartnerOffer(order, entry) {
 }
 
 async function filterPartnersByCashLimit(partners = [], options = {}) {
-  // Since we are removing cash limit checks, we simply map partners to ensure they have expected shape.
-  // We allow all partners to bypass cash limit.
   if (!Array.isArray(partners) || partners.length === 0) return [];
-  
-  return partners.map((p) => ({
-    ...p,
-    availableCashLimit: Number.MAX_SAFE_INTEGER,
-    allowOverLimit: true,
-    requiredCashForOrder: 0,
-  }));
+
+  // Imported lazily: order-delivery.service imports this module.
+  const { getPartnerCashCapacity } = await import('./order-delivery.service.js');
+  const requiredAmount = Math.max(0, Number(options.requiredAmount || 0));
+
+  const checked = await Promise.all(
+    partners.map(async (p) => {
+      try {
+        const capacity = await getPartnerCashCapacity(p.partnerId);
+        // Over the limit (or this COD order would push the rider over it): no offer until cash is deposited.
+        const eligible = capacity.hasCapacity && Number(capacity.availableCashLimit || 0) >= requiredAmount;
+        return eligible
+          ? {
+              ...p,
+              availableCashLimit: Number(capacity.availableCashLimit || 0),
+              allowOverLimit: false,
+              requiredCashForOrder: requiredAmount,
+            }
+          : null;
+      } catch (error) {
+        // If capacity cannot be read, do not silently drop the rider.
+        logger.warn(`[Dispatch] Cash capacity check failed for rider ${p.partnerId}: ${error?.message}`);
+        return { ...p, availableCashLimit: Number.MAX_SAFE_INTEGER, allowOverLimit: true, requiredCashForOrder: 0 };
+      }
+    }),
+  );
+
+  const eligible = checked.filter(Boolean);
+  if (eligible.length < partners.length) {
+    logger.info(`[Dispatch] Cash limit excluded ${partners.length - eligible.length} of ${partners.length} rider(s)`);
+  }
+  return eligible;
 }
 
 async function listNearbyOnlineDeliveryPartners(
@@ -341,8 +364,8 @@ export async function tryAutoAssign(orderId, options = {}) {
 
     const searchOptions = {
       maxKm,
-      requiredAmount: 0,
-      allowOverLimitFallback: true,
+      requiredAmount,
+      allowOverLimitFallback: false,
     };
     
     logger.info(`[Dispatch] Order ${order._id} attempt=${attempt} maxKm=${maxKm}`);
