@@ -1395,6 +1395,13 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                   <p className="mt-1 text-[11px] font-semibold text-amber-100">
                     {cashLimitNotice?.message || 'Please deposit your amount to get orders.'}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/food/delivery/pocket')}
+                    className="mt-2 rounded-full bg-amber-400 px-4 py-1.5 text-[11px] font-black text-black active:scale-95 transition-transform"
+                  >
+                    Deposit cash
+                  </button>
                 </div>
               )}
             </motion.div>

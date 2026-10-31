@@ -335,6 +335,11 @@ export async function listOrdersAvailableDelivery(deliveryPartnerId, query) {
     cashInHand: Number(partnerCapacity.cashInHand || 0),
     availableCashLimit: Number(partnerCapacity.availableCashLimit || 0),
   };
+  // Over the admin cash limit: dispatch stops offering orders until the rider deposits cash.
+  if (cashLimit.totalCashLimit > 0 && !partnerCapacity.hasCapacity) {
+    cashLimit.blocked = true;
+    cashLimit.message = `Cash limit reached (₹${cashLimit.cashInHand.toFixed(0)} in hand, limit ₹${cashLimit.totalCashLimit.toFixed(0)}). Please deposit your cash, otherwise you will not receive new orders.`;
+  }
 
   const activeOwnOrderFilter = {
     'dispatch.deliveryPartnerId': partnerId,
