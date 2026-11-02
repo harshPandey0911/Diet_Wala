@@ -4,9 +4,17 @@ import { FoodOtp } from './otp.model.js';
 import { config } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 import { ValidationError } from '../auth/errors.js';
+import { isTestOtpPhone, TEST_OTP_CODE } from '../auth/testOtpAccounts.js';
 
-// Explicit development-only switch for local OTP testing. It is ignored in production.
-const isDefaultOtpPhone = () => config.nodeEnv !== 'production' && config.useDefaultOtp;
+/**
+ * True when this number gets the fixed OTP instead of a generated one: either the
+ * development-only global switch is on, or it is one of the explicit demo/QA numbers
+ * (see testOtpAccounts.js), which also applies in production.
+ */
+const isDefaultOtpPhone = (phone) => {
+    if (isTestOtpPhone(phone)) return true;
+    return config.nodeEnv !== 'production' && config.useDefaultOtp;
+};
 const hashOtp = (phone, otp) => crypto
     .createHmac('sha256', config.jwtAccessSecret)
     .update(`${phone}:${otp}`)
@@ -146,8 +154,10 @@ export const createOrUpdateOtp = async (phone, purpose = 'login') => {
     const existing = await FoodOtp.findOne({ phone, purpose }).select('+otpHash +otp');
     const now = new Date();
 
-    // Rate Limiting Logic
-    if (existing) {
+    // Rate Limiting Logic.
+    // Demo/QA numbers are exempt: their code never changes, so throttling requests only
+    // locks the tester out without protecting anything.
+    if (existing && !isTestOtpPhone(phone)) {
         const windowMs = (config.otpRateWindow || 600) * 1000;
         const isInWindow = now - existing.lastRequestAt < windowMs;
         if (now - existing.lastRequestAt < 60 * 1000) {
@@ -167,8 +177,11 @@ export const createOrUpdateOtp = async (phone, purpose = 'login') => {
     }
 
     let otp;
-    if (isDefaultOtpPhone(phone)) {
-        otp = '123456';
+    if (isTestOtpPhone(phone)) {
+        otp = TEST_OTP_CODE;
+        logger.info(`[OTP] Fixed demo OTP issued for ${phone} (no SMS sent)`);
+    } else if (isDefaultOtpPhone(phone)) {
+        otp = TEST_OTP_CODE;
         logger.info('Default OTP mode enabled for development');
     } else {
         otp = generateOtpCode();
@@ -218,6 +231,14 @@ export const createOrUpdateOtp = async (phone, purpose = 'login') => {
 export const verifyOtp = async (phone, otp, options = { consume: true, purpose: 'login' }) => {
     const purpose = options.purpose || 'login';
     const record = await FoodOtp.findOne({ phone, purpose }).select('+otpHash +otp');
+
+    // Demo/QA numbers: the fixed code always works, even if the stored OTP expired or was
+    // never requested, so the account can always be signed into.
+    if (isTestOtpPhone(phone) && String(otp) === TEST_OTP_CODE) {
+        if (record && options.consume !== false) await record.deleteOne();
+        return { valid: true };
+    }
+
     if (!record) {
         return { valid: false, reason: 'OTP not found' };
     }

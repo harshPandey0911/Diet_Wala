@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { isPasscodeDisabledForTestAccount } from "./testOtpAccounts.js";
 import bcrypt from "bcryptjs";
 import ms from "ms";
 import { FoodUser } from "../users/user.model.js";
@@ -49,7 +50,12 @@ const sanitizeUserForAuthResponse = (userDoc = {}) => {
     refCode: userDoc?.referralCode || "",
     referralCount: Number(userDoc?.referralCount || 0),
     walletAmount: Number(userDoc?.walletAmount || 0),
-    hasPasscode: Boolean(userDoc?.hasPasscode),
+    // A demo/QA account has no passcode and must not be asked to create one, so it is
+    // reported as already having one. The login screen still routes it to OTP, because
+    // checkPasscodeStatus answers `false` for these accounts.
+    hasPasscode: isPasscodeDisabledForTestAccount("user", userDoc?.phone)
+      ? true
+      : Boolean(userDoc?.hasPasscode),
   };
 };
 
@@ -71,7 +77,14 @@ const sanitizeRestaurantForAuthResponse = (restaurantDoc = {}) => {
     status: restaurantDoc?.status || "",
     profileImage: toSafeImageUrl(restaurantDoc?.profileImage),
     createdAt: restaurantDoc?.createdAt,
-    hasPasscode: Boolean(restaurantDoc?.hasPasscode),
+    // See the note in sanitizeUserForAuthResponse: a demo/QA account is reported as
+    // already having a passcode so the app never prompts it to create one.
+    hasPasscode: isPasscodeDisabledForTestAccount(
+      "restaurant",
+      restaurantDoc?.ownerPhone || restaurantDoc?.primaryContactNumber,
+    )
+      ? true
+      : Boolean(restaurantDoc?.hasPasscode),
   };
 };
 
@@ -301,7 +314,9 @@ export const verifyUserOtpAndLogin = async (
     refreshToken,
     user: sanitizeUserForAuthResponse(user),
     isNewUser,
-    requiresPasscodeSetup: purpose === "passcode_reset" || !userDoc.hasPasscode,
+    requiresPasscodeSetup: isPasscodeDisabledForTestAccount("user", userDoc?.phone)
+      ? false
+      : purpose === "passcode_reset" || !userDoc.hasPasscode,
   };
 };
 
@@ -433,7 +448,12 @@ export const verifyRestaurantOtpAndLogin = async (phone, otp, fcmToken, platform
     refreshToken,
     user: sanitizeRestaurantForAuthResponse(restaurantDoc?.toObject?.() || restaurantDoc),
     needsRegistration: false,
-    requiresPasscodeSetup: !restaurantDoc.hasPasscode,
+    requiresPasscodeSetup: isPasscodeDisabledForTestAccount(
+      "restaurant",
+      restaurantDoc?.ownerPhone || restaurantDoc?.primaryContactNumber,
+    )
+      ? false
+      : !restaurantDoc.hasPasscode,
   };
 };
 
@@ -798,10 +818,19 @@ const createPasscodeSession = async (moduleName, account, role) => {
 
 export const checkPasscodeStatus = async (moduleName, phone) => {
   const { account } = await findPasscodeAccount(moduleName, phone);
+  // Demo/QA accounts always sign in with the fixed OTP, so the login screen must send
+  // them down the OTP path rather than asking for a passcode.
+  if (isPasscodeDisabledForTestAccount(moduleName, phone)) {
+    return { exists: Boolean(account), hasPasscode: false };
+  }
   return { exists: Boolean(account), hasPasscode: Boolean(account?.hasPasscode) };
 };
 
 export const loginWithPasscode = async (moduleName, phone, passcode) => {
+  // The passcode is switched off for demo/QA accounts - OTP is the only way in.
+  if (isPasscodeDisabledForTestAccount(moduleName, phone)) {
+    throw new AuthError("Invalid phone number or passcode");
+  }
   if (!/^\d{4}$/.test(String(passcode || ""))) throw new AuthError("Invalid phone number or passcode");
   const { account, role } = await findPasscodeAccount(moduleName, phone, true);
   if (!account?.hasPasscode || !account.passcodeHash) throw new AuthError("Invalid phone number or passcode");
@@ -834,6 +863,12 @@ export const setOrUpdatePasscode = async (userId, role, newPasscode, confirmPass
   const { model } = PASSCODE_ROLES[moduleName];
   const account = await model.findById(userId).select("+passcodeHash");
   if (!account) throw new AuthError("Account is not available");
+  // Keep demo/QA accounts OTP-only: setting a passcode here would send the login screen
+  // back to the passcode path and break the fixed-OTP sign-in.
+  const accountPhone = account.phone || account.ownerPhone || account.primaryContactNumber;
+  if (isPasscodeDisabledForTestAccount(moduleName, accountPhone)) {
+    throw new ValidationError("This account signs in with OTP only and cannot use a passcode");
+  }
   ensureAccountCanLogin(moduleName, account);
   if (account.hasPasscode && !passcodeResetVerified) {
     const currentValid = /^\d{4}$/.test(String(currentPasscode || "")) && await bcrypt.compare(String(currentPasscode), account.passcodeHash || "");
