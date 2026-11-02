@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { restaurantAPI } from "@food/api"
 
 export const RESTAURANT_ORDERS_PAGE_SIZE = 30
@@ -31,9 +31,14 @@ export function usePaginatedRestaurantOrders({
     totalPages: 1,
   })
   const [loading, setLoading] = useState(true)
+  // Guards against a slow fetch stacking up behind the poll that follows it, which is how
+  // a burst of orders turned into a pile of overlapping requests on the restaurant page.
+  const inFlightRef = useRef(false)
 
   const fetchOrders = useCallback(
     async (pageNum, { silent = false } = {}) => {
+      if (silent && inFlightRef.current) return
+      inFlightRef.current = true
       if (!silent) setLoading(true)
       try {
         const response = await restaurantAPI.getOrders({
@@ -64,6 +69,7 @@ export function usePaginatedRestaurantOrders({
       } catch {
         setOrders([])
       } finally {
+        inFlightRef.current = false
         if (!silent) setLoading(false)
       }
     },
@@ -87,12 +93,19 @@ export function usePaginatedRestaurantOrders({
     return () => clearInterval(intervalId)
   }, [enablePoll, pollMs, page, fetchOrders])
 
-  const goToPage = (nextPage) => {
-    setPage((current) => {
-      const max = meta.totalPages || 1
-      return Math.max(1, Math.min(nextPage, max))
-    })
-  }
+  const goToPage = useCallback(
+    (nextPage) => {
+      setPage((current) => {
+        const max = meta.totalPages || 1
+        return Math.max(1, Math.min(nextPage, max))
+      })
+    },
+    [meta.totalPages]
+  )
+
+  // Stable identity so callers can safely depend on it (or hold it in a ref) without
+  // rebuilding their timers on every render.
+  const refetch = useCallback(() => fetchOrders(page), [fetchOrders, page])
 
   return {
     orders,
@@ -102,7 +115,7 @@ export function usePaginatedRestaurantOrders({
     setPage: goToPage,
     goNext: () => goToPage(page + 1),
     goPrev: () => goToPage(page - 1),
-    refetch: () => fetchOrders(page),
+    refetch,
   }
 }
 

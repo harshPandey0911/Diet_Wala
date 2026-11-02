@@ -5,3 +5,6 @@ temp_interactive_push.bat
 *.p8
 *.p12
 
+
+# Migration backups: contain real order, payout and customer data
+Backend/scripts/backups/

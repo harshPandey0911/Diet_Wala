@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from "react"
-import { Search, Download, ChevronDown, Filter, Briefcase, RefreshCw, Settings, ArrowUpDown, FileText, FileSpreadsheet, Code, Loader2, Star } from "lucide-react"
+import { Search, Download, ChevronDown, Filter, Briefcase, RefreshCw, Settings, ArrowUpDown, FileText, FileSpreadsheet, Code, Loader2, Star, FileBarChart2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@food/components/ui/dialog"
 import { exportReportsToCSV, exportReportsToExcel, exportReportsToPDF, exportReportsToJSON } from "@food/components/admin/reports/reportsExportUtils"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"
 import { getPlaceholderImage } from "@/shared/utils/media.js"
+import RestaurantFullReportDialog from "./RestaurantFullReportDialog"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -13,8 +14,15 @@ const debugError = (...args) => {}
 
 export default function RestaurantReport() {
   const [searchQuery, setSearchQuery] = useState("")
+  // The query actually sent to the server. It trails `searchQuery` by a short pause so
+  // typing a word fires one request instead of one per keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [restaurants, setRestaurants] = useState([])
-  const [loading, setLoading] = useState(true)
+  // Only the very first load blanks the page. Later loads keep the table (and the focused
+  // search box) on screen and just dim it, so typing is never interrupted.
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [isFetching, setIsFetching] = useState(false)
+  const [fullReportRestaurantId, setFullReportRestaurantId] = useState(null)
   const [filters, setFilters] = useState({
     zone: "All Zones",
     all: "All",
@@ -39,21 +47,32 @@ export default function RestaurantReport() {
     fetchZones()
   }, [])
 
+  // Debounce the search box: one request per pause in typing, not one per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 400)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Fetch restaurant report data
   useEffect(() => {
+    const controller = new AbortController()
+    let cancelled = false
+
     const fetchRestaurantReport = async () => {
       try {
-        setLoading(true)
-        
+        setIsFetching(true)
+
         const params = {
           zone: filters.zone !== "All Zones" ? filters.zone : undefined,
           all: filters.all !== "All" ? filters.all : undefined,
           type: filters.type !== "All types" ? filters.type : undefined,
           time: filters.time !== "All Time" ? filters.time : undefined,
-          search: searchQuery || undefined
+          search: debouncedSearch || undefined,
+          signal: controller.signal,
         }
 
         const response = await adminAPI.getRestaurantReport(params)
+        if (cancelled) return
 
         if (response?.data?.success && response.data.data) {
           setRestaurants(response.data.data.restaurants || [])
@@ -64,16 +83,28 @@ export default function RestaurantReport() {
           }
         }
       } catch (error) {
+        // A superseded request (newer keystroke/filter) is expected, not a failure.
+        if (cancelled || controller.signal.aborted || error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
+          return
+        }
         debugError("Error fetching restaurant report:", error)
         toast.error("Failed to fetch restaurant report")
         setRestaurants([])
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setIsFetching(false)
+          setInitialLoading(false)
+        }
       }
     }
 
     fetchRestaurantReport()
-  }, [filters, searchQuery])
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [filters, debouncedSearch])
 
   const filteredRestaurants = useMemo(() => {
     return restaurants // Backend already filters, so just return restaurants
@@ -89,6 +120,7 @@ export default function RestaurantReport() {
       time: "All Time",
     })
     setSearchQuery("")
+    setDebouncedSearch("")
   }
 
   const handleExport = (format) => {
@@ -148,7 +180,7 @@ export default function RestaurantReport() {
     )
   }
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="p-4 lg:p-6 bg-slate-50 min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -284,7 +316,11 @@ export default function RestaurantReport() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-4 pr-10 py-2.5 w-full text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                {isFetching ? (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
+                ) : (
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                )}
               </div>
 
               <DropdownMenu>
@@ -326,7 +362,7 @@ export default function RestaurantReport() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto transition-opacity ${isFetching ? "opacity-60" : "opacity-100"}`}>
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
@@ -384,12 +420,15 @@ export default function RestaurantReport() {
                       <ArrowUpDown className="w-3 h-3 text-slate-400" />
                     </div>
                   </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    Full Report
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
                 {filteredRestaurants.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-20 text-center">
+                    <td colSpan={10} className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <p className="text-lg font-semibold text-slate-700 mb-1">No Data Found</p>
                         <p className="text-sm text-slate-500">No restaurants match your search</p>
@@ -450,6 +489,15 @@ export default function RestaurantReport() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {renderStars(restaurant.averageRatings, restaurant.reviews)}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => setFullReportRestaurantId(restaurant._id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50"
+                        >
+                          <FileBarChart2 className="w-3.5 h-3.5" />
+                          View &amp; download
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -458,6 +506,15 @@ export default function RestaurantReport() {
           </div>
         </div>
       </div>
+
+      <RestaurantFullReportDialog
+        restaurantId={fullReportRestaurantId}
+        time={filters.time}
+        open={Boolean(fullReportRestaurantId)}
+        onOpenChange={(open) => {
+          if (!open) setFullReportRestaurantId(null)
+        }}
+      />
 
       {/* Settings Dialog */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>

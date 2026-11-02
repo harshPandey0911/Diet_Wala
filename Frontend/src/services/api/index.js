@@ -545,8 +545,14 @@ export const adminAPI = {
   getZones: (params = {}) =>
     adminClient.get("/food/admin/zones", { params: { limit: 1000, ...params } }),
   /** Restaurant report (admin). */
-  getRestaurantReport: (params = {}) =>
-    adminClient.get("/food/admin/reports/restaurants", { params: { page: 1, limit: 1000, ...params } }),
+  getRestaurantReport: ({ signal, ...params } = {}) =>
+    adminClient.get("/food/admin/reports/restaurants", {
+      params: { page: 1, limit: 1000, ...params },
+      ...(signal ? { signal } : {}),
+    }),
+  /** Everything about one restaurant: profile, earnings, menu, items sold, orders. */
+  getRestaurantFullReport: (restaurantId, params = {}) =>
+    adminClient.get(`/food/admin/reports/restaurants/${restaurantId}/full`, { params }),
   getTransactionReport: (params = {}) =>
     adminClient.get("/food/admin/reports/transactions", { params: { page: 1, limit: 1000, ...params } }),
   getTaxReport: (params = {}) =>

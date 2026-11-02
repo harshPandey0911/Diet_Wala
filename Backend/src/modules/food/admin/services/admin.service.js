@@ -15,7 +15,7 @@ import { FoodEarningAddonHistory } from '../models/earningAddonHistory.model.js'
 import { FoodRestaurantCommission } from '../models/restaurantCommission.model.js';
 import { FoodDeliveryCommissionRule } from '../models/deliveryCommissionRule.model.js';
 import { FoodFeeSettings } from '../models/feeSettings.model.js';
-import { clearFoodMarkupCache } from './foodMarkup.service.js';
+import { clearFoodMarkupCache, getFoodMarkupSettings } from './foodMarkup.service.js';
 import { FeedbackExperience } from '../models/feedbackExperience.model.js';
 import { FoodUser } from '../../../../core/users/user.model.js';
 import { FoodAdmin } from '../../../../core/admin/admin.model.js';
@@ -517,6 +517,41 @@ export async function getDashboardStats(query = {}) {
                         $sum: { 
                             $cond: [DELIVERED_ORDER_STATUS_EXPR, { $ifNull: ['$platformProfit', 0] }, 0] 
                         } 
+                    },
+                    // Admin's hidden food markup, already baked into the item prices the
+                    // customer paid. It is platform margin, not restaurant earning.
+                    markupTotal: {
+                        $sum: {
+                            $cond: [DELIVERED_ORDER_STATUS_EXPR, { $ifNull: ['$pricing.markupAmount', 0] }, 0]
+                        }
+                    },
+                    markupOrders: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        DELIVERED_ORDER_STATUS_EXPR,
+                                        { $gt: [{ $ifNull: ['$pricing.markupAmount', 0] }, 0] }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    markupBaseTotal: {
+                        $sum: {
+                            $cond: [
+                                DELIVERED_ORDER_STATUS_EXPR,
+                                {
+                                    $subtract: [
+                                        { $ifNull: ['$pricing.subtotal', 0] },
+                                        { $ifNull: ['$pricing.markupAmount', 0] }
+                                    ]
+                                },
+                                0
+                            ]
+                        }
                     }
                 }
             }
@@ -542,6 +577,11 @@ export async function getDashboardStats(query = {}) {
                         $sum: { 
                             $cond: [{ $eq: ['$orderStatus', 'delivered'] }, { $ifNull: ['$pricing.total', 0] }, 0] 
                         } 
+                    },
+                    markup: {
+                        $sum: {
+                            $cond: [{ $eq: ['$orderStatus', 'delivered'] }, { $ifNull: ['$pricing.markupAmount', 0] }, 0]
+                        }
                     },
                     commission: {
                         $sum: {
@@ -676,6 +716,9 @@ export async function getDashboardStats(query = {}) {
 
     const totals = orderTotalsAgg?.[0] || {};
 
+    const markupSettings = await getFoodMarkupSettings().catch(() => ({ percent: 0 }));
+    const markupPercentSetting = markupSettings?.percent || 0;
+
     const now = new Date();
     const monthlyMap = new Map(
         (monthlyAgg || []).map((row) => {
@@ -695,6 +738,7 @@ export async function getDashboardStats(query = {}) {
             month: formatMonthShort(year, month - 1),
             orders: Number(row?.orders || 0),
             revenue: Number(row?.revenue || 0),
+            markup: Number(row?.markup || 0),
             commission: Number(row?.commission || 0)
         });
     }
@@ -713,6 +757,17 @@ export async function getDashboardStats(query = {}) {
         platformFee: { total: Number(totals.platformFeeTotal || 0) },
         deliveryFee: { total: Number(totals.deliveryFeeTotal || 0) },
         gst: { total: Number(totals.gstTotal || 0) },
+        // Earnings that came purely from the admin's food markup. Already part of
+        // `totalAdminEarnings` (it flows through platformProfit) - this is the breakdown.
+        markup: {
+            total: Math.round(Number(totals.markupTotal || 0) * 100) / 100,
+            orders: Number(totals.markupOrders || 0),
+            restaurantBase: Math.round(Number(totals.markupBaseTotal || 0) * 100) / 100,
+            currentPercent: Number(markupPercentSetting || 0),
+            averagePerOrder: Number(totals.markupOrders || 0) > 0
+                ? Math.round((Number(totals.markupTotal || 0) / Number(totals.markupOrders)) * 100) / 100
+                : 0
+        },
         totalAdminEarnings: Number(totals.adminNetProfit || 0) + Number(totals.gstTotal || 0),
         deliveryProfit: Number(totals.adminNetProfit || 0) - Number(totals.commissionTotal || 0) - Number(totals.platformFeeTotal || 0),
         restaurants: {
@@ -844,6 +899,7 @@ export async function getTransactionReport(query = {}) {
                 platformFee: platformFee,
                 packagingFee: packagingFee,
                 restaurantCommission: Number(pricing.restaurantCommission || 0),
+                foodMarkup: Number(pricing.markupAmount ?? tx.amounts?.markupAmount ?? 0),
                 gstOnItem: Number(pricing.gstOnItem || 0),
                 gstOnCommission: Number(pricing.gstOnCommission || 0),
                 paymentGatewayFee: Number(pricing.paymentGatewayFee || 0),
@@ -867,6 +923,7 @@ export async function getTransactionReport(query = {}) {
         platformFee: 0,
         packagingFee: 0,
         restaurantCommission: 0,
+        foodMarkup: 0,
         gstOnCommission: 0,
         paymentGatewayFee: 0,
         tcs: 0
@@ -892,6 +949,7 @@ export async function getTransactionReport(query = {}) {
             adminEarningBreakdown.platformFee += Number(pricing.platformFee || 0);
             adminEarningBreakdown.packagingFee += Number(pricing.packagingFee || 0);
             adminEarningBreakdown.restaurantCommission += Number(pricing.restaurantCommission || 0);
+            adminEarningBreakdown.foodMarkup += Number(pricing.markupAmount ?? tx.amounts?.markupAmount ?? 0);
             adminEarningBreakdown.gstOnCommission += Number(pricing.gstOnCommission || 0);
             adminEarningBreakdown.paymentGatewayFee += Number(pricing.paymentGatewayFee || 0);
             adminEarningBreakdown.tcs += Number(pricing.tcs || 0);

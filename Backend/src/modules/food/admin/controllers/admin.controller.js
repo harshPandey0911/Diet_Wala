@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import * as adminService from '../services/admin.service.js';
+import { getRestaurantFullReport as getRestaurantFullReportService } from '../services/restaurantFullReport.service.js';
 import { FoodRestaurant } from '../../restaurant/models/restaurant.model.js';
 import { validateCategoryListQuery, validateCategoryRejectDto, validateCategoryUpsertDto } from '../validators/category.validator.js';
 import { validateCreateOfferDto, validateUpdateOfferCartVisibilityDto } from '../validators/offer.validator.js';
@@ -211,6 +212,23 @@ export async function getRestaurantReport(req, res, next) {
         res.status(200).json({
             success: true,
             message: 'Restaurant report fetched successfully',
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/** Full report for one restaurant: profile, earnings, menu, items sold, orders. */
+export async function getRestaurantFullReport(req, res, next) {
+    try {
+        const data = await getRestaurantFullReportService(
+            req.params.restaurantId,
+            req.query || {}
+        );
+        res.status(200).json({
+            success: true,
+            message: 'Restaurant full report fetched successfully',
             data
         });
     } catch (error) {

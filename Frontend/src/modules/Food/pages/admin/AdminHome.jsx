@@ -25,7 +25,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, DollarSign, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, XCircle } from "lucide-react"
+import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, DollarSign, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, XCircle, Percent } from "lucide-react"
 import { adminAPI } from "@food/api"
 const debugLog = () => {}
 const debugError = () => {}
@@ -116,13 +116,14 @@ export default function AdminHome() {
     if (!dashboardData?.monthlyData || dashboardData.monthlyData.length === 0) {
       // Return empty data structure if no data
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      return monthNames.map(month => ({ month, commission: 0, revenue: 0, orders: 0 }))
+      return monthNames.map(month => ({ month, commission: 0, markup: 0, revenue: 0, orders: 0 }))
     }
 
     // Use real monthly data from backend
     return dashboardData.monthlyData.map(item => ({
       month: item.month,
       commission: item.commission || 0,
+      markup: item.markup || 0,
       revenue: item.revenue || 0,
       orders: item.orders || 0
     }))
@@ -139,6 +140,14 @@ export default function AdminHome() {
   const deliveryFeeTotal = dashboardData?.deliveryFee?.total || 0
   const gstTotal = dashboardData?.gst?.total || 0
   const totalAdminEarnings = dashboardData?.totalAdminEarnings || 0
+
+  // Food markup: the hidden percentage the admin adds on top of every restaurant price.
+  // It is pure platform margin - the restaurant is paid on its own ex-markup price.
+  const markupTotal = dashboardData?.markup?.total || 0
+  const markupOrders = dashboardData?.markup?.orders || 0
+  const markupPercent = dashboardData?.markup?.currentPercent || 0
+  const markupRestaurantBase = dashboardData?.markup?.restaurantBase || 0
+  const markupAveragePerOrder = dashboardData?.markup?.averagePerOrder || 0
 
   // Additional stats
   const totalRestaurants = dashboardData?.restaurants?.total || 0
@@ -168,6 +177,7 @@ export default function AdminHome() {
     `Comm: ${formatCurrency(commissionTotal)}`,
     `Platform: ${formatCurrency(platformFeeTotal)}`,
     `Delivery Net: ${formatCurrency(deliveryProfit)}`,
+    `Markup: ${formatCurrency(markupTotal)}`,
     `GST: ${formatCurrency(gstTotal)}`,
   ].join(" + ")
 
@@ -264,6 +274,14 @@ export default function AdminHome() {
               path="/admin/food/transaction-report"
             />
             <MetricCard
+              title="Markup earned"
+              value={formatCurrency(markupTotal)}
+              helper={`${markupPercent}% food markup: ${periodLabel}`}
+              icon={<Percent className="h-5 w-5 text-rose-600" />}
+              accent="bg-rose-200/40"
+              path="/admin/food/fee-settings"
+            />
+            <MetricCard
               title="GST"
               value={formatCurrency(gstTotal)}
               helper={`Total tax collected: ${periodLabel}`}
@@ -352,6 +370,41 @@ export default function AdminHome() {
               path="/admin/food/orders/delivered"
             />
           </div>
+
+          <Card className="border-neutral-200 bg-white">
+            <CardHeader className="flex flex-col gap-1 border-b border-neutral-200 pb-4">
+              <div className="flex items-center gap-2">
+                <Percent className="h-5 w-5 text-rose-600" />
+                <CardTitle className="text-lg text-neutral-900">Markup earnings</CardTitle>
+              </div>
+              <p className="text-sm text-neutral-500">
+                What the {markupPercent}% food markup earned on delivered orders ({periodLabel.toLowerCase()}).
+                The restaurant is paid on its own price, so this entire amount is platform margin.
+              </p>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-neutral-200 bg-rose-50/60 p-4">
+                  <p className="text-xs uppercase tracking-wide text-neutral-500">Markup earned</p>
+                  <p className="mt-1 text-2xl font-semibold text-neutral-900">{formatCurrency(markupTotal)}</p>
+                </div>
+                <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <p className="text-xs uppercase tracking-wide text-neutral-500">Current markup</p>
+                  <p className="mt-1 text-2xl font-semibold text-neutral-900">{markupPercent}%</p>
+                </div>
+                <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <p className="text-xs uppercase tracking-wide text-neutral-500">Orders with markup</p>
+                  <p className="mt-1 text-2xl font-semibold text-neutral-900">{markupOrders.toLocaleString("en-IN")}</p>
+                  <p className="mt-1 text-xs text-neutral-500">Avg {formatCurrency(markupAveragePerOrder)} per order</p>
+                </div>
+                <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <p className="text-xs uppercase tracking-wide text-neutral-500">Restaurant item value</p>
+                  <p className="mt-1 text-2xl font-semibold text-neutral-900">{formatCurrency(markupRestaurantBase)}</p>
+                  <p className="mt-1 text-xs text-neutral-500">Base the restaurant is paid on</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2 min-w-0 border-neutral-200 bg-white">

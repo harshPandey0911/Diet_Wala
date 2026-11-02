@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   checkOnboardingStatus,
@@ -754,14 +754,7 @@ function AllOrders({ onSelectOrder, onCancel }) {
   const [markingReadyOrderIds, setMarkingReadyOrderIds] = useState({});
   const [orderOverrides, setOrderOverrides] = useState({});
 
-  useEffect(() => {
-    const countdownIntervalId = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(countdownIntervalId);
-  }, []);
-
-  const orders = rawOrders
+  const orders = useMemo(() => rawOrders
     .map(transformOrderForList)
     .map((order) => {
       const key = order.mongoId || order.orderId;
@@ -773,7 +766,33 @@ function AllOrders({ onSelectOrder, onCancel }) {
         (allOrdersStatusPriority[b.status] ?? 999);
       if (priorityDiff !== 0) return priorityDiff;
       return b.sortTimestamp - a.sortTimestamp;
-    });
+    }),
+    [rawOrders, orderOverrides]);
+
+  const ordersRef = useRef(orders);
+  useEffect(() => {
+    ordersRef.current = orders;
+  });
+
+  // Countdown clock. A per-second tick is only needed while a preparing order is inside its
+  // last two minutes; otherwise the ETA is shown in whole minutes, so the list does not need
+  // to re-render every second. With several orders open that difference is the whole lag.
+  useEffect(() => {
+    let timeoutId;
+    const tick = () => {
+      const now = new Date();
+      setCurrentTime(now);
+      const needsSeconds = ordersRef.current.some((order) => {
+        if (String(order.status || "").toLowerCase() !== "preparing") return false;
+        if (!order.preparingTimestamp) return false;
+        const remainingMs = (order.initialETA || 30) * 60000 - (now - order.preparingTimestamp);
+        return remainingMs <= 120000;
+      });
+      timeoutId = setTimeout(tick, needsSeconds ? 1000 : 15000);
+    };
+    timeoutId = setTimeout(tick, 1000);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   const handleMarkReady = async ({ orderId, mongoId }) => {
     const orderKey = mongoId || orderId;
@@ -1101,9 +1120,10 @@ export default function OrdersMain() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const fetchCounts = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         // Fetch pending orders
-        const ordersRes = await restaurantAPI.getOrders({ page: 1, limit: 100 });
+        const ordersRes = await restaurantAPI.getOrders({ page: 1, limit: 30 });
         if (ordersRes.data.success) {
           const orders = Array.isArray(ordersRes.data.data?.orders) ? ordersRes.data.data.orders : [];
           const pending = orders.filter(o =>
@@ -1557,8 +1577,11 @@ export default function OrdersMain() {
       // Skip if popup is already showing or Socket.IO order exists
       if (showNewOrderPopupRef.current || newOrderRef.current) return;
 
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+
       try {
-        const response = await restaurantAPI.getOrders();
+        // Only the newest handful can need a popup, so don't pull the full order page here.
+        const response = await restaurantAPI.getOrders({ page: 1, limit: 20 });
         if (response.data?.success && response.data.data?.orders) {
           const now = Date.now();
 
@@ -3623,14 +3646,7 @@ function PreparingOrders({
   const [markingReadyOrderIds, setMarkingReadyOrderIds] = useState({});
   const [hiddenOrderIds, setHiddenOrderIds] = useState(() => new Set());
 
-  useEffect(() => {
-    const countdownIntervalId = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(countdownIntervalId);
-  }, []);
-
-  const orders = rawOrders
+  const orders = useMemo(() => rawOrders
     .map((order) => {
       const initialETA = order.estimatedDeliveryTime || 30;
       const preparingTimestamp = order.tracking?.preparing?.timestamp
@@ -3666,17 +3682,48 @@ function PreparingOrders({
         pickupOtp: order.pickupOtp || null,
       };
     })
-    .filter((order) => !hiddenOrderIds.has(order.mongoId || order.orderId));
+    .filter((order) => !hiddenOrderIds.has(order.mongoId || order.orderId)),
+    [rawOrders, hiddenOrderIds]);
 
   // Track which orders have been marked as ready to avoid duplicate API calls
   const markedReadyOrdersRef = useRef(new Set());
+  // The timers below read the latest orders/callbacks through refs, so they can be set up
+  // once instead of being torn down and rebuilt on every render (which is what stopped the
+  // auto-ready check from ever firing, and made the page crawl once several orders were open).
+  const ordersRef = useRef(orders);
+  const onStatusChangedRef = useRef(onStatusChanged);
+  const refetchRef = useRef(refetch);
+  useEffect(() => {
+    ordersRef.current = orders;
+    onStatusChangedRef.current = onStatusChanged;
+    refetchRef.current = refetch;
+  });
+
+  // Countdown clock. Only orders inside their last two minutes need a per-second tick;
+  // everything else shows whole minutes, so the clock slows down and the whole order grid
+  // stops re-rendering once a second.
+  useEffect(() => {
+    let timeoutId;
+    const tick = () => {
+      const now = new Date();
+      setCurrentTime(now);
+      const needsSeconds = ordersRef.current.some((order) => {
+        const remainingMs = order.initialETA * 60000 - (now - order.preparingTimestamp);
+        return remainingMs <= 120000;
+      });
+      timeoutId = setTimeout(tick, needsSeconds ? 1000 : 15000);
+    };
+    timeoutId = setTimeout(tick, 1000);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   // Auto-mark orders as ready when ETA reaches 0
   useEffect(() => {
-    if (!currentTime || orders.length === 0) return;
-
     const checkAndMarkReady = async () => {
-      for (const order of orders) {
+      const currentOrders = ordersRef.current;
+      if (!currentOrders.length) return;
+      const now = new Date();
+      for (const order of currentOrders) {
         const orderKey = order.mongoId || order.orderId;
 
         // Skip if already marked as ready
@@ -3685,7 +3732,7 @@ function PreparingOrders({
         }
 
         // Calculate remaining ETA
-        const elapsedMs = currentTime - order.preparingTimestamp;
+        const elapsedMs = now - order.preparingTimestamp;
         const elapsedMinutes = Math.floor(elapsedMs / 60000);
         const remainingMinutes = Math.max(0, order.initialETA - elapsedMinutes);
 
@@ -3705,8 +3752,8 @@ function PreparingOrders({
                 order.mongoId || order.orderId,
               );
               debugLog(`? Order ${order.orderId} marked as ready`);
-              onStatusChanged?.();
-              refetch();
+              onStatusChangedRef.current?.();
+              refetchRef.current?.();
             } catch (error) {
               const status = error.response?.status;
               const msg = (
@@ -3736,13 +3783,13 @@ function PreparingOrders({
       }
     };
 
-    // Check every 2 seconds for orders that need to be marked ready
-    const readyCheckInterval = setInterval(checkAndMarkReady, 2000);
+    // One interval for the lifetime of the component - it reads the latest orders from the ref.
+    const readyCheckInterval = setInterval(checkAndMarkReady, 5000);
 
     return () => {
       clearInterval(readyCheckInterval);
     };
-  }, [currentTime, orders]);
+  }, []);
 
   // Clear marked orders when orders list changes (orders moved to ready)
   useEffect(() => {

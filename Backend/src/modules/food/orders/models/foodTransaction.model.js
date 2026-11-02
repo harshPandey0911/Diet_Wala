@@ -25,6 +25,8 @@ const foodTransactionSchema = new mongoose.Schema({
     // Snapshot of order pricing at the time transaction was created
     pricing: {
         subtotal: { type: Number, default: 0 },
+        markupAmount: { type: Number, default: 0 },
+        markupPercent: { type: Number, default: 0 },
         tax: { type: Number, default: 0 },
         packagingFee: { type: Number, default: 0 },
         deliveryFee: { type: Number, default: 0 },
@@ -61,6 +63,8 @@ const foodTransactionSchema = new mongoose.Schema({
         totalCustomerPaid: { type: Number, required: true },
         restaurantShare: { type: Number, required: true },
         restaurantCommission: { type: Number, required: true },
+        // Platform margin taken out of the item price before the restaurant is paid.
+        markupAmount: { type: Number, default: 0 },
         gstOnItem: { type: Number, default: 0 },
         gstOnCommission: { type: Number, default: 0 },
         paymentGatewayFee: { type: Number, default: 0 },

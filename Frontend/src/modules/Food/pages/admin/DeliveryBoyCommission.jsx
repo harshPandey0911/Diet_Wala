@@ -58,28 +58,59 @@ export default function DeliveryBoyCommission() {
     return `${min}-${max} km`
   }
 
-  // Calculate total commission for a given distance
-  const calculateTotalCommission = (commission, distance) => {
-    // Check if distance falls within this commission tier
-    if (distance < commission.minDistance) return 0
-    if (commission.maxDistance !== null && distance > commission.maxDistance) return 0
-    
-    // For 0-x slab we usually want per-km on full distance; for other slabs apply per-km after minDistance
-    const min = Number(commission.minDistance) || 0
-    const extraDistance = Math.max(0, distance - min)
-    const kmForRate = min === 0 ? distance : extraDistance
-    return commission.basePayout + (kmForRate * commission.commissionPerKm)
+  // What the rider is actually paid for a trip of `distance` km.
+  // This mirrors the backend payout exactly (computeRiderEarningFromRules):
+  // one flat base payout from the slab that covers the start of the trip, plus each
+  // slab's per-km rate charged only on the kilometres that fall inside that slab.
+  const calculateTotalCommission = (allCommissions, distance) => {
+    const d = Number(distance)
+    if (!Number.isFinite(d) || d <= 0) return 0
+
+    const list = (Array.isArray(allCommissions) ? allCommissions : []).filter(Boolean)
+    if (list.length === 0) return 0
+
+    const sorted = [...list].sort(
+      (a, b) => (Number(a.minDistance) || 0) - (Number(b.minDistance) || 0)
+    )
+    const baseRule = sorted.find((r) => (Number(r.minDistance) || 0) === 0) || sorted[0]
+    let earning = Math.max(0, Number(baseRule?.basePayout) || 0)
+
+    for (const r of sorted) {
+      const perKm = Number(r.commissionPerKm) || 0
+      if (perKm <= 0) continue
+      const min = Number(r.minDistance) || 0
+      const max = r.maxDistance === null || r.maxDistance === undefined ? null : Number(r.maxDistance)
+      if (d <= min) continue
+      const upper = max === null || !Number.isFinite(max) ? d : Math.min(d, max)
+      const kmInSlab = Math.max(0, upper - min)
+      if (kmInSlab > 0) earning += kmInSlab * perKm
+    }
+
+    return Math.round(earning)
   }
 
-  // Calculate example commission for display (using mid-point of range)
+  // Example payout for a representative distance inside this slab.
   const getExampleCommission = (commission) => {
-    if (commission.maxDistance === null) {
-      const exampleDistance = commission.minDistance + 5 // Example: 10km for 10+ km tier
-      return calculateTotalCommission(commission, exampleDistance)
-    }
-    const midDistance = (commission.minDistance + commission.maxDistance) / 2
-    return calculateTotalCommission(commission, midDistance)
+    const min = Number(commission.minDistance) || 0
+    const max =
+      commission.maxDistance === null || commission.maxDistance === undefined
+        ? null
+        : Number(commission.maxDistance)
+    const exampleDistance = max === null ? min + 5 : (min + max) / 2
+    return calculateTotalCommission(commissions, exampleDistance)
   }
+
+  // A flat slab (e.g. "₹20 for 0-3 km") only stays flat while its per-km is 0: a per-km
+  // value on the slab that starts at 0 km is charged from the very first kilometre, so
+  // a 1.4 km trip would pay base + 1.4 x per-km instead of just the base.
+  const firstSlabChargesPerKm = (() => {
+    const zeroSlab = commissions.find((c) => (Number(c.minDistance) || 0) === 0)
+    if (!zeroSlab) return null
+    const perKm = Number(zeroSlab.commissionPerKm) || 0
+    const base = Number(zeroSlab.basePayout) || 0
+    if (perKm <= 0 || base <= 0) return null
+    return { perKm, base, max: zeroSlab.maxDistance }
+  })()
 
   // Fetch commission rules on component mount
   useEffect(() => {
@@ -391,6 +422,22 @@ export default function DeliveryBoyCommission() {
   return (
     <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
+        {firstSlabChargesPerKm && (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">
+              The first slab is not a flat fee
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Your 0{firstSlabChargesPerKm.max != null ? `-${firstSlabChargesPerKm.max}` : "+"} km slab has
+              a base payout of {"₹"}{firstSlabChargesPerKm.base} and also {"₹"}
+              {firstSlabChargesPerKm.perKm}/km. Per-km on the slab that starts at 0 km is charged from the
+              very first kilometre, so a 1.4 km delivery pays {"₹"}
+              {Math.round(firstSlabChargesPerKm.base + 1.4 * firstSlabChargesPerKm.perKm)}, not {"₹"}
+              {firstSlabChargesPerKm.base}. Set Commission/Km to 0 on this slab if you want a flat fee.
+            </p>
+          </div>
+        )}
+
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">

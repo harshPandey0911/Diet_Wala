@@ -38,6 +38,12 @@ const deliveryAddressSchema = new mongoose.Schema(
 const pricingSchema = new mongoose.Schema(
     {
         subtotal: { type: Number, required: true, min: 0 },
+        // Admin's hidden food markup that is already baked into `subtotal` (and into every
+        // item price the customer saw). It is the platform's margin, NOT the restaurant's:
+        // the restaurant is paid on (subtotal - markupAmount) and commission/GST/TCS are
+        // charged on that same ex-markup base.
+        markupAmount: { type: Number, default: 0, min: 0 },
+        markupPercent: { type: Number, default: 0, min: 0 },
         tax: { type: Number, default: 0, min: 0 },
         packagingFee: { type: Number, default: 0, min: 0 },
         deliveryFee: { type: Number, default: 0, min: 0 },
@@ -342,6 +348,9 @@ orderSchema.index({ 'deliveryAddress.location': '2dsphere' });
 orderSchema.index({ lastRiderLocation: '2dsphere' });
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, orderStatus: 1, createdAt: -1 });
+// The restaurant "All orders" list filters on restaurantId alone and sorts by createdAt,
+// which the compound index above cannot serve without an orderStatus equality.
+orderSchema.index({ restaurantId: 1, createdAt: -1 });
 orderSchema.index({ 'dispatch.deliveryPartnerId': 1, orderStatus: 1 });
 orderSchema.index({ 'dispatch.status': 1, orderStatus: 1 });
 orderSchema.index({ 'dispatch.status': 1, orderStatus: 1, updatedAt: -1 });

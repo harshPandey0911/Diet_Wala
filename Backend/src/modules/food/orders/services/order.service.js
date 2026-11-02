@@ -35,6 +35,8 @@ import * as foodTransactionService from './foodTransaction.service.js';
 import * as userWalletService from '../../user/services/userWallet.service.js';
 import * as loyaltyService from '../../loyalty/services/loyalty.service.js';
 import { calculateOrderPricing } from './order-pricing.service.js';
+import { computeRiderEarningFromRules } from './riderEarning.util.js';
+import { getFoodMarkupSettings, extractMarkupFromMarkedUpAmount } from '../../admin/services/foodMarkup.service.js';
 import * as dispatchService from './order-dispatch.service.js';
 import { clearDeliveryOffersForOrder } from './order-dispatch.firebase.js';
 import * as deliveryService from './order-delivery.service.js';
@@ -85,35 +87,9 @@ async function getActiveCommissionRules() {
 // 🗑️ Moved to foodTransaction.service.js to centralize finance logic.
 
 
-async function getRiderEarning(distanceKm) {
-  const d = Number(distanceKm);
-  if (!Number.isFinite(d) || d <= 0) return 0;
+export async function getRiderEarning(distanceKm) {
   const rules = await getActiveCommissionRules();
-  if (!rules.length) return 0;
-
-  const sorted = [...rules].sort(
-    (a, b) => (a.minDistance || 0) - (b.minDistance || 0),
-  );
-  const baseRule = sorted.find((r) => Number(r.minDistance || 0) === 0) || null;
-  if (!baseRule) return 0;
-
-  let earning = Number(baseRule.basePayout || 0);
-
-  for (const r of sorted) {
-    const perKm = Number(r.commissionPerKm || 0);
-    if (!Number.isFinite(perKm) || perKm <= 0) continue;
-    const min = Number(r.minDistance || 0);
-    const max = r.maxDistance == null ? null : Number(r.maxDistance);
-    if (d <= min) continue;
-    const upper = max == null ? d : Math.min(d, max);
-    const kmInSlab = Math.max(0, upper - min);
-    if (kmInSlab > 0) {
-      earning += kmInSlab * perKm;
-    }
-  }
-
-  if (!Number.isFinite(earning) || earning <= 0) return 0;
-  return Math.round(earning);
+  return computeRiderEarningFromRules(distanceKm, rules);
 }
 
 /** Append-only food_order_payments row; never blocks main flow on failure */
@@ -291,7 +267,18 @@ export async function createOrder(userId, dto) {
     riderEarning += deliveryBonusAmount;
   }
   
-  // Calculate restaurant commission and taxes from subtotal
+  // The item prices the customer paid already include the admin's hidden food markup
+  // (the menu/search APIs apply it once when listing items). That markup is the platform's
+  // own margin, so it is carved out of the subtotal here: the restaurant is paid on, and
+  // commission/GST/TCS are charged on, the restaurant's own ex-markup price.
+  const markupSettings = await getFoodMarkupSettings();
+  normalizedPricing.markupPercent = Number(markupSettings.percent) || 0;
+  normalizedPricing.markupAmount = extractMarkupFromMarkedUpAmount(
+    normalizedPricing.subtotal,
+    markupSettings.multiplier,
+  );
+
+  // Calculate restaurant commission and taxes from the ex-markup subtotal
   const commissionSnapshot = await foodTransactionService.getRestaurantCommissionSnapshot({
     pricing: normalizedPricing,
     restaurantId: dto.restaurantId
@@ -313,7 +300,8 @@ export async function createOrder(userId, dto) {
       normalizedPricing.restaurantCommission +
       normalizedPricing.gstOnItem +
       normalizedPricing.paymentGatewayFee +
-      normalizedPricing.tcs -
+      normalizedPricing.tcs +
+      (Number.isFinite(normalizedPricing.markupAmount) ? normalizedPricing.markupAmount : 0) -
       riderEarning -
       (Number.isFinite(normalizedPricing.discount) ? normalizedPricing.discount : 0) -
       (Number.isFinite(normalizedPricing.pointsDiscount) ? normalizedPricing.pointsDiscount : 0),

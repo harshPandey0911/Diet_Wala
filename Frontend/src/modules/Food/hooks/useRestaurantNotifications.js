@@ -18,9 +18,12 @@ import {
   isSameOrder,
   markRestaurantOrderHandled,
 } from '@food/utils/restaurantOrderAlerts';
-const debugLog = (...args) => console.log(...args)
-const debugWarn = (...args) => console.warn(...args)
-const debugError = (...args) => console.error(...args)
+// These run on every poll (every few seconds) and on every socket event. Logging them in a
+// production build floods the console and, with several orders open, visibly slows the page.
+const isDebugEnabled = !import.meta.env.PROD
+const debugLog = (...args) => { if (isDebugEnabled) console.log(...args) }
+const debugWarn = (...args) => { if (isDebugEnabled) console.warn(...args) }
+const debugError = (...args) => { if (isDebugEnabled) console.error(...args) }
 
 const normalizeOrderStatus = (value) =>
   String(value || '').toLowerCase().trim().replace(/\s+/g, '_');
@@ -347,7 +350,14 @@ export const useRestaurantNotificationsState = () => {
     }
   }, []);
 
-  const startAlertLoop = () => {
+  /**
+   * Keeps ringing for whatever is in `activeOrderRef`.
+   * `restart: false` leaves an already-running loop alone, so a second order arriving does
+   * not reset the 2-minute cap (which is how the ring used to go on indefinitely, and how
+   * several orders ended up each driving their own ring).
+   */
+  const startAlertLoop = ({ restart = true } = {}) => {
+    if (!restart && alertLoopTimerRef.current) return;
     stopAlertLoop();
     alertLoopStartedAtRef.current = Date.now();
 
@@ -404,18 +414,26 @@ export const useRestaurantNotificationsState = () => {
       return;
     }
 
-    // If another order is already ringing, keep that ring going (it stays first in the queue);
-    // the new one rings immediately once, and takes over when the first is answered.
-    if (!activeOrderRef.current || isSameOrder(activeOrderRef.current, orderData)) {
-      activeOrderRef.current = orderData || { id: Date.now() };
+    // Only one order rings at a time. If something else is already ringing, this order waits
+    // its turn in the queue and takes over when the first one is answered - otherwise a batch
+    // of orders would fire several overlapping sounds and alert loops at once.
+    const isAlreadyRinging = Boolean(activeOrderRef.current);
+    const isThisOrder = isAlreadyRinging && isSameOrder(activeOrderRef.current, orderData);
+
+    if (isAlreadyRinging && !isThisOrder) {
+      // Still surface it while the tab is in the background, just without the ring.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        showBackgroundOrderNotification(orderData);
+      }
+      return;
     }
 
-    const isTabHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
-    
-    // Always play sound immediately
-    playNotificationSound(orderData);
+    activeOrderRef.current = orderData || { id: Date.now() };
 
-    startAlertLoop();
+    const isTabHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
+    playNotificationSound(orderData);
+    startAlertLoop({ restart: !isThisOrder });
 
     if (isTabHidden) {
       showBackgroundOrderNotification(orderData);
@@ -466,11 +484,19 @@ export const useRestaurantNotificationsState = () => {
   useEffect(() => {
     if (!restaurantId) return;
 
-    const ALERT_POLL_MS = 8000;
+    // This poll is the fallback for when Socket.IO is down. While the socket is connected it
+    // only needs to be a safety net, so it backs right off; with several orders open the 8s
+    // full order fetch was a large part of what made the page stutter.
+    const ALERT_POLL_DISCONNECTED_MS = 8000;
+    const ALERT_POLL_CONNECTED_MS = 25000;
     let isCancelled = false;
+    let timeoutId = null;
 
     const pollOrders = async () => {
       if (isCancelled) return;
+      // The browser throttles background timers anyway, and the visibility handler below
+      // does a catch-up fetch when the tab comes back, so skip hidden-tab polls entirely.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
 
       try {
         const response = await restaurantAPI.getOrders({ page: 1, limit: 30 });
@@ -516,11 +542,15 @@ export const useRestaurantNotificationsState = () => {
         syncQueueWithServerRows(rows);
 
         if (confirmed.length > 0) {
-          // Trigger alerts for newest confirmed orders (dedupe prevents spam).
-          confirmed.slice(0, 5).forEach((o) => {
-            handleIncomingOrderAlert(o, 'poll');
-            enqueueOrder(o); // add each confirmed order to the queue
-          });
+          // Queue every confirmed order, but ring for only one of them: the one that is
+          // already ringing, or else the newest. The rest ring in turn as each is answered.
+          confirmed.slice(0, 5).forEach((o) => enqueueOrder(o));
+
+          const alreadyRinging = activeOrderRef.current;
+          const orderToRing = alreadyRinging
+            ? confirmed.find((o) => isSameOrder(o, alreadyRinging))
+            : confirmed[0];
+          if (orderToRing) handleIncomingOrderAlert(orderToRing, 'poll');
         }
 
         // --- NEW: Fallback for Cancellations if Socket failed ---
@@ -593,13 +623,26 @@ export const useRestaurantNotificationsState = () => {
       }
     };
 
+    const scheduleNextPoll = () => {
+      if (isCancelled) return;
+      const connected =
+        typeof window !== 'undefined' && window.restaurantSocketConnected === true;
+      timeoutId = setTimeout(runPoll, connected ? ALERT_POLL_CONNECTED_MS : ALERT_POLL_DISCONNECTED_MS);
+    };
+
+    // Chained timeouts rather than setInterval: a slow fetch can never stack up behind
+    // itself, which is what turned a batch of orders into a queue of overlapping requests.
+    const runPoll = async () => {
+      await pollOrders();
+      scheduleNextPoll();
+    };
+
     // Initial poll immediately.
-    pollOrders();
-    const intervalId = setInterval(pollOrders, ALERT_POLL_MS);
+    runPoll();
 
     return () => {
       isCancelled = true;
-      clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [restaurantId]);
 

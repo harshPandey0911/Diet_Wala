@@ -79,6 +79,7 @@ router.patch('/restaurants/complaints/:id', adminController.updateRestaurantComp
 router.get('/restaurants', adminController.getRestaurants);
 router.get('/dashboard-stats', adminController.getDashboardStats);
 router.get('/reports/restaurants', adminController.getRestaurantReport);
+router.get('/reports/restaurants/:restaurantId/full', adminController.getRestaurantFullReport);
 router.get('/reports/transactions', adminController.getTransactionReport);
 router.get('/reports/tax', adminController.getTaxReport);
 router.get('/reports/tax/:id', adminController.getTaxReportDetail);

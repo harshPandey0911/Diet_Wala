@@ -48,8 +48,21 @@ export function computeRestaurantCommissionAmount(baseAmount, rule) {
     return { commissionAmount, commissionType, commissionValue, baseAmount: safeBase };
 }
 
+/**
+ * The restaurant's own share of the item subtotal, i.e. the subtotal minus the admin's
+ * hidden food markup that is baked into every customer-facing price. Everything the
+ * restaurant is charged (commission, GST on item, TCS) is computed on this base, and the
+ * restaurant is paid on this base - never on the marked-up amount the customer saw.
+ */
+export function getRestaurantBaseSubtotal(pricing) {
+    const subtotal = Number(pricing?.subtotal ?? 0) || 0;
+    const markup = Number(pricing?.markupAmount ?? 0) || 0;
+    if (!Number.isFinite(markup) || markup <= 0) return Math.max(0, subtotal);
+    return Math.max(0, Math.round((subtotal - markup) * 100) / 100);
+}
+
 export async function getRestaurantCommissionSnapshot(orderDoc) {
-    const baseAmount = Number(orderDoc?.pricing?.subtotal ?? 0) || 0;
+    const baseAmount = getRestaurantBaseSubtotal(orderDoc?.pricing);
     const restaurantIdRaw =
         orderDoc?.restaurantId?._id ?? orderDoc?.restaurantId ?? null;
 
@@ -137,11 +150,16 @@ export async function createInitialTransaction(order) {
     const paymentGatewayFee = commissionSnapshot.paymentGatewayFee || 0;
     const tcs = commissionSnapshot.tcs || 0;
 
-    const restaurantNet = (order.pricing?.subtotal || 0) + (order.pricing?.packagingFee || 0) - restaurantCommission - gstOnItem - gstOnCommission - paymentGatewayFee - tcs;
+    // Admin's food markup is the platform's margin, so it never reaches the restaurant:
+    // the payout starts from the restaurant's own (ex-markup) price.
+    const markupAmount = Math.max(0, Number(order.pricing?.markupAmount ?? 0) || 0);
+    const restaurantBaseSubtotal = getRestaurantBaseSubtotal(order.pricing);
+
+    const restaurantNet = restaurantBaseSubtotal + (order.pricing?.packagingFee || 0) - restaurantCommission - gstOnItem - gstOnCommission - paymentGatewayFee - tcs;
 
     // Coupon + loyalty-points discounts are absorbed by the platform's margin (restaurant/rider are paid in full).
     const totalDiscount = (order.pricing?.discount || 0) + (order.pricing?.pointsDiscount || 0);
-    const calculatedPlatformNetProfit = (order.pricing?.platformFee || 0) + (order.pricing?.deliveryFee || 0) + restaurantCommission + gstOnItem + paymentGatewayFee + tcs - riderShare - totalDiscount;
+    const calculatedPlatformNetProfit = (order.pricing?.platformFee || 0) + (order.pricing?.deliveryFee || 0) + restaurantCommission + gstOnItem + paymentGatewayFee + tcs + markupAmount - riderShare - totalDiscount;
     const platformNetProfit = order.platformProfit !== undefined
         ? order.platformProfit
         : Math.max(0, calculatedPlatformNetProfit);
@@ -174,6 +192,8 @@ export async function createInitialTransaction(order) {
         },
         pricing: {
             subtotal: Number(order.pricing?.subtotal || 0) || 0,
+            markupAmount,
+            markupPercent: Number(order.pricing?.markupPercent || 0) || 0,
             tax: Number(order.pricing?.tax || 0) || 0,
             packagingFee: Number(order.pricing?.packagingFee || 0) || 0,
             deliveryFee: Number(order.pricing?.deliveryFee || 0) || 0,
@@ -188,6 +208,7 @@ export async function createInitialTransaction(order) {
             totalCustomerPaid,
             restaurantShare: Math.max(0, restaurantNet),
             restaurantCommission,
+            markupAmount,
             gstOnItem,
             gstOnCommission,
             paymentGatewayFee,
