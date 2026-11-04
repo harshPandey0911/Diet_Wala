@@ -3847,6 +3847,7 @@ export async function getAllOffers(_query = {}) {
     const list = await FoodOffer.find({})
         .sort({ createdAt: -1 })
         .populate({ path: 'restaurantId', select: 'restaurantName' })
+        .populate({ path: 'userId', select: 'name phone' })
         .lean();
 
     const offers = list.map((o, index) => {
@@ -3868,9 +3869,13 @@ export async function getAllOffers(_query = {}) {
             offerId: String(o._id),
             dishId: 'all',
             restaurantName,
-            dishName: 'All Items',
+            dishName: o.categoryName ? `Category: ${o.categoryName}` : 'All Items',
             couponCode: o.couponCode,
-            customerGroup: o.customerScope === 'first-time' ? 'new' : 'all',
+            customerGroup: o.customerScope === 'first-time' ? 'new' : (o.customerScope === 'specific' ? 'specific' : 'all'),
+            userId: o.userId?._id ? String(o.userId._id) : '',
+            userLabel: o.userId?._id ? [o.userId.name, o.userId.phone].filter(Boolean).join(' · ') : '',
+            categoryId: o.categoryId ? String(o.categoryId) : '',
+            categoryName: o.categoryName || '',
             discountType: o.discountType,
             discountPercentage,
             originalPrice,
@@ -3915,8 +3920,11 @@ export async function createAdminOffer(body) {
         discountType: body.discountType,
         discountValue: body.discountValue,
         customerScope: body.customerScope,
+        userId: body.customerScope === 'specific' ? body.userId : undefined,
         restaurantScope: body.restaurantScope,
         restaurantId: body.restaurantScope === 'selected' ? body.restaurantId : undefined,
+        categoryId: body.categoryId || undefined,
+        categoryName: body.categoryName || '',
         minOrderValue: body.minOrderValue ?? 0,
         maxDiscount: body.maxDiscount ?? null,
         usageLimit: body.usageLimit ?? null,
@@ -3981,8 +3989,11 @@ export async function updateAdminOffer(id, body) {
                 discountType: body.discountType,
                 discountValue: body.discountValue,
                 customerScope: body.customerScope,
+                userId: body.customerScope === 'specific' ? body.userId : null,
                 restaurantScope: body.restaurantScope,
                 restaurantId: isSelected ? body.restaurantId : null,
+                categoryId: body.categoryId || null,
+                categoryName: body.categoryName || '',
                 minOrderValue: body.minOrderValue ?? 0,
                 maxDiscount: body.maxDiscount ?? null,
                 usageLimit: body.usageLimit ?? null,

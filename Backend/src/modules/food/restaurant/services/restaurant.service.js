@@ -1707,6 +1707,8 @@ export const getApprovedRestaurantByIdOrSlug = async (idOrSlug, query = {}) => {
         // Fetch Admin FoodOffers
         const adminFilter = {
             status: 'active',
+            // Coupons made for one particular user must not be shown to everyone.
+            customerScope: { $ne: 'specific' },
             $and: [
                 { $or: [{ startDate: { $exists: false } }, { startDate: null }, { startDate: { $lte: now } }] },
                 { $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gt: now } }] }
@@ -1836,6 +1838,7 @@ export const listPublicOffers = async () => {
     ));
     const filter = {
         status: 'active',
+        customerScope: { $ne: 'specific' },
         $and: [
             { $or: [{ startDate: { $exists: false } }, { startDate: null }, { startDate: { $lte: now } }] },
             { $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: startOfTodayUtc } }] }

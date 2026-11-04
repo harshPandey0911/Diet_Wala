@@ -7,6 +7,7 @@ import { assertAppOpenForZone } from '../../admin/services/appAvailability.servi
 import { FoodOffer } from '../../admin/models/offer.model.js';
 import { FoodOfferUsage } from '../../admin/models/offerUsage.model.js';
 import { FoodZone } from '../../admin/models/zone.model.js';
+import { FoodItem } from '../../admin/models/food.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { haversineKm } from './order.helpers.js';
 import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
@@ -243,6 +244,38 @@ export async function calculateOrderPricing(userId, dto) {
         usageOk = false;
       }
 
+      // Coupon made for one particular user only.
+      const userOk =
+        offer.customerScope !== "specific" ||
+        (Boolean(userId) && String(offer.userId || "") === String(userId));
+
+      // Category coupon: discount applies only to items of that category.
+      let couponBaseSubtotal = eligibleSubtotalForCoupon;
+      let categoryMatched = true;
+      if (offer.categoryId) {
+        const itemIds = items
+          .map((it) => String(it.itemId || ""))
+          .filter((id) => mongoose.Types.ObjectId.isValid(id));
+        const foods = itemIds.length
+          ? await FoodItem.find({ _id: { $in: itemIds } }).select("categoryId").lean()
+          : [];
+        const inCategory = new Set(
+          foods
+            .filter((f) => String(f.categoryId || "") === String(offer.categoryId))
+            .map((f) => String(f._id)),
+        );
+        couponBaseSubtotal = Math.round(
+          items.reduce(
+            (sum, it) =>
+              inCategory.has(String(it.itemId))
+                ? sum + (Number(it.price) || 0) * (Number(it.quantity) || 1)
+                : sum,
+            0,
+          ),
+        );
+        categoryMatched = couponBaseSubtotal > 0;
+      }
+
       let perUserOk = true;
       if (userId && Number(offer.perUserLimit) > 0) {
         const usage = await FoodOfferUsage.findOne({
@@ -273,26 +306,28 @@ export async function calculateOrderPricing(userId, dto) {
         startOk &&
         endOk &&
         scopeOk &&
+        userOk &&
+        categoryMatched &&
         minOk &&
         usageOk &&
         perUserOk &&
         firstOrderOk;
 
       if (allowed) {
-        if (eligibleSubtotalForCoupon <= 0) {
+        if (couponBaseSubtotal <= 0) {
           couponError = "This coupon is not applicable on discounted items. Please try other items.";
         } else {
           if (offer.discountType === "percentage") {
-            const raw = eligibleSubtotalForCoupon * (Number(offer.discountValue) / 100);
+            const raw = couponBaseSubtotal * (Number(offer.discountValue) / 100);
             const capped = Number(offer.maxDiscount)
               ? Math.min(raw, Number(offer.maxDiscount))
               : raw;
-            discount = Math.max(0, Math.min(eligibleSubtotalForCoupon, Math.floor(capped)));
+            discount = Math.max(0, Math.min(couponBaseSubtotal, Math.floor(capped)));
           } else {
             discount = Math.max(
               0,
               Math.min(
-                eligibleSubtotalForCoupon,
+                couponBaseSubtotal,
                 Math.floor(Number(offer.discountValue) || 0),
               ),
             );
@@ -300,7 +335,11 @@ export async function calculateOrderPricing(userId, dto) {
           appliedCoupon = { code: codeRaw, discount };
         }
       } else {
-        if (!minOk) {
+        if (!userOk) {
+          couponError = "This coupon is not valid for your account.";
+        } else if (!categoryMatched) {
+          couponError = `This coupon is valid only on ${offer.categoryName || "selected category"} items. Add an item from that category.`;
+        } else if (!minOk) {
           couponError = `Minimum order value of ${offer.minOrderValue} required for this coupon.`;
         } else if (!statusOk) {
           couponError = "This coupon is not active.";

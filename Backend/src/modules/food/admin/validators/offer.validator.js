@@ -6,9 +6,12 @@ const createOfferSchema = z.object({
     couponCode: z.string().min(1, 'Coupon code is required'),
     discountType: z.enum(['percentage', 'flat-price']).default('percentage'),
     discountValue: z.number().positive('Discount value must be greater than 0'),
-    customerScope: z.enum(['all', 'first-time']).default('all'),
+    customerScope: z.enum(['all', 'first-time', 'specific']).default('all'),
+    userId: z.string().optional(),
     restaurantScope: z.enum(['all', 'selected']).default('all'),
     restaurantId: z.string().optional(),
+    categoryId: z.string().optional(),
+    categoryName: z.string().optional(),
     endDate: z.string().optional().or(z.literal('')).or(z.undefined()),
     startDate: z.string().optional().or(z.literal('')).or(z.undefined()),
     minOrderValue: z.number().min(0).optional(),
@@ -27,6 +30,9 @@ export const validateCreateOfferDto = (body, { isUpdate = false } = {}) => {
         customerScope: body?.customerScope,
         restaurantScope: body?.restaurantScope,
         restaurantId: body?.restaurantId ? String(body.restaurantId) : undefined,
+        userId: body?.userId ? String(body.userId) : undefined,
+        categoryId: body?.categoryId ? String(body.categoryId) : undefined,
+        categoryName: body?.categoryName ? String(body.categoryName) : undefined,
         endDate: body?.endDate ? String(body.endDate) : undefined,
         startDate: body?.startDate ? String(body.startDate) : undefined,
         minOrderValue: body?.minOrderValue !== undefined ? Number(body.minOrderValue) : undefined,
@@ -44,6 +50,20 @@ export const validateCreateOfferDto = (body, { isUpdate = false } = {}) => {
     if (result.data.restaurantScope === 'selected') {
         if (!result.data.restaurantId || !mongoose.Types.ObjectId.isValid(result.data.restaurantId)) {
             throw new ValidationError('Valid restaurantId is required for selected restaurant scope');
+        }
+    }
+
+    if (result.data.customerScope === 'specific') {
+        if (!result.data.userId || !mongoose.Types.ObjectId.isValid(result.data.userId)) {
+            throw new ValidationError('Please select a user for this coupon');
+        }
+    }
+    if (result.data.categoryId) {
+        if (result.data.restaurantScope !== 'selected') {
+            throw new ValidationError('Select a restaurant to apply a category coupon');
+        }
+        if (!mongoose.Types.ObjectId.isValid(result.data.categoryId)) {
+            throw new ValidationError('Invalid categoryId');
         }
     }
 
@@ -79,6 +99,9 @@ export const validateCreateOfferDto = (body, { isUpdate = false } = {}) => {
         customerScope: result.data.customerScope,
         restaurantScope: result.data.restaurantScope,
         restaurantId: result.data.restaurantScope === 'selected' ? result.data.restaurantId : undefined,
+        userId: result.data.customerScope === 'specific' ? result.data.userId : undefined,
+        categoryId: result.data.categoryId || undefined,
+        categoryName: result.data.categoryId ? (result.data.categoryName || '') : '',
         endDate,
         startDate,
         minOrderValue: result.data.minOrderValue,

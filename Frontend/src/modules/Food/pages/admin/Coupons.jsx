@@ -20,13 +20,17 @@ export default function Coupons() {
   const [deletingOffer, setDeletingOffer] = useState({})
   const [errors, setErrors] = useState({})
   const [editingId, setEditingId] = useState(null)
+  const [customers, setCustomers] = useState([])
+  const [categories, setCategories] = useState([])
   const [formData, setFormData] = useState({
     couponCode: "",
     discountType: "percentage",
     discountValue: "",
     customerScope: "all",
+    userId: "",
     restaurantScope: "all",
     restaurantId: "",
+    categoryId: "",
     endDate: "",
     startDate: "",
     minOrderValue: "",
@@ -82,6 +86,45 @@ export default function Coupons() {
     fetchRestaurants()
   }, [])
 
+  // Customers list is only needed when a coupon is made for one particular user.
+  useEffect(() => {
+    if (formData.customerScope !== "specific" || customers.length > 0) return
+    ;(async () => {
+      try {
+        const response = await adminAPI.getCustomers({ page: 1, limit: 1000 })
+        const data = response?.data?.data
+        const list = data?.customers || data?.users || []
+        setCustomers(Array.isArray(list) ? list : [])
+      } catch (err) {
+        debugError("Error fetching customers:", err)
+      }
+    })()
+  }, [formData.customerScope, customers.length])
+
+  // Categories that belong to the selected restaurant (derived from its menu items).
+  useEffect(() => {
+    if (formData.restaurantScope !== "selected" || !formData.restaurantId) {
+      setCategories([])
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await adminAPI.getFoods({ restaurantId: formData.restaurantId, limit: 5000 })
+        const foods = response?.data?.data?.foods || []
+        const map = new Map()
+        foods.forEach((f) => {
+          if (f?.categoryId) map.set(String(f.categoryId), f.categoryName || "Category")
+        })
+        if (!cancelled) setCategories(Array.from(map, ([id, name]) => ({ id, name })))
+      } catch (err) {
+        debugError("Error fetching categories:", err)
+        if (!cancelled) setCategories([])
+      }
+    })()
+    return () => { cancelled = true }
+  }, [formData.restaurantScope, formData.restaurantId])
+
   const todayYMD = () => {
     const d = new Date()
     const m = String(d.getMonth() + 1).padStart(2, "0")
@@ -135,6 +178,7 @@ export default function Coupons() {
       }
     }
     const next = { ...formData, [field]: value }
+    if (field === "restaurantId" || field === "restaurantScope") next.categoryId = ""
     // Date constraints
     if (field === "startDate" && next.endDate) {
       // Ensure startDate <= endDate
@@ -176,7 +220,9 @@ export default function Coupons() {
       couponCode: offer.couponCode || "",
       discountType: offer.discountType || "percentage",
       discountValue: offer.discountValue ?? "",
-      customerScope: offer.customerGroup === "new" ? "first-time" : "all",
+      customerScope: offer.customerGroup === "new" ? "first-time" : (offer.customerGroup === "specific" ? "specific" : "all"),
+      userId: offer.userId || "",
+      categoryId: offer.categoryId || "",
       restaurantScope: offer.restaurantScope === "selected" ? "selected" : "all",
       restaurantId: offer.restaurantId || "",
       endDate: toYMD(offer.endDate),
@@ -198,8 +244,10 @@ export default function Coupons() {
       discountType: "percentage",
       discountValue: "",
       customerScope: "all",
+      userId: "",
       restaurantScope: "all",
       restaurantId: "",
+      categoryId: "",
       endDate: "",
       startDate: "",
       minOrderValue: "",
@@ -231,6 +279,11 @@ export default function Coupons() {
       return
     }
 
+    if (formData.customerScope === "specific" && !formData.userId) {
+      setSubmitError("Please select a user")
+      return
+    }
+
     if (formData.restaurantScope === "selected" && !formData.restaurantId) {
       setSubmitError("Please select a restaurant")
       return
@@ -244,7 +297,12 @@ export default function Coupons() {
         discountValue: parsedDiscountValue,
         customerScope: formData.customerScope,
         restaurantScope: formData.restaurantScope,
+        userId: formData.customerScope === "specific" ? formData.userId : undefined,
         restaurantId: formData.restaurantScope === "selected" ? formData.restaurantId : undefined,
+        categoryId: formData.restaurantScope === "selected" && formData.categoryId ? formData.categoryId : undefined,
+        categoryName: formData.restaurantScope === "selected" && formData.categoryId
+          ? (categories.find((c) => c.id === formData.categoryId)?.name || undefined)
+          : undefined,
         endDate: formData.endDate || undefined,
         startDate: formData.startDate || undefined,
         minOrderValue: formData.minOrderValue !== "" ? Number(formData.minOrderValue) : undefined,
@@ -396,6 +454,7 @@ export default function Coupons() {
                   >
                     <option value="all">All Users</option>
                     <option value="first-time">First-time Users</option>
+                    <option value="specific">Particular User</option>
                   </select>
                 </div>
 
@@ -503,6 +562,27 @@ export default function Coupons() {
                 <label htmlFor="isFirstOrderOnly" className="text-sm text-slate-700">First order only</label>
               </div>
 
+                {formData.customerScope === "specific" && (
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Select User</label>
+                    <select
+                      value={formData.userId}
+                      onChange={(e) => handleFormChange("userId", e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Choose a user</option>
+                      {formData.userId && !customers.some((c) => String(c._id || c.id) === formData.userId) && (
+                        <option value={formData.userId}>Selected user</option>
+                      )}
+                      {customers.map((c) => (
+                        <option key={c._id || c.id} value={c._id || c.id}>
+                          {[c.name, c.phone].filter(Boolean).join(" - ") || c.email || c._id || c.id}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {formData.restaurantScope === "selected" && (
                   <div className="md:col-span-2 lg:col-span-3">
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Select Restaurant</label>
@@ -518,6 +598,26 @@ export default function Coupons() {
                         </option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {formData.restaurantScope === "selected" && formData.restaurantId && (
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Category (Optional)</label>
+                    <select
+                      value={formData.categoryId}
+                      onChange={(e) => handleFormChange("categoryId", e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All categories of this restaurant</option>
+                      {formData.categoryId && !categories.some((c) => c.id === formData.categoryId) && (
+                        <option value={formData.categoryId}>Selected category</option>
+                      )}
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-slate-500">Discount will apply only to items of this category.</p>
                   </div>
                 )}
               </div>
@@ -637,7 +737,7 @@ export default function Coupons() {
                             ? "bg-purple-100 text-purple-700"
                             : "bg-slate-100 text-slate-700"
                         }`}>
-                          {offer.customerGroup === "new" ? "First-time Users" : "All Users"}
+                          {offer.customerGroup === "new" ? "First-time Users" : offer.customerGroup === "specific" ? (offer.userLabel || "Particular User") : "All Users"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
