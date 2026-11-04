@@ -21,6 +21,7 @@ export default function Coupons() {
   const [errors, setErrors] = useState({})
   const [editingId, setEditingId] = useState(null)
   const [customers, setCustomers] = useState([])
+  const [userSearch, setUserSearch] = useState("")
   const [categories, setCategories] = useState([])
   const [formData, setFormData] = useState({
     couponCode: "",
@@ -87,19 +88,22 @@ export default function Coupons() {
   }, [])
 
   // Customers list is only needed when a coupon is made for one particular user.
+  // Searches by name / phone / email on the server (debounced), so it works for any number of users.
   useEffect(() => {
-    if (formData.customerScope !== "specific" || customers.length > 0) return
-    ;(async () => {
+    if (formData.customerScope !== "specific") return
+    let cancelled = false
+    const timer = setTimeout(async () => {
       try {
-        const response = await adminAPI.getCustomers({ page: 1, limit: 1000 })
+        const response = await adminAPI.getCustomers({ page: 1, limit: 100, search: userSearch.trim() || undefined })
         const data = response?.data?.data
         const list = data?.customers || data?.users || []
-        setCustomers(Array.isArray(list) ? list : [])
+        if (!cancelled) setCustomers(Array.isArray(list) ? list : [])
       } catch (err) {
         debugError("Error fetching customers:", err)
       }
-    })()
-  }, [formData.customerScope, customers.length])
+    }, 300)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [formData.customerScope, userSearch])
 
   // Categories that belong to the selected restaurant (derived from its menu items).
   useEffect(() => {
@@ -565,6 +569,13 @@ export default function Coupons() {
                 {formData.customerScope === "specific" && (
                   <div className="md:col-span-2 lg:col-span-3">
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Select User</label>
+                    <input
+                      type="text"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search user by name, phone or email..."
+                      className="w-full mb-2 px-3 py-2.5 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
                     <select
                       value={formData.userId}
                       onChange={(e) => handleFormChange("userId", e.target.value)}
