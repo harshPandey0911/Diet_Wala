@@ -18,7 +18,7 @@ const createOfferSchema = z.object({
     isFirstOrderOnly: z.boolean().optional()
 });
 
-export const validateCreateOfferDto = (body) => {
+export const validateCreateOfferDto = (body, { isUpdate = false } = {}) => {
     const normalized = {
         ...body,
         couponCode: typeof body?.couponCode === 'string' ? body.couponCode.trim() : body?.couponCode,
@@ -58,7 +58,7 @@ export const validateCreateOfferDto = (body) => {
     if (endDate && startDate && endDate.getTime() <= startDate.getTime()) {
         throw new ValidationError('endDate must be after startDate');
     }
-    if (endDate && endDate.getTime() <= Date.now()) {
+    if (!isUpdate && endDate && endDate.getTime() <= Date.now()) {
         throw new ValidationError('endDate must be a future date');
     }
     // Business rule: percentage coupon must have maxDiscount; flat ignores it

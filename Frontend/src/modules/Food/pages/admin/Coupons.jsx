@@ -19,6 +19,7 @@ export default function Coupons() {
   const [updatingCartVisibility, setUpdatingCartVisibility] = useState({})
   const [deletingOffer, setDeletingOffer] = useState({})
   const [errors, setErrors] = useState({})
+  const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState({
     couponCode: "",
     discountType: "percentage",
@@ -104,7 +105,7 @@ export default function Coupons() {
     const start = f.startDate ? new Date(`${f.startDate}T00:00:00`) : null
     const end = f.endDate ? new Date(`${f.endDate}T00:00:00`) : null
     const now = new Date()
-    if (end && end < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+    if (!editingId && end && end < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
       e.endDate = "End date cannot be in the past"
     }
     if (start && end && start > end) {
@@ -160,7 +161,38 @@ export default function Coupons() {
     }
   }
 
+  const toYMD = (value) => {
+    if (!value) return ""
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10)
+  }
+
+  const handleEditOffer = (offer) => {
+    setEditingId(offer.offerId)
+    setErrors({})
+    setSubmitError("")
+    setSubmitSuccess("")
+    setFormData({
+      couponCode: offer.couponCode || "",
+      discountType: offer.discountType || "percentage",
+      discountValue: offer.discountValue ?? "",
+      customerScope: offer.customerGroup === "new" ? "first-time" : "all",
+      restaurantScope: offer.restaurantScope === "selected" ? "selected" : "all",
+      restaurantId: offer.restaurantId || "",
+      endDate: toYMD(offer.endDate),
+      startDate: toYMD(offer.startDate),
+      minOrderValue: offer.minOrderValue ? String(offer.minOrderValue) : "",
+      maxDiscount: offer.maxDiscount ? String(offer.maxDiscount) : "",
+      usageLimit: offer.usageLimit ? String(offer.usageLimit) : "",
+      perUserLimit: offer.perUserLimit ? String(offer.perUserLimit) : "",
+      isFirstOrderOnly: Boolean(offer.isFirstOrderOnly),
+    })
+    setIsAddOpen(true)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   const resetForm = () => {
+    setEditingId(null)
     setFormData({
       couponCode: "",
       discountType: "percentage",
@@ -221,14 +253,18 @@ export default function Coupons() {
         perUserLimit: formData.perUserLimit !== "" ? Number(formData.perUserLimit) : undefined,
         isFirstOrderOnly: Boolean(formData.isFirstOrderOnly),
       }
-      await adminAPI.createAdminOffer(payload)
-
-      setSubmitSuccess("Coupon created successfully")
+      if (editingId) {
+        await adminAPI.updateAdminOffer(editingId, payload)
+        setSubmitSuccess("Coupon updated successfully")
+      } else {
+        await adminAPI.createAdminOffer(payload)
+        setSubmitSuccess("Coupon created successfully")
+      }
       resetForm()
       await fetchOffers()
     } catch (err) {
       debugError("Error creating coupon:", err)
-      setSubmitError(err?.response?.data?.message || "Failed to create coupon")
+      setSubmitError(err?.response?.data?.message || (editingId ? "Failed to update coupon" : "Failed to create coupon"))
     } finally {
       setIsSubmitting(false)
     }
@@ -292,6 +328,8 @@ export default function Coupons() {
             <button
               type="button"
               onClick={() => {
+                if (isAddOpen) resetForm()
+                setErrors({})
                 setIsAddOpen((prev) => !prev)
                 setSubmitError("")
                 setSubmitSuccess("")
@@ -307,7 +345,7 @@ export default function Coupons() {
               onSubmit={handleCreateCoupon}
               className="border border-slate-200 rounded-xl p-4 mb-5 bg-slate-50"
             >
-              <h3 className="text-base font-semibold text-slate-900 mb-3">Create Coupon</h3>
+              <h3 className="text-base font-semibold text-slate-900 mb-3">{editingId ? "Edit Coupon" : "Create Coupon"}</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
@@ -379,7 +417,7 @@ export default function Coupons() {
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => handleFormChange("endDate", e.target.value)}
-                  min={formData.startDate || todayYMD()}
+                  min={editingId ? undefined : (formData.startDate || todayYMD())}
                   className={`w-full px-3 py-2.5 text-sm rounded-lg border ${errors.endDate ? "border-red-500" : "border-slate-300"} bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                   />
                 {errors.endDate && <p className="mt-1 text-xs text-red-600">{errors.endDate}</p>}
@@ -391,7 +429,7 @@ export default function Coupons() {
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleFormChange("startDate", e.target.value)}
-                  min={todayYMD()}
+                  min={editingId ? undefined : todayYMD()}
                   className={`w-full px-3 py-2.5 text-sm rounded-lg border ${errors.startDate ? "border-red-500" : "border-slate-300"} bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                 />
                 {errors.startDate && <p className="mt-1 text-xs text-red-600">{errors.startDate}</p>}
@@ -496,8 +534,17 @@ export default function Coupons() {
                   disabled={isSubmitting || Object.keys(errors).length > 0}
                   className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isSubmitting ? "Creating..." : "Create Coupon"}
+                  {isSubmitting ? (editingId ? "Saving..." : "Creating...") : (editingId ? "Save Changes" : "Create Coupon")}
                 </button>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => { resetForm(); setErrors({}); setSubmitError(""); setSubmitSuccess("") }}
+                    className="ml-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
             </form>
           )}
@@ -671,6 +718,13 @@ export default function Coupons() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleEditOffer(offer)}
+                          className="mr-2 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700"
+                        >
+                          Edit
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteOffer(offer.offerId)}

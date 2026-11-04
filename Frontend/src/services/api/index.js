@@ -606,6 +606,8 @@ export const adminAPI = {
     adminClient.get("/food/admin/offers", { params }),
   createAdminOffer: (body) =>
     adminClient.post("/food/admin/offers", body ?? {}),
+  updateAdminOffer: (offerId, body) =>
+    adminClient.put(`/food/admin/offers/${String(offerId)}`, body ?? {}),
   updateAdminOfferCartVisibility: (offerId, itemId, showInCart) =>
     adminClient.patch(`/food/admin/offers/${String(offerId)}/cart-visibility`, { itemId: String(itemId), showInCart: Boolean(showInCart) }),
   deleteAdminOffer: (offerId) =>

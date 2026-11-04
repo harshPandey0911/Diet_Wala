@@ -3883,7 +3883,12 @@ export async function getAllOffers(_query = {}) {
             maxDiscount: o.maxDiscount ?? null,
             usageLimit: o.usageLimit ?? null,
             usedCount: o.usedCount ?? 0,
-            restaurantScope: o.restaurantScope
+            restaurantScope: o.restaurantScope,
+            restaurantId: o.restaurantId?._id ? String(o.restaurantId._id) : '',
+            startDate: o.startDate || null,
+            perUserLimit: o.perUserLimit ?? null,
+            isFirstOrderOnly: Boolean(o.isFirstOrderOnly),
+            discountValue: Number(o.discountValue) || 0
         };
     });
 
@@ -3945,6 +3950,52 @@ export async function createAdminOffer(body) {
     }
 
     return doc.toObject();
+}
+
+export async function updateAdminOffer(id, body) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+    const current = await FoodOffer.findById(id).lean();
+    if (!current) return null;
+
+    const duplicate = await FoodOffer.findOne({ couponCode: body.couponCode, _id: { $ne: id } }).lean();
+    if (duplicate) {
+        throw new ValidationError('Coupon code already exists');
+    }
+
+    const offerEnd = body.endDate ? new Date(body.endDate) : null;
+    let expired = false;
+    if (offerEnd && !Number.isNaN(offerEnd.getTime())) {
+        offerEnd.setUTCHours(23, 59, 59, 999);
+        expired = Date.now() > offerEnd.getTime();
+    }
+    let status = current.status || 'active';
+    if (expired) status = 'inactive';
+    else if (status === 'inactive') status = 'active';
+
+    const isSelected = body.restaurantScope === 'selected';
+    const updated = await FoodOffer.findByIdAndUpdate(
+        id,
+        {
+            $set: {
+                couponCode: body.couponCode,
+                discountType: body.discountType,
+                discountValue: body.discountValue,
+                customerScope: body.customerScope,
+                restaurantScope: body.restaurantScope,
+                restaurantId: isSelected ? body.restaurantId : null,
+                minOrderValue: body.minOrderValue ?? 0,
+                maxDiscount: body.maxDiscount ?? null,
+                usageLimit: body.usageLimit ?? null,
+                perUserLimit: body.perUserLimit ?? null,
+                startDate: body.startDate ?? null,
+                endDate: body.endDate ?? null,
+                isFirstOrderOnly: body.isFirstOrderOnly ?? false,
+                status
+            }
+        },
+        { new: true }
+    ).lean();
+    return updated;
 }
 
 export async function updateAdminOfferCartVisibility(offerId, itemId, showInCart) {
