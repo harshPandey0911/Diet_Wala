@@ -1496,7 +1496,7 @@ export async function updateOrderStatusRestaurant(
                     }
                 } else if (assignedId && io) {
                     console.log(`[DEBUG] Notifying assigned partner ${assignedId} that order is ready.`);
-                    const restaurant = await FoodRestaurant.findById(order.restaurantId).select('restaurantName location addressLine1 area city state').lean();
+                    const restaurant = await FoodRestaurant.findById(order.restaurantId).select('restaurantName location addressLine1 area city state ownerPhone primaryContactNumber').lean();
                     const payload = buildDeliverySocketPayload(order, restaurant);
                     logger.info(
                       `[DeliveryDispatch] Emitting order_ready to ${rooms.delivery(assignedId)} for order ${order._id.toString()}`,

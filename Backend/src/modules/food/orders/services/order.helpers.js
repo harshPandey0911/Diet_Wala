@@ -248,7 +248,11 @@ export function buildDeliverySocketPayload(orderDoc, restaurantDoc = null) {
       restaurantLocation?.formattedAddress ||
       restaurant?.addressLine1 ||
       "",
-    restaurantPhone: restaurant?.phone || "",
+    restaurantPhone:
+      restaurant?.primaryContactNumber ||
+      restaurant?.ownerPhone ||
+      restaurant?.phone ||
+      "",
     restaurantLocation: {
       latitude: restaurantLocation?.latitude,
       longitude: restaurantLocation?.longitude,

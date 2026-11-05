@@ -37,7 +37,11 @@ export const PickupActionModal = ({
   const restaurantPhone = String(
     order.restaurantPhone ||
     order.restaurant_phone ||
+    order.restaurantId?.primaryContactNumber ||
+    order.restaurantId?.ownerPhone ||
     order.restaurantId?.phone ||
+    order.restaurant?.primaryContactNumber ||
+    order.restaurant?.ownerPhone ||
     order.restaurant?.phone ||
     '',
   ).trim();
