@@ -8,3 +8,5 @@ temp_interactive_push.bat
 
 # Migration backups: contain real order, payout and customer data
 Backend/scripts/backups/
+config.bat
+node_modules

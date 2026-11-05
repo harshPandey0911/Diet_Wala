@@ -9,8 +9,7 @@ import { FoodOfferUsage } from '../../admin/models/offerUsage.model.js';
 import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodItem } from '../../admin/models/food.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
-import { haversineKm } from './order.helpers.js';
-import { getDrivingDistances } from '../../../../services/googleMaps.service.js';
+import { deliveryDistanceKm } from './order.helpers.js';
 import { computePointsRedemption } from '../../loyalty/services/loyalty.service.js';
 import { assertDeliveryLocationServiceable } from './delivery-location.service.js';
 
@@ -73,30 +72,11 @@ export async function calculateOrderPricing(userId, dto) {
   const platformFee = (feeSettings.platformFee != null && Number.isFinite(Number(feeSettings.platformFee))) ? Number(feeSettings.platformFee) : 0;
 
   const freeUpTo = Number(feeSettings.freeDeliveryUpTo || 0);
-  let distanceKm = null;
-  if (
-    restaurant?.location?.coordinates?.length === 2 &&
-    dto?.deliveryAddress?.location?.coordinates?.length === 2
-  ) {
-    const [rLng, rLat] = restaurant.location.coordinates;
-    const [dLng, dLat] = dto.deliveryAddress.location.coordinates;
-    try {
-      const origin = { lat: rLat, lng: rLng };
-      const dests = [{ id: "delivery", lat: dLat, lng: dLng }];
-      const distances = await getDrivingDistances(origin, dests);
-      const distInfo = distances.get("delivery");
-      
-      if (distInfo && distInfo.distanceValue) {
-        distanceKm = distInfo.distanceValue / 1000;
-      } else {
-        const d = haversineKm(rLat, rLng, dLat, dLng);
-        distanceKm = Number.isFinite(d) ? d : null;
-      }
-    } catch (err) {
-      const d = haversineKm(rLat, rLng, dLat, dLng);
-      distanceKm = Number.isFinite(d) ? d : null;
-    }
-  }
+  // Same distance as order placement uses for the rider's earning (see deliveryDistanceKm).
+  const distanceKm = deliveryDistanceKm(
+    restaurant?.location?.coordinates,
+    dto?.deliveryAddress?.location?.coordinates,
+  );
   let deliveryFee = 0;
   let deliveryFeeBreakdown = null;
   await assertDeliveryLocationServiceable({
@@ -116,58 +96,33 @@ export async function calculateOrderPricing(userId, dto) {
       ? [...feeSettings.deliveryFeeRanges]
       : [];
     if (ranges.length > 0) {
-      ranges.sort((a, b) => Number(a.min) - Number(b.min));
+      const validRanges = ranges
+        .map((r) => ({ min: Number(r?.min), max: Number(r?.max), fee: Number(r?.fee) }))
+        .filter((r) => Number.isFinite(r.min) && Number.isFinite(r.max) && Number.isFinite(r.fee))
+        .sort((a, b) => a.min - b.min);
       let matched = null;
-      for (let i = 0; i < ranges.length; i += 1) {
-        const r = ranges[i] || {};
-        const min = Number(r.min);
-        const max = Number(r.max);
-        const fee = Number(r.fee);
-        if (
-          !Number.isFinite(min) ||
-          !Number.isFinite(max) ||
-          !Number.isFinite(fee)
-        ) {
-          continue;
-        }
-        const isLast = i === ranges.length - 1;
-        if (!Number.isFinite(distanceKm)) {
-          continue;
-        }
-        const inRange = isLast
-          ? distanceKm >= min
-          : distanceKm >= min && distanceKm < max;
-        if (inRange) {
-          matched = fee;
-          if (Number.isFinite(distanceKm)) {
-            deliveryFeeBreakdown = {
-              source: "distance",
-              distanceKm,
-              minKm: min,
-              maxKm: max,
-              fee,
-            };
-          }
-          break;
-        }
-      }
 
-      if (Number.isFinite(distanceKm) && !Number.isFinite(matched)) {
-        const lastRange = ranges[ranges.length - 1];
-        const lastFee = lastRange && Number.isFinite(Number(lastRange.fee))
-          ? Number(lastRange.fee)
-          : null;
-        matched =
-          lastFee ??
-          (feeSettings.deliveryFee != null ? Number(feeSettings.deliveryFee) : 0);
-        if (Number.isFinite(matched)) {
-          deliveryFeeBreakdown = {
-            source: 'distance',
-            distanceKm,
-            fee: matched,
-            fallback: true,
-          };
+      if (Number.isFinite(distanceKm) && validRanges.length > 0) {
+        // Use the highest slab that has started at this distance. That covers a normal
+        // in-range hit, a distance past the last slab, and a distance that falls in a gap
+        // between two slabs (e.g. 3.5 km with "0-3" and "4-6" -> the 0-3 fee).
+        // A distance before the first slab starts (e.g. 0.5 km when the first slab is
+        // "1-3 km") gets the first slab's fee. Previously both of these fell back to the
+        // LAST (most expensive) slab, so a 500 m order could be charged the top fee.
+        let picked = null;
+        for (const r of validRanges) {
+          if (distanceKm >= r.min) picked = r;
         }
+        if (!picked) picked = validRanges[0];
+
+        matched = picked.fee;
+        deliveryFeeBreakdown = {
+          source: "distance",
+          distanceKm,
+          minKm: picked.min,
+          maxKm: picked.max,
+          fee: picked.fee,
+        };
       }
 
       deliveryFee = Number.isFinite(matched)
