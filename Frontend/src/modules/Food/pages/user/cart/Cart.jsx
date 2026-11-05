@@ -1091,18 +1091,18 @@ export default function Cart() {
 
     const ranges = Array.isArray(feeSettings.deliveryFeeRanges) ? [...feeSettings.deliveryFeeRanges] : []
     if (ranges.length > 0 && Number.isFinite(distanceKm)) {
-      const sortedRanges = ranges.sort((a, b) => Number(a.min) - Number(b.min))
-      for (let i = 0; i < sortedRanges.length; i += 1) {
-        const range = sortedRanges[i]
-        const min = Number(range.min)
-        const max = Number(range.max)
-        const fee = Number(range.fee)
-        const isLastRange = i === sortedRanges.length - 1
-        const inRange = isLastRange
-          ? distanceKm >= min
-          : distanceKm >= min && distanceKm < max
-
-        if (inRange) return fee
+      // Same rule as the backend pricing: highest slab that has started at this
+      // distance; before the first slab -> first slab's fee.
+      const sortedRanges = ranges
+        .map((r) => ({ min: Number(r?.min), fee: Number(r?.fee) }))
+        .filter((r) => Number.isFinite(r.min) && Number.isFinite(r.fee))
+        .sort((a, b) => a.min - b.min)
+      if (sortedRanges.length > 0) {
+        let picked = null
+        for (const r of sortedRanges) {
+          if (distanceKm >= r.min) picked = r
+        }
+        return (picked || sortedRanges[0]).fee
       }
 
       return Number(feeSettings.deliveryFee || 0)

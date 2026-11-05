@@ -46,6 +46,7 @@ import { isRestaurantWithinOutletTimings } from '../../restaurant/services/outle
 import {
   enqueueOrderEvent,
   haversineKm,
+  deliveryDistanceKm,
   generateFourDigitDeliveryOtp,
   sanitizeOrderForExternal,
   emitDeliveryDropOtpToUser,
@@ -223,30 +224,12 @@ export async function createOrder(userId, dto) {
     qr: {},
   };
 
-  let distanceKm = null;
-  if (
-    restaurant.location?.coordinates?.length === 2 &&
-    dto.address?.location?.coordinates?.length === 2
-  ) {
-    const [rLng, rLat] = restaurant.location.coordinates;
-    const [dLng, dLat] = dto.address.location.coordinates;
-    try {
-      const origin = { lat: rLat, lng: rLng };
-      const dests = [{ id: "delivery", lat: dLat, lng: dLng }];
-      const distances = await getDrivingDistances(origin, dests);
-      const distInfo = distances.get("delivery");
-      
-      if (distInfo && distInfo.distanceValue) {
-        distanceKm = distInfo.distanceValue / 1000;
-      } else {
-        const d = haversineKm(rLat, rLng, dLat, dLng);
-        distanceKm = Number.isFinite(d) ? d : null;
-      }
-    } catch (err) {
-      const d = haversineKm(rLat, rLng, dLat, dLng);
-      distanceKm = Number.isFinite(d) ? d : null;
-    }
-  } else {
+  // Same distance the cart pricing used for the customer's delivery fee.
+  const distanceKm = deliveryDistanceKm(
+    restaurant.location?.coordinates,
+    dto.address?.location?.coordinates,
+  );
+  if (distanceKm == null) {
     console.warn(
       `Food order: distance not available, rider earning set to 0`,
     );

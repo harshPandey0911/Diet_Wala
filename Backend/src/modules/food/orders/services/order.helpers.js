@@ -35,6 +35,36 @@ export function haversineKm(lat1, lon1, lat2, lon2) {
   return (R * c) * 1.35; // Apply routing multiplier for road distance approximation
 }
 
+/**
+ * Distance used for the customer's delivery fee AND the rider's earning.
+ *
+ * Straight-line distance x 1.3 (approximate road distance for a bike). Google's
+ * "driving" distance is NOT used here: it routes a car, and in narrow-lane areas
+ * (e.g. New Mustafabad) a 0.65 km trip came back as ~4.2 km, which pushed the
+ * customer into the ₹40 slab and the rider into the per-km slab (₹27 instead of ₹20).
+ * Being deterministic also keeps the cart price and the placed order in agreement.
+ *
+ * coords are GeoJSON order: [lng, lat]. Returns null when either point is missing.
+ */
+export const DELIVERY_DISTANCE_FACTOR = 1.3;
+
+export function deliveryDistanceKm(restaurantCoords, deliveryCoords) {
+  if (!Array.isArray(restaurantCoords) || restaurantCoords.length !== 2) return null;
+  if (!Array.isArray(deliveryCoords) || deliveryCoords.length !== 2) return null;
+  const [rLng, rLat] = restaurantCoords.map(Number);
+  const [dLng, dLat] = deliveryCoords.map(Number);
+  if (![rLng, rLat, dLng, dLat].every(Number.isFinite)) return null;
+  const R = 6371;
+  const toRad = (x) => (x * Math.PI) / 180;
+  const dLatR = toRad(dLat - rLat);
+  const dLonR = toRad(dLng - rLng);
+  const a =
+    Math.sin(dLatR / 2) ** 2 +
+    Math.cos(toRad(rLat)) * Math.cos(toRad(dLat)) * Math.sin(dLonR / 2) ** 2;
+  const straightKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return straightKm * DELIVERY_DISTANCE_FACTOR;
+}
+
 export function generateFourDigitDeliveryOtp() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
