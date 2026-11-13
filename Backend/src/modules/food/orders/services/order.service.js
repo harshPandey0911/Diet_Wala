@@ -177,6 +177,7 @@ export async function createOrder(userId, dto) {
     deliveryFee: Number(dto.pricing?.deliveryFee ?? 0),
     platformFee: Number(dto.pricing?.platformFee ?? 0),
     discount: Number(dto.pricing?.discount ?? 0),
+    itemDiscount: Number(dto.pricing?.itemDiscount ?? 0),
     pointsDiscount: Number(dto.pricing?.pointsDiscount ?? 0),
     total: Number(dto.pricing?.total ?? 0),
     currency: String(dto.pricing?.currency || "INR"),

@@ -99,7 +99,7 @@ export default function FoodApproval() {
     )
   }, [foodRequests, searchQuery])
 
-  const totalRequests = filteredRequests.length
+  const totalRequests = foodRequests.length
 
   // Handle approve food item or addon
   const handleApprove = async (request) => {

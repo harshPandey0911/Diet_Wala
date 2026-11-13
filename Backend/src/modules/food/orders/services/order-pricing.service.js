@@ -51,21 +51,20 @@ export async function calculateOrderPricing(userId, dto) {
     // markup once when listing items, so it must not be applied again here.
     let price = Number(it.price) || 0;
     const qty = Number(it.quantity) || 1;
-    let hasItemDiscount = false;
 
-    // The frontend already sends the discounted price in it.price.
-    // If we need to calculate itemDiscountTotal, we should rely on originalPrice sent by frontend,
-    // but since it's not sent, we skip re-applying the discount to avoid double discounting.
-    // In a future secure update, backend should fetch item prices from DB and apply discounts here.
+    // Item prices sent by the cart are already discounted. Keep the original price only
+    // to report the savings in the bill; do not subtract this discount a second time.
+    const originalPrice = Number(it.originalPrice);
+    if (Number.isFinite(originalPrice) && originalPrice > price) {
+      itemDiscountTotal += (originalPrice - price) * qty;
+    }
 
     subtotal += price * qty;
-    if (!hasItemDiscount) {
-      eligibleSubtotalForCoupon += price * qty;
-    }
+    eligibleSubtotalForCoupon += price * qty;
   });
   subtotal = Math.round(subtotal);
   eligibleSubtotalForCoupon = Math.round(eligibleSubtotalForCoupon);
-  itemDiscountTotal = Math.floor(itemDiscountTotal);
+  itemDiscountTotal = Math.round(itemDiscountTotal);
 
   const packagingFee = (feeSettings.packagingFee != null && Number.isFinite(Number(feeSettings.packagingFee))) ? Number(feeSettings.packagingFee) : 0;
 

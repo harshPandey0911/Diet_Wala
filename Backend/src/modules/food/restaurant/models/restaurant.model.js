@@ -254,7 +254,8 @@ const restaurantSchema = new mongoose.Schema(
     featuredDish: { type: String },
     featuredPrice: { type: Number },
     offer: { type: String },
-    discount: { type: Number, default: 0, min: 0, max: 100 },
+    discount: { type: Number, default: 0, min: 0 },
+    discountType: { type: String, enum: ['PERCENTAGE', 'FLAT'], default: 'PERCENTAGE' },
     itemDiscounts: [{
       itemId: { type: String },
       discountValue: { type: Number },

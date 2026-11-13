@@ -135,7 +135,7 @@ function HomeRestaurantCard({
                       {restaurant.discount > 0 && (
                         <div className="inline-flex rounded-full px-2.5 py-1 bg-[#ea580c] text-white text-[10px] font-black uppercase tracking-widest shadow-sm items-center gap-1">
                           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.864 2.227l8.909 8.91a2.182 2.182 0 010 3.085l-7.364 7.364a2.182 2.182 0 01-3.085 0l-8.91-8.91A2.182 2.182 0 012 11.137V4.41A2.182 2.182 0 014.182 2.23h6.727a2.182 2.182 0 011.955-.003z" /></svg>
-                          {restaurant.discount}% OFF
+                          {restaurant.discountType === 'FLAT' ? `₹${restaurant.discount} OFF/item` : `${restaurant.discount}% OFF`}
                         </div>
                       )}
                       {availability.isOpen &&

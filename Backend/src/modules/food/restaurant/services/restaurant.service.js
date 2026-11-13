@@ -1415,6 +1415,7 @@ export const listApprovedRestaurants = async (query = {}) => {
         outletTimings: 1,
         deliveryTimings: 1,
         discount: 1,
+        discountType: 1,
         itemDiscounts: 1,
         discountRules: 1,
         menu: 1,

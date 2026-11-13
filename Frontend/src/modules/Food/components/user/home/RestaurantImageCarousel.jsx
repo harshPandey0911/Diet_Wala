@@ -216,8 +216,9 @@ const RestaurantImageCarousel = React.memo(
             dText = bestGlobalOffer.title || `FLAT â‚¹${discountVal} OFF`;
           }
         } else if (!discountedPrice && restaurant.discount > 0) {
-          discountedPrice = priceNum * (1 - restaurant.discount / 100);
-          dText = `${restaurant.discount}% OFF`;
+          const globalDiscount = restaurant.discountType === 'FLAT' ? Number(restaurant.discount) : priceNum * (Number(restaurant.discount) / 100);
+          discountedPrice = Math.max(0, priceNum - Math.min(priceNum, globalDiscount));
+          dText = restaurant.discountType === 'FLAT' ? `₹${restaurant.discount} OFF` : `${restaurant.discount}% OFF`;
         } else {
           const matchingRule = (restaurant.discountRules || []).find(rule => {
             const val = Number(rule.conditionValue);
@@ -226,9 +227,11 @@ const RestaurantImageCarousel = React.memo(
             return false;
           });
           if (matchingRule) {
-            const discountVal = matchingRule.discountValue || 0;
-            discountedPrice = priceNum * (1 - discountVal / 100);
-            dText = `${discountVal}% OFF`;
+            const discountVal = Number(matchingRule.discountValue) || 0;
+            const isFlat = String(matchingRule.discountType || '').toUpperCase() === 'FLAT';
+            const discountAmount = Math.min(priceNum, isFlat ? discountVal : priceNum * discountVal / 100);
+            discountedPrice = Math.max(0, priceNum - discountAmount);
+            dText = isFlat ? `₹${discountVal} OFF` : `${discountVal}% OFF`;
           }
         }
 
@@ -495,7 +498,7 @@ const RestaurantImageCarousel = React.memo(
                   SPECIAL OFFER
                 </span>
                 <span className="font-medium text-white/95 text-[11px] whitespace-nowrap">
-                  UP TO {maxDiscount}% OFF
+                  UP TO {restaurant.discountType === 'FLAT' ? `₹${maxDiscount} OFF/item` : `${maxDiscount}% OFF`}
                 </span>
               </div>
             );
