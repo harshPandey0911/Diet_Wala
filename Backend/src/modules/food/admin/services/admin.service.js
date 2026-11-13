@@ -298,7 +298,7 @@ export async function getRestaurants(query) {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status ownerName ownerPhone zoneId zoneRank rating discount itemDiscounts discountRules openingTime closingTime deliveryTimings onboarding openDays estimatedDeliveryTime isActive isAcceptingOrders acceptingOrdersUpdatedAt')
+            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status ownerName ownerPhone zoneId zoneRank rating discount discountType itemDiscounts discountRules openingTime closingTime deliveryTimings onboarding openDays estimatedDeliveryTime isActive isAcceptingOrders acceptingOrdersUpdatedAt')
             .populate('zoneId', 'name zoneName')
             .lean(),
         FoodRestaurant.countDocuments(filter)
@@ -2651,18 +2651,41 @@ export async function updateRestaurantById(id, body = {}) {
     
     if (body.discount !== undefined) {
         const disc = Number(body.discount);
-        if (Number.isFinite(disc) && disc >= 0 && disc <= 100) {
-            doc.discount = disc;
-        } else {
-            doc.discount = 0;
+        const discountType = String(body.discountType ?? doc.discountType ?? 'PERCENTAGE').toUpperCase();
+        if (!['PERCENTAGE', 'FLAT'].includes(discountType)) throw new ValidationError('Discount type must be percentage or flat amount');
+        if (!Number.isFinite(disc) || disc < 0 || (discountType === 'PERCENTAGE' && disc > 100)) {
+            throw new ValidationError(discountType === 'PERCENTAGE' ? 'Percentage discount must be between 0 and 100' : 'Amount discount must be zero or greater');
         }
+        doc.discount = disc;
+        doc.discountType = discountType;
+    } else if (body.discountType !== undefined) {
+        const discountType = String(body.discountType).toUpperCase();
+        if (!['PERCENTAGE', 'FLAT'].includes(discountType)) throw new ValidationError('Discount type must be percentage or flat amount');
+        if (discountType === 'PERCENTAGE' && Number(doc.discount || 0) > 100) throw new ValidationError('Percentage discount must be between 0 and 100');
+        doc.discountType = discountType;
     }
 
     if (body.itemDiscounts !== undefined) {
-        doc.itemDiscounts = Array.isArray(body.itemDiscounts) ? body.itemDiscounts : [];
+        const discounts = Array.isArray(body.itemDiscounts) ? body.itemDiscounts : [];
+        for (const entry of discounts) {
+            const type = String(entry?.discountType || 'PERCENTAGE').toUpperCase();
+            const value = Number(entry?.discountValue);
+            if (!['PERCENTAGE', 'FLAT'].includes(type) || !Number.isFinite(value) || value < 0 || (type === 'PERCENTAGE' && value > 100)) {
+                throw new ValidationError('Item discounts must be a non-negative amount or a percentage from 0 to 100');
+            }
+        }
+        doc.itemDiscounts = discounts;
     }
     if (body.discountRules !== undefined) {
-        doc.discountRules = Array.isArray(body.discountRules) ? body.discountRules : [];
+        const rules = Array.isArray(body.discountRules) ? body.discountRules : [];
+        for (const rule of rules) {
+            const type = String(rule?.discountType || 'PERCENTAGE').toUpperCase();
+            const value = Number(rule?.discountValue);
+            if (!['PERCENTAGE', 'FLAT'].includes(type) || !Number.isFinite(value) || value < 0 || (type === 'PERCENTAGE' && value > 100)) {
+                throw new ValidationError('Rule discounts must be a non-negative amount or a percentage from 0 to 100');
+            }
+        }
+        doc.discountRules = rules;
     }
 
     if (body.estimatedDeliveryTime !== undefined) {
@@ -5637,7 +5660,7 @@ export async function getSidebarBadges() {
             restaurants: pendingRestaurants,
             deliveryPartners: pendingDeliveryPartners,
             foods: pendingFoods + pendingAddons,
-            foodApprovals: pendingFoods,
+            foodApprovals: pendingFoods + pendingAddons,
             orders: pendingOrders,
             offlinePayments: pendingOfflinePayments,
             restaurantWithdrawals: pendingRestaurantWithdrawals,

@@ -54,6 +54,7 @@ const pricingSchema = new mongoose.Schema(
         paymentGatewayFee: { type: Number, default: 0, min: 0 },
         tcs: { type: Number, default: 0, min: 0 },
         discount: { type: Number, default: 0, min: 0 },
+        itemDiscount: { type: Number, default: 0, min: 0 },
         pointsDiscount: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
         currency: { type: String, default: 'INR' }

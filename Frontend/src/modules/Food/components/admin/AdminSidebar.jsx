@@ -121,9 +121,10 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
     return () => window.removeEventListener('adminAuthChanged', loadAdminUser)
   }, [])
 
-  // Everything that waits for an admin decision. When this total goes up, play a sound.
-  const previousApprovalTotalRef = useRef(null)
+  // Play a short alert when the food and add-on approval queue grows.
+  const previousFoodApprovalCountRef = useRef(null)
   const approvalSoundRef = useRef(null)
+  const approvalSoundTimeoutRef = useRef(null)
 
   useEffect(() => {
     const unlockAudio = () => {
@@ -139,14 +140,11 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
     return () => {
       window.removeEventListener("pointerdown", unlockAudio)
       window.removeEventListener("keydown", unlockAudio)
+      if (approvalSoundTimeoutRef.current) clearTimeout(approvalSoundTimeoutRef.current)
     }
   }, [])
 
   useEffect(() => {
-    const getApprovalTotal = (counts = {}) =>
-      ["restaurants", "deliveryPartners", "foods", "restaurantWithdrawals", "deliveryWithdrawals", "earningAddons"]
-        .reduce((sum, key) => sum + (Number(counts[key]) || 0), 0)
-
     const fetchBadges = async () => {
       try {
         const res = await adminAPI.getSidebarBadges()
@@ -154,14 +152,20 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
           const counts = res.data.counts || {}
           setBadges(counts)
 
-          const total = getApprovalTotal(counts)
-          const previous = previousApprovalTotalRef.current
-          previousApprovalTotalRef.current = total
-          if (previous !== null && total > previous) {
+          const foodApprovalCount = Number(counts.foodApprovals) || 0
+          const previous = previousFoodApprovalCountRef.current
+          previousFoodApprovalCountRef.current = foodApprovalCount
+          if (previous !== null && foodApprovalCount > previous) {
             try {
               const audio = approvalSoundRef.current || new Audio("/alert.mp3")
+              if (approvalSoundTimeoutRef.current) clearTimeout(approvalSoundTimeoutRef.current)
               audio.currentTime = 0
-              void audio.play().catch(() => {})
+              void audio.play().then(() => {
+                approvalSoundTimeoutRef.current = setTimeout(() => {
+                  audio.pause()
+                  audio.currentTime = 0
+                }, 2500)
+              }).catch(() => {})
             } catch {
               // sound is best-effort
             }

@@ -21,6 +21,7 @@ export default function RestaurantDiscount() {
 
   // Form State
   const [globalDiscount, setGlobalDiscount] = useState(0);
+  const [globalDiscountType, setGlobalDiscountType] = useState("PERCENTAGE");
   const [itemDiscounts, setItemDiscounts] = useState([]);
   const [discountRules, setDiscountRules] = useState([]);
   const [activeTab, setActiveTab] = useState("global"); // global, items, rules
@@ -69,6 +70,7 @@ export default function RestaurantDiscount() {
   const openDiscountModal = async (restaurant) => {
     setSelectedRestaurant(restaurant);
     setGlobalDiscount(restaurant.discount || 0);
+    setGlobalDiscountType(restaurant.discountType || "PERCENTAGE");
     setItemDiscounts(restaurant.itemDiscounts || []);
     setDiscountRules(restaurant.discountRules || []);
     setActiveTab("global");
@@ -94,6 +96,7 @@ export default function RestaurantDiscount() {
       const id = selectedRestaurant.id || selectedRestaurant._id;
       const payload = {
         discount: Number(globalDiscount) || 0,
+        discountType: globalDiscountType,
         itemDiscounts: itemDiscounts,
         discountRules: discountRules
       };
@@ -130,15 +133,15 @@ export default function RestaurantDiscount() {
   };
 
   // Item Helpers
-  const updateItemDiscount = (itemId, discountValue) => {
+  const updateItemDiscount = (itemId, field, value) => {
     const existing = itemDiscounts.find(i => i.itemId === itemId);
-    if (!discountValue || discountValue === '0') {
+    if (field === 'discountValue' && (!value || Number(value) === 0)) {
       setItemDiscounts(itemDiscounts.filter(i => i.itemId !== itemId));
     } else {
       if (existing) {
-        setItemDiscounts(itemDiscounts.map(i => i.itemId === itemId ? { ...i, discountValue: Number(discountValue) } : i));
+        setItemDiscounts(itemDiscounts.map(i => i.itemId === itemId ? { ...i, [field]: field === 'discountValue' ? Number(value) : value } : i));
       } else {
-        setItemDiscounts([...itemDiscounts, { itemId, discountValue: Number(discountValue), discountType: 'PERCENTAGE' }]);
+        setItemDiscounts([...itemDiscounts, { itemId, discountValue: field === 'discountValue' ? Number(value) : 0, discountType: field === 'discountType' ? value : 'PERCENTAGE' }]);
       }
     }
   };
@@ -262,7 +265,7 @@ export default function RestaurantDiscount() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           <div className="flex flex-col gap-1 items-center">
-                            {hasGlobal && <span className="inline-flex items-center gap-1 text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-200"><Percent className="w-3 h-3"/> Global {restaurant.discount}%</span>}
+                            {hasGlobal && <span className="inline-flex items-center gap-1 text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-200"><Percent className="w-3 h-3"/> Global {restaurant.discountType === 'FLAT' ? `₹${restaurant.discount} off/item` : `${restaurant.discount}%`}</span>}
                             {hasItems && <span className="inline-flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200"><Tag className="w-3 h-3"/> {restaurant.itemDiscounts.length} Items</span>}
                             {hasRules && <span className="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200"><Settings2 className="w-3 h-3"/> {restaurant.discountRules.length} Rules</span>}
                             {!hasGlobal && !hasItems && !hasRules && <span className="text-xs text-slate-400">None</span>}
@@ -325,21 +328,27 @@ export default function RestaurantDiscount() {
               {/* GLOBAL TAB */}
               {activeTab === 'global' && (
                 <div className="space-y-4 max-w-sm">
-                  <h3 className="font-semibold text-slate-800">Flat Restaurant Discount</h3>
-                  <p className="text-sm text-slate-500">This discount percentage will be applied to every single item in the restaurant unless overridden by an item-specific discount.</p>
+                  <h3 className="font-semibold text-slate-800">Restaurant-wide Discount</h3>
+                  <p className="text-sm text-slate-500">Apply a percentage or fixed rupee discount to each item. A fixed discount is capped at that item's price, so an item can never become negative.</p>
                   
                   <div className="mt-4">
-                    <label className="text-sm font-medium text-slate-700 mb-1.5 block">Discount Percentage</label>
+                    <label className="text-sm font-medium text-slate-700 mb-1.5 block">Discount Type</label>
+                    <select value={globalDiscountType} onChange={(e) => setGlobalDiscountType(e.target.value)} className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600">
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FLAT">Fixed amount (₹ per item)</option>
+                    </select>
+                    <label className="text-sm font-medium text-slate-700 mb-1.5 block">{globalDiscountType === 'FLAT' ? 'Discount Amount per Item (₹)' : 'Discount Percentage'}</label>
                     <div className="relative">
                       <input
                         type="number"
                         min="0"
-                        max="100"
+                        max={globalDiscountType === 'PERCENTAGE' ? 100 : undefined}
+                        step={globalDiscountType === 'FLAT' ? '0.01' : '1'}
                         value={globalDiscount}
                         onChange={(e) => setGlobalDiscount(e.target.value)}
                         className="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                       />
-                      <Percent className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      {globalDiscountType === 'FLAT' ? <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span> : <Percent className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />}
                     </div>
                   </div>
                 </div>
@@ -367,7 +376,7 @@ export default function RestaurantDiscount() {
                           <tr>
                             <th className="px-4 py-3 font-medium text-slate-600">Item Name</th>
                             <th className="px-4 py-3 font-medium text-slate-600 w-24">Price</th>
-                            <th className="px-4 py-3 font-medium text-slate-600 w-32">Discount %</th>
+                            <th className="px-4 py-3 font-medium text-slate-600 w-44">Discount</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -382,14 +391,23 @@ export default function RestaurantDiscount() {
                                 </td>
                                 <td className="px-4 py-3 text-slate-600">₹{item.price}</td>
                                 <td className="px-4 py-3">
-                                  <div className="relative">
+                                  <div className="space-y-1">
+                                    <select
+                                      value={current?.discountType || 'PERCENTAGE'}
+                                      onChange={(e) => updateItemDiscount(itemId, 'discountType', e.target.value)}
+                                      className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-blue-600"
+                                    >
+                                      <option value="PERCENTAGE">Percent (%)</option>
+                                      <option value="FLAT">Amount (₹)</option>
+                                    </select>
                                     <input
                                       type="number"
                                       min="0"
-                                      max="100"
-                                      placeholder="0"
+                                      max={(current?.discountType || 'PERCENTAGE') === 'PERCENTAGE' ? 100 : undefined}
+                                      step={(current?.discountType || 'PERCENTAGE') === 'FLAT' ? '0.01' : '1'}
+                                      placeholder={(current?.discountType || 'PERCENTAGE') === 'FLAT' ? '₹ amount' : '%'}
                                       value={current?.discountValue || ''}
-                                      onChange={(e) => updateItemDiscount(itemId, e.target.value)}
+                                      onChange={(e) => updateItemDiscount(itemId, 'discountValue', e.target.value)}
                                       className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-blue-600"
                                     />
                                   </div>
@@ -457,7 +475,15 @@ export default function RestaurantDiscount() {
                               onChange={(e) => updateRule(index, 'discountValue', e.target.value)}
                               className="w-full pl-3 pr-7 py-2 border border-slate-300 rounded-md text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                             />
-                            <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <select
+                              aria-label="Rule discount type"
+                              value={rule.discountType || 'PERCENTAGE'}
+                              onChange={(e) => updateRule(index, 'discountType', e.target.value)}
+                              className="absolute right-1 top-1/2 -translate-y-1/2 max-w-[78px] rounded border-0 bg-transparent py-1 pl-1 pr-1 text-xs text-slate-500 outline-none"
+                            >
+                              <option value="PERCENTAGE">%</option>
+                              <option value="FLAT">₹</option>
+                            </select>
                           </div>
                           
                           <button onClick={() => removeRule(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors">

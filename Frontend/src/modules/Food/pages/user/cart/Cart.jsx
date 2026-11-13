@@ -916,6 +916,7 @@ export default function Cart() {
           itemId: item.itemId || item.id,
           name: item.name,
           price: item.price, // Price should already be in INR
+          originalPrice: item.originalPrice,
           variantId: item.variantId || undefined,
           variantName: item.variantName || undefined,
           variantPrice: item.variantPrice || item.price,
@@ -1422,6 +1423,7 @@ export default function Cart() {
           itemId: item.itemId || item.id,
           name: item.name,
           price: item.price,
+          originalPrice: item.originalPrice,
           variantId: item.variantId || undefined,
           variantName: item.variantName || undefined,
           variantPrice: item.variantPrice || item.price,
@@ -1491,6 +1493,7 @@ export default function Cart() {
         itemId: item.itemId || item.id,
         name: item.name,
         price: item.price,
+        originalPrice: item.originalPrice,
         variantId: item.variantId || undefined,
         variantName: item.variantName || undefined,
         variantPrice: item.variantPrice || item.price,
@@ -1698,6 +1701,7 @@ export default function Cart() {
         itemId: item.itemId || item.id,
         name: item.name,
         price: item.price,
+        originalPrice: item.originalPrice,
         variantId: item.variantId || undefined,
         variantName: item.variantName || undefined,
         variantPrice: item.variantPrice || item.price,
@@ -3002,6 +3006,13 @@ export default function Cart() {
                       <span className="text-gray-600 dark:text-gray-400">Item Total</span>
                       <span className="text-gray-800 dark:text-gray-200 font-medium">{RUPEE_SYMBOL}{subtotal.toFixed(2)}</span>
                     </div>
+
+                    {itemDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-primary font-medium">
+                        <span>Item Discount (included above)</span>
+                        <span>-{RUPEE_SYMBOL}{itemDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Delivery Fee</span>

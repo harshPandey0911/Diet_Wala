@@ -580,6 +580,7 @@ function RestaurantDetailsContent() {
             isActive: (actualRestaurant?.isActive ?? apiRestaurant?.isActive) !== false, // Default to true if not specified
             isAcceptingOrders: (actualRestaurant?.isAcceptingOrders ?? apiRestaurant?.isAcceptingOrders) !== false, // Backend order-placement source of truth
             discount: actualRestaurant?.discount || apiRestaurant?.discount || 0,
+            discountType: actualRestaurant?.discountType || apiRestaurant?.discountType || 'PERCENTAGE',
             itemDiscounts: Array.isArray(actualRestaurant?.itemDiscounts) ? actualRestaurant.itemDiscounts : (Array.isArray(apiRestaurant?.itemDiscounts) ? apiRestaurant.itemDiscounts : []),
             discountRules: Array.isArray(actualRestaurant?.discountRules) ? actualRestaurant.discountRules : (Array.isArray(apiRestaurant?.discountRules) ? apiRestaurant.discountRules : []),
             // Preserve backend-computed road distance so it stays consistent with the Home page listing
@@ -1714,7 +1715,7 @@ function RestaurantDetailsContent() {
     if (itemDiscount) {
       const discountValue = itemDiscount.discountValue || 0;
       const isFlatDiscount = String(itemDiscount.discountType || '').toUpperCase() === 'FLAT';
-      const discountAmount = isFlatDiscount ? discountValue : (priceNum * discountValue) / 100;
+      const discountAmount = Math.min(priceNum, isFlatDiscount ? discountValue : (priceNum * discountValue) / 100);
       if (discountAmount > bestDiscountAmount) {
         bestDiscountAmount = discountAmount;
         bestDiscountValue = discountValue;
@@ -1731,23 +1732,24 @@ function RestaurantDetailsContent() {
     });
     if (matchingRule) {
       const discountValue = matchingRule.discountValue || 0;
-      // Default to percentage for rules
-      const discountAmount = (priceNum * discountValue) / 100;
+      const isFlatDiscount = String(matchingRule.discountType || '').toUpperCase() === 'FLAT';
+      const discountAmount = Math.min(priceNum, isFlatDiscount ? discountValue : (priceNum * discountValue) / 100);
       if (discountAmount > bestDiscountAmount) {
         bestDiscountAmount = discountAmount;
         bestDiscountValue = discountValue;
-        bestIsFlatDiscount = false;
+        bestIsFlatDiscount = isFlatDiscount;
       }
     }
 
     // 3. Check global restaurant discount
     const globalDiscount = Number(restaurant?.discount || 0);
     if (globalDiscount > 0) {
-      const discountAmount = (priceNum * globalDiscount) / 100;
+      const isFlatDiscount = String(restaurant?.discountType || '').toUpperCase() === 'FLAT';
+      const discountAmount = Math.min(priceNum, isFlatDiscount ? globalDiscount : (priceNum * globalDiscount) / 100);
       if (discountAmount > bestDiscountAmount) {
         bestDiscountAmount = discountAmount;
         bestDiscountValue = globalDiscount;
-        bestIsFlatDiscount = false;
+        bestIsFlatDiscount = isFlatDiscount;
       }
     }
 
@@ -2633,7 +2635,7 @@ function RestaurantDetailsContent() {
                   </div>
                   <div>
                     <p className="text-sm font-black text-green-800 dark:text-green-400 uppercase tracking-wide">
-                      FLAT {restaurant.discount}% OFF
+                      {restaurant.discountType === 'FLAT' ? `₹${restaurant.discount} OFF per item` : `${restaurant.discount}% OFF`}
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-500 font-medium mt-0.5">
                       Applied automatically on all items
@@ -3724,12 +3726,14 @@ function RestaurantDetailsContent() {
                             const variant = getVariantForDish(selectedItem, selectedVariantId);
                             const basePrice = hasFoodVariants(selectedItem) ? (variant?.price || selectedItem.price) : selectedItem.price;
 
-                            if (restaurant?.discount > 0) {
-                              const discountedPrice = basePrice * (1 - restaurant.discount / 100);
+                            const numericBasePrice = Number(basePrice) || 0;
+                            const { discountAmount } = calculateBestDiscount(selectedItem, numericBasePrice);
+                            const discountedPrice = Math.max(0, Math.round(numericBasePrice - Math.min(numericBasePrice, discountAmount)));
+                            if (discountAmount > 0) {
                               return (
                                 <>
                                   <span className="text-sm line-through text-red-200">
-                                    {RUPEE_SYMBOL}{Math.round(basePrice)}
+                                    {RUPEE_SYMBOL}{Math.round(numericBasePrice)}
                                   </span>
                                   <span className="text-base font-bold">
                                     {hasFoodVariants(selectedItem) ? `${variant?.name || "Default"} · ` : ""}{RUPEE_SYMBOL}{Math.round(discountedPrice)}

@@ -1520,6 +1520,7 @@ export default function Home() {
                 closingTime: restaurant.closingTime || restaurant?.deliveryTimings?.closingTime || null,
                 zoneRank: restaurant.zoneRank || null,
                 discount: restaurant.discount || 0,
+                discountType: restaurant.discountType || 'PERCENTAGE',
                 distanceText: restaurant.distanceText || null,
                 distanceInfo: restaurant.distanceInfo || null,
               };

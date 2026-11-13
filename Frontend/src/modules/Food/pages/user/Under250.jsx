@@ -210,10 +210,12 @@ const HorizontalMenuScroller = ({ restaurant, quantities, isClosed, handleItemCl
               <div className="flex items-center justify-between">
                 <div>
                   {(() => {
-                    let discountPercentage = restaurant?.discount || 0;
+                    let discountValue = restaurant?.discount || 0;
+                    let discountType = restaurant?.discountType || 'PERCENTAGE';
                     const specificItemDiscount = (restaurant?.itemDiscounts || []).find(d => String(d.itemId) === String(item.id || item._id));
                     if (specificItemDiscount) {
-                      discountPercentage = specificItemDiscount.discountValue || 0;
+                      discountValue = specificItemDiscount.discountValue || 0;
+                      discountType = specificItemDiscount.discountType || 'PERCENTAGE';
                     } else {
                       const matchingRule = (restaurant?.discountRules || []).find(rule => {
                         const val = Number(rule.conditionValue);
@@ -221,15 +223,16 @@ const HorizontalMenuScroller = ({ restaurant, quantities, isClosed, handleItemCl
                         if (rule.conditionType === 'PRICE_BELOW' && item.price < val) return true;
                         return false;
                       });
-                      if (matchingRule) discountPercentage = matchingRule.discountValue || 0;
+                      if (matchingRule) { discountValue = matchingRule.discountValue || 0; discountType = matchingRule.discountType || 'PERCENTAGE'; }
                     }
 
-                    if (discountPercentage > 0) {
+                    if (discountValue > 0) {
+                      const discountAmount = Math.min(Number(item.price) || 0, discountType === 'FLAT' ? Number(discountValue) : (Number(item.price) || 0) * Number(discountValue) / 100);
                       return (
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-2">
                             <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 dark:text-white">
-                              {RUPEE_SYMBOL}{Math.round(item.price * (1 - discountPercentage / 100))}
+                              {RUPEE_SYMBOL}{Math.max(0, Math.round(item.price - discountAmount))}
                             </p>
                             <p className="text-xs md:text-sm text-gray-500 line-through">
                               {RUPEE_SYMBOL}{Math.round(item.price)}
@@ -237,7 +240,7 @@ const HorizontalMenuScroller = ({ restaurant, quantities, isClosed, handleItemCl
                           </div>
                           <div className="inline-flex">
                             <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-1 py-0.5 rounded uppercase">
-                              {discountPercentage}% OFF
+                              {discountType === 'FLAT' ? `₹${discountValue} OFF` : `${discountValue}% OFF`}
                             </span>
                           </div>
                         </div>
@@ -856,6 +859,7 @@ export default function Under250() {
                 distanceText: restaurant?.distanceText || null,
                 distanceInfo: restaurant?.distanceInfo || null,
                 discount: restaurant?.discount || 0,
+                discountType: restaurant?.discountType || 'PERCENTAGE',
                 itemDiscounts: Array.isArray(restaurant?.itemDiscounts) ? restaurant.itemDiscounts : [],
                 discountRules: Array.isArray(restaurant?.discountRules) ? restaurant.discountRules : [],
                 isActive: restaurant?.isActive !== false,
@@ -1086,10 +1090,12 @@ export default function Under250() {
     );
     
     // Evaluate Item-Specific and Smart Rules Discounts
-    let discountPercentage = restaurantObj?.discount || 0;
+    let discountValue = restaurantObj?.discount || 0;
+    let discountType = restaurantObj?.discountType || 'PERCENTAGE';
     const specificItemDiscount = (restaurantObj?.itemDiscounts || []).find(d => String(d.itemId) === String(item.id || item._id));
     if (specificItemDiscount) {
-      discountPercentage = specificItemDiscount.discountValue || 0;
+      discountValue = specificItemDiscount.discountValue || 0;
+      discountType = specificItemDiscount.discountType || 'PERCENTAGE';
     } else {
       const matchingRule = (restaurantObj?.discountRules || []).find(rule => {
         const val = Number(rule.conditionValue);
@@ -1097,10 +1103,11 @@ export default function Under250() {
         if (rule.conditionType === 'PRICE_BELOW' && item.price < val) return true;
         return false;
       });
-      if (matchingRule) discountPercentage = matchingRule.discountValue || 0;
+      if (matchingRule) { discountValue = matchingRule.discountValue || 0; discountType = matchingRule.discountType || 'PERCENTAGE'; }
     }
     
-    const finalPrice = discountPercentage > 0 ? Math.round(item.price * (1 - discountPercentage / 100)) : item.price;
+    const discountAmount = Math.min(Number(item.price) || 0, discountType === 'FLAT' ? Number(discountValue) : (Number(item.price) || 0) * Number(discountValue) / 100);
+    const finalPrice = discountValue > 0 ? Math.max(0, Math.round(Number(item.price) - discountAmount)) : item.price;
 
     // Prepare cart item with all required properties
     const cartItem = {
@@ -1969,14 +1976,33 @@ export default function Under250() {
                         const restaurant = under250Restaurants.find(r => 
                           r.menuItems?.some(m => m.id === selectedItem.id)
                         );
-                        if (restaurant?.discount > 0) {
+                        let discountValue = Number(restaurant?.discount) || 0;
+                        let discountType = restaurant?.discountType || 'PERCENTAGE';
+                        const itemDiscount = restaurant?.itemDiscounts?.find(d => String(d.itemId) === String(selectedItem.id || selectedItem._id));
+                        if (itemDiscount) {
+                          discountValue = Number(itemDiscount.discountValue) || 0;
+                          discountType = itemDiscount.discountType || 'PERCENTAGE';
+                        } else {
+                          const matchedRule = (restaurant?.discountRules || []).find(rule => {
+                            const value = Number(rule.conditionValue);
+                            return (rule.conditionType === 'PRICE_ABOVE' && Number(selectedItem.price) > value) || (rule.conditionType === 'PRICE_BELOW' && Number(selectedItem.price) < value);
+                          });
+                          if (matchedRule) {
+                            discountValue = Number(matchedRule.discountValue) || 0;
+                            discountType = matchedRule.discountType || 'PERCENTAGE';
+                          }
+                        }
+                        const itemPrice = Number(selectedItem.price) || 0;
+                        const rawDiscount = discountType === 'FLAT' ? discountValue : itemPrice * discountValue / 100;
+                        const discountedPrice = Math.max(0, Math.round(itemPrice - Math.min(itemPrice, rawDiscount)));
+                        if (discountValue > 0) {
                           return (
                             <>
                               <span className="text-sm md:text-base lg:text-lg line-through text-red-200">
-                                {RUPEE_SYMBOL}{Math.round(selectedItem.price)}
+                                {RUPEE_SYMBOL}{Math.round(itemPrice)}
                               </span>
                               <span className="text-base md:text-lg lg:text-xl font-bold">
-                                {RUPEE_SYMBOL}{Math.round(selectedItem.price * (1 - restaurant.discount / 100))}
+                                {RUPEE_SYMBOL}{Math.round(discountedPrice)}
                               </span>
                             </>
                           );
